@@ -368,128 +368,134 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
                   )
                   : const AdminAppbarDesktop(title: 'Student Absentees'),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        maximumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        elevation: 2,
-                        shadowColor: Colors.black,
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          maximumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          elevation: 2,
+                          shadowColor: Colors.black,
 
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.black,
-                      ),
-                      onPressed: () => pickDate(context),
-                      icon: const Icon(
-                        Icons.calendar_month,
-                        color: Colors.black,
-                        size: 24,
-                      ),
-                      label: Text(
-                        "Pick Date: ${pickedDate.day}/${pickedDate.month}/${pickedDate.year}",
-                        style: const TextStyle(
-                          fontSize: 20,
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.black,
+                        ),
+                        onPressed: () => pickDate(context),
+                        icon: const Icon(
+                          Icons.calendar_month,
                           color: Colors.black,
+                          size: 24,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: Text(
-                      "🕘 Forenoon Absentees",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.teal,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  attendance.any((e) => e['fn_status'] == 'A')
-                      ? DataTable(
-                        headingRowColor: MaterialStateProperty.all(
-                          Colors.grey[200],
-                        ),
-                        columns: const [
-                          DataColumn(label: Text('Username')),
-                          DataColumn(label: Text('Name')),
-                        ],
-                        rows: buildAbsentRows('fn'),
-                      )
-                      : Center(
-                        child: Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                        label: Text(
+                          "Pick Date: ${pickedDate.day}/${pickedDate.month}/${pickedDate.year}",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            color: Colors.black,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              "No absentees in the forenoon.",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        "🕘 Forenoon Absentees",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color: Colors.teal,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    attendance.any((e) => e['fn_status'] == 'A')
+                        ? DataTable(
+                          headingRowColor: MaterialStateProperty.all(
+                            Colors.grey[200],
+                          ),
+                          columns: const [
+                            DataColumn(label: Text('Username')),
+                            DataColumn(label: Text('Name')),
+                          ],
+                          rows: buildAbsentRows('fn'),
+                        )
+                        : Center(
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                "No absentees in the forenoon.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  const SizedBox(height: 30),
-                  Center(
-                    child: Text(
-                      "🌞 Afternoon Absentees",
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.teal,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                    const SizedBox(height: 30),
+                    Center(
+                      child: Text(
+                        "🌞 Afternoon Absentees",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color: Colors.teal,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  attendance.any((e) => e['an_status'] == 'A')
-                      ? DataTable(
-                        headingRowColor: MaterialStateProperty.all(
-                          Colors.grey[200],
-                        ),
-                        columns: const [
-                          DataColumn(label: Text('Username')),
-                          DataColumn(label: Text('Name')),
-                        ],
-                        rows: buildAbsentRows('an'),
-                      )
-                      : Center(
-                        child: Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                    const SizedBox(height: 15),
+                    attendance.any((e) => e['an_status'] == 'A')
+                        ? DataTable(
+                          headingRowColor: MaterialStateProperty.all(
+                            Colors.grey[200],
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              "No absentees in the afternoon.",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
+                          columns: const [
+                            DataColumn(label: Text('Username')),
+                            DataColumn(label: Text('Name')),
+                          ],
+                          rows: buildAbsentRows('an'),
+                        )
+                        : Center(
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                "No absentees in the afternoon.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

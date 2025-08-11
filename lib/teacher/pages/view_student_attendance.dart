@@ -3,27 +3,31 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
+import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
+import '../../admin/widget/attendance_screen.dart';
 import '../../services/api_service.dart';
 import '../../student/services/student_api_services.dart';
 import '../../teacher/services/teacher_api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
 import '../components/build_profile_card_mobile.dart';
-import '../components/export_attendance_to_excel.dart';
-import '../widget/attendance_screen.dart';
-import 'admin_dashboard.dart';
 
-class ClassList extends StatefulWidget {
+class StudentAttendanceClasses extends StatefulWidget {
   final String schoolId;
   final String username;
-  const ClassList({super.key, required this.schoolId, required this.username});
+  const StudentAttendanceClasses({
+    super.key,
+    required this.schoolId,
+    required this.username,
+  });
 
   @override
-  State<ClassList> createState() => _ClassListState();
+  State<StudentAttendanceClasses> createState() =>
+      _StudentAttendanceClassesState();
 }
 
-class _ClassListState extends State<ClassList> {
+class _StudentAttendanceClassesState extends State<StudentAttendanceClasses> {
   String? schoolName;
   String? schoolAddress;
   Image? schoolPhoto;
@@ -107,15 +111,11 @@ class _ClassListState extends State<ClassList> {
   }
 
   Future<bool> onWillPop() async {
-    AdminDashboardState.selectedIndex = 0;
+    StaffDashboardState.selectedIndex = 0;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
+        builder: (context) => StaffDashboard(username: widget.username),
       ),
     );
     return false;
@@ -132,25 +132,23 @@ class _ClassListState extends State<ClassList> {
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
           child:
               isMobile
-                  ? AdminAppbarMobile(
+                  ? MobileAppbar(
                     title: 'Class List',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      AdminDashboardState.selectedIndex = 0;
+                      StaffDashboardState.selectedIndex = 0;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
+                              (context) =>
+                                  StaffDashboard(username: widget.username),
                         ),
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Class List'),
+                  : const DesktopAppbar(title: 'Class List'),
         ),
         body:
             isLoading
@@ -163,11 +161,7 @@ class _ClassListState extends State<ClassList> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      BuildProfileCard(
-                        schoolPhoto: schoolPhoto,
-                        schoolAddress: '$schoolAddress',
-                        schoolName: '$schoolName',
-                      ),
+                      BuildProfileCard(),
                       const SizedBox(height: 16),
                       classes.isEmpty
                           ? const Center(
@@ -298,12 +292,12 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    AdminDashboardState.selectedIndex = 0;
+    // StaffDashboardState.selectedIndex = 0;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder:
-            (context) => ClassList(
+            (context) => StudentAttendanceClasses(
               schoolId: widget.school_id,
               username: widget.username,
             ),
@@ -369,7 +363,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
           child:
               isMobile
-                  ? AdminAppbarMobile(
+                  ? MobileAppbar(
                     title: 'View Student Attendance',
                     enableDrawer: false,
                     enableBack: true,
@@ -378,7 +372,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => ClassList(
+                              (context) => StudentAttendanceClasses(
                                 schoolId: widget.school_id,
                                 username: widget.username,
                               ),
@@ -386,7 +380,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Student Attendance'),
+                  : const DesktopAppbar(title: 'View Student Attendance'),
         ),
         body:
             students.isEmpty
@@ -467,21 +461,6 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                                         title: 'Student Attendance',
                                       ),
                                       const SizedBox(height: 16),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: ElevatedButton.icon(
-                                          icon: const Icon(
-                                            Icons.download_outlined,
-                                          ),
-                                          label: const Text("Export Excel"),
-                                          onPressed:
-                                              () => exportAttendanceToExcel(
-                                                context,
-                                                attendance,
-                                                userName,
-                                              ),
-                                        ),
-                                      ),
                                     ],
                                   )
                                 else

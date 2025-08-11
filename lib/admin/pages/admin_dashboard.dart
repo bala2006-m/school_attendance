@@ -76,7 +76,6 @@ class AdminDashboardState extends State<AdminDashboard> {
     prefs.setString('schoolId', widget.schoolId);
 
     try {
-      // Step 1: Minimal info to show UI
       final List responses = await Future.wait([
         AdminApiService.fetchAdminData(widget.username),
         ApiService.fetchSchoolData(widget.schoolId),
@@ -93,7 +92,7 @@ class AdminDashboardState extends State<AdminDashboard> {
       schoolAddress = schoolData?[0]['address'];
 
       await prefs.setString('adminName', adminName);
-      await prefs.setString('schoolAddress', adminName);
+      await prefs.setString('schoolAddress', '$schoolAddress');
       await prefs.setString('adminPhoto', '${adminData!['photo']}');
       await prefs.setString('schoolPhoto', '${schoolData?[0]['photo']}');
 
@@ -122,7 +121,6 @@ class AdminDashboardState extends State<AdminDashboard> {
         });
       }
 
-      // Step 3: Load rest in background
       fetchSecondaryData();
 
       _hasLoadedOnce = true;

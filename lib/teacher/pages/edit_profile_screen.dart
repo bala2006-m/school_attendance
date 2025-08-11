@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
 import '../appbar/desktop_appbar.dart';
 import '../appbar/mobile_appbar.dart';
@@ -63,11 +64,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+
     return Scaffold(
-      appBar:
-          MediaQuery.sizeOf(context).width > 600
-              ? DesktopAppbar(title: 'Edit Profile')
-              : MobileAppbar(title: 'Edit Profile'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+        isMobile
+            ? MobileAppbar(
+          title: 'Edit Profile',enableDrawer: false,enableBack: true,onBack: () {
+          StaffDashboardState.selectedIndex = 0;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => StaffDashboard(
+                username: widget.username,
+              ),
+            ),
+          );
+        },
+        )
+            : const DesktopAppbar(title: 'Edit Profile'),
+      ),
       body:
           _isLoading
               ? const Center(

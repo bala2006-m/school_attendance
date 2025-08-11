@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/services/api_service.dart';
+import 'package:school_attendance/student/services/student_api_services.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -473,19 +474,173 @@ class StudentAttendance extends StatefulWidget {
 }
 
 class _StudentAttendanceState extends State<StudentAttendance> {
+  bool? attendanceStatusMapFn;
+  bool? attendanceStatusMapAn;
   bool isAllPresent = true;
   AttendanceSession session =
       DateTime.now().hour < 13 ? AttendanceSession.FN : AttendanceSession.AN;
   String get sessionKey =>
       session == AttendanceSession.FN ? 'fn_status' : 'an_status';
-
+  List<Map<String, dynamic>> holidays = [];
   List<Map<String, dynamic>> students = [];
   bool isLoading = true;
+  // Add at the top
+  bool isFnHoliday = false;
+  bool isAnHoliday = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await fetchHolidays(); // wait for holiday check
+      await _loadData();
+
+      final hour = DateTime.now().hour;
+      if (hour < 13) {
+        // Before 1 PM - default FN session logic
+        if (!isFnHoliday && attendanceStatusMapFn == false) {
+          _showUnmarkedDialog();
+        } else if (isFnHoliday) {
+          _showHolidayDialog('FN');
+        }
+      } else {
+        // After 1 PM
+        if (!isAnHoliday && attendanceStatusMapAn == true) {
+          // If AN is already marked, switch to AN
+          setState(() => session = AttendanceSession.AN);
+          _loadData();
+        } else if (!isAnHoliday && attendanceStatusMapFn == true) {
+          // Stay in FN if AN is not marked but FN is marked
+          setState(() => session = AttendanceSession.FN);
+          _loadData();
+        } else if (!isAnHoliday && attendanceStatusMapAn == false) {
+          // If AN not marked and FN also not marked, show dialog
+          _showUnmarkedDialog();
+        }
+
+        if (isAnHoliday) {
+          _showHolidayDialog('AN');
+        }
+      }
+    });
+  }
+
+  Future<void> fetchHolidays() async {
+    holidays = await StudentApiServices.fetchHolidaysClasses(
+      schoolId: widget.schoolId,
+      classId: widget.classId,
+    );
+
+    final today = DateTime.parse(widget.date);
+    final todayStr = today.toIso8601String().split("T")[0];
+
+    for (var holiday in holidays) {
+      final holidayDate = holiday['date'].toString().split("T")[0];
+      if (holidayDate == todayStr) {
+        isFnHoliday = (holiday['fn'] ?? '').toString().toUpperCase() == 'H';
+        isAnHoliday = (holiday['an'] ?? '').toString().toUpperCase() == 'H';
+        break;
+      }
+    }
+  }
+
+  void _showHolidayDialog(String sessionLabel) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text("Holiday"),
+            content: Text(
+              "Attendance for $sessionLabel session is not allowed today due to a holiday.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildSessionButton(String label, AttendanceSession type) {
+    final isSelected = session == type;
+
+    final isMarked =
+        type == AttendanceSession.FN
+            ? attendanceStatusMapFn ?? false
+            : attendanceStatusMapAn ?? false;
+
+    final isHoliday = type == AttendanceSession.FN ? isFnHoliday : isAnHoliday;
+
+    final currentHour = DateTime.now().hour;
+
+    // Disable FN if time > 1PM and FN is unmarked
+    final isFnLateUnmarked =
+        type == AttendanceSession.FN &&
+        currentHour >= 13 &&
+        !(attendanceStatusMapFn ?? false);
+
+    // Disable AN if time < 1PM and AN is unmarked
+    final isAnEarlyUnmarked =
+        type == AttendanceSession.AN &&
+        currentHour < 13 &&
+        !(attendanceStatusMapAn ?? false);
+
+    final isDisabled =
+        !isMarked || isHoliday || isFnLateUnmarked || isAnEarlyUnmarked;
+
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? Colors.teal : Colors.grey[300],
+      ),
+      onPressed:
+          isDisabled
+              ? null
+              : () {
+                setState(() => session = type);
+                _loadData();
+              },
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isDisabled ? Colors.grey : Colors.black,
+          fontSize: 20,
+        ),
+      ),
+    );
+  }
+
+  void _showUnmarkedDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Attendance Not Marked"),
+            content: const Text(
+              "Attendance for this session has not been marked.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => Classes(
+                            schoolId: widget.schoolId,
+                            date: widget.date,
+                            username: widget.username,
+                          ),
+                    ),
+                  );
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -502,7 +657,18 @@ class _StudentAttendanceState extends State<StudentAttendance> {
           classId: widget.classId,
         ),
       ]);
-
+      attendanceStatusMapFn = await ApiService.checkAttendanceStatusSession(
+        widget.schoolId,
+        widget.classId,
+        widget.date,
+        'FN',
+      );
+      attendanceStatusMapAn = await ApiService.checkAttendanceStatusSession(
+        widget.schoolId,
+        widget.classId,
+        widget.date,
+        'AN',
+      );
       final fetchedStudents = results[0];
       final attendance = results[1] as List<dynamic>;
 
@@ -528,23 +694,6 @@ class _StudentAttendanceState extends State<StudentAttendance> {
     }
 
     if (mounted) setState(() => isLoading = false);
-  }
-
-  Widget _buildSessionButton(String label, AttendanceSession type) {
-    final isSelected = session == type;
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.teal : Colors.grey[300],
-      ),
-      onPressed: () {
-        setState(() => session = type);
-        _loadData();
-      },
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.black, fontSize: 20),
-      ),
-    );
   }
 
   Future<bool> onWillPop() async {
@@ -638,7 +787,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                           isAllPresent ? Icons.check_circle : Icons.cancel,
                         ),
                         label: Text(
-                          isAllPresent ? 'All Present' : 'All Absent',
+                          isAllPresent ? 'All Absent' : 'All Present',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -646,7 +795,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
-                              isAllPresent ? Colors.green : Colors.red,
+                              isAllPresent ? Colors.red : Colors.green,
                           foregroundColor: Colors.white,
                         ),
                       ),

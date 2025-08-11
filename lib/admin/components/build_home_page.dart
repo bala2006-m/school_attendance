@@ -67,6 +67,9 @@ class BuildHomePage {
               name: 'Staff',
               presentFN: presentStaffFN,
               presentAN: presentStaffAN,
+              isClassShown: false,
+              classIds: [],
+              schoolId: '',
             ),
             SizedBox(height: 10),
             DesktopStats(
@@ -76,6 +79,9 @@ class BuildHomePage {
               name: 'Students',
               presentFN: presentStudentFN,
               presentAN: presentStudentAN,
+              isClassShown: false,
+              classIds: [],
+              schoolId: '',
             ),
 
             const SizedBox(height: 40),

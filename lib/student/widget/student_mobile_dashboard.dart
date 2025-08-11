@@ -3,10 +3,6 @@ import 'package:school_attendance/student/widget/student_attendance_page.dart';
 import 'package:school_attendance/student/widget/student_home_page.dart';
 import 'package:school_attendance/student/widget/student_manage_page.dart';
 
-import '../pages/attendance_page.dart';
-import '../pages/holiday_page.dart';
-import '../pages/timetable_page.dart';
-
 class StudentMobileDashboard extends StatelessWidget {
   const StudentMobileDashboard({
     super.key,
@@ -21,8 +17,9 @@ class StudentMobileDashboard extends StatelessWidget {
     required this.selectedIndex,
     required this.schoolAddress,
     required this.message,
+    required this.timetable,
   });
-
+  final List<String> timetable;
   final String username;
   final String name;
   final String email;
@@ -38,36 +35,38 @@ class StudentMobileDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IndexedStack(
-      // padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-      // child: Column(
-      //   crossAxisAlignment: CrossAxisAlignment.start,
       index: selectedIndex,
-        children: [
-          StudentAttendancePage(
-            username: username,
-            name: name,
-            email: email,
-            schoolId: schoolId,
-            classId: classId,
-            gender: gender,
-            schoolName: schoolName,
-            schoolAddress: schoolAddress,
-            message: message,
-          ),
-          StudentHomePage(
-            schoolId: schoolId,
-            classId: classId, username: username, schoolName: schoolName, schoolAddress: schoolAddress, message: message,
-          ),
-          StudentManagePage(
-            schoolId: schoolId,
-            classId: classId,
-            username: username,
-            schoolName: schoolName,
-            schoolAddress: schoolAddress,
-            message: message,
-          ),
-        ],
-      );
+      children: [
+        StudentAttendancePage(
+          username: username,
+          name: name,
+          email: email,
+          schoolId: schoolId,
+          classId: classId,
+          gender: gender,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
+          message: message,
+        ),
+        StudentHomePage(
+          timetable: timetable,
+          schoolId: schoolId,
+          classId: classId,
+          username: username,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
+          message: message,
+        ),
+        StudentManagePage(
+          schoolId: schoolId,
+          classId: classId,
+          username: username,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
+          message: message,
+        ),
+      ],
+    );
   }
 
   Widget dashboardTile({

@@ -39,12 +39,28 @@ class _EditProfileState extends State<EditProfile> {
   bool _isLoading = true;
 
   File? _newImageFile;
+  bool _hasChanges = false;
 
   @override
   void initState() {
-    print(widget.username);
     super.initState();
     initializeInitialData();
+  }
+
+  void _checkForChanges() {
+    final nameChanged = _nameController.text.trim() != adminName.trim();
+    final mobileChanged =
+        _mobileController.text.trim() != adminMobileNumber.trim();
+    final imageChanged = _newImageFile != null;
+
+    final anyFieldEmpty =
+        _nameController.text.trim().isEmpty ||
+        _mobileController.text.trim().isEmpty;
+
+    setState(() {
+      _hasChanges =
+          !anyFieldEmpty && (nameChanged || mobileChanged || imageChanged);
+    });
   }
 
   Future<void> initializeInitialData() async {
@@ -62,6 +78,8 @@ class _EditProfileState extends State<EditProfile> {
       // ✅ Initialize controllers with actual data
       _nameController = TextEditingController(text: adminName);
       _mobileController = TextEditingController(text: adminMobileNumber);
+      _nameController.addListener(_checkForChanges);
+      _mobileController.addListener(_checkForChanges);
 
       setState(() => _isLoading = false);
     } catch (e) {
@@ -98,6 +116,11 @@ class _EditProfileState extends State<EditProfile> {
       );
 
       if (success) {
+        setState(() {
+          initializeInitialData();
+          _hasChanges = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Profile updated successfully')),
         );
@@ -218,7 +241,7 @@ class _EditProfileState extends State<EditProfile> {
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
-                    onPressed: _saveProfile,
+                    onPressed: _hasChanges ? _saveProfile : null,
                     icon: const Icon(Icons.save),
                     label: const Text('Save Changes'),
                     style: ElevatedButton.styleFrom(

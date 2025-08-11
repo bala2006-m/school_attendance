@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:school_attendance/teacher/color/teacher_custom_color.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
 import '../appbar/desktop_appbar.dart';
 import '../appbar/mobile_appbar.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({super.key});
+  const ChangePasswordScreen({super.key, required this.username});
+  final String username;
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
@@ -21,6 +23,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   final _formKey = GlobalKey<FormState>();
   bool _showPassword = false;
+
 
   void _submit() async {
     final username = _studentUsernameController.text.trim();
@@ -68,12 +71,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.sizeOf(context).width > 600;
+    final isMobile = MediaQuery.of(context).size.width < 500;
+
 
     return Scaffold(
-      appBar:
-          isDesktop
-              ? DesktopAppbar(title: 'Change Student Password')
-              : MobileAppbar(title: 'Change Student Password'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+        isMobile
+            ? MobileAppbar(
+          title: 'Change Student Password',enableDrawer: false,enableBack: true,onBack: () {
+          StaffDashboardState.selectedIndex = 0;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => StaffDashboard(
+                username: widget.username,
+              ),
+            ),
+          );
+        },
+        )
+            : const DesktopAppbar(title: 'Student Attendance'),
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Center(

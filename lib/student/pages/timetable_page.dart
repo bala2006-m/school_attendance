@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 import 'package:school_attendance/student/widget/student_timetable_desktop.dart';
 
@@ -10,11 +11,12 @@ import '../widget/student_timetable_mobile.dart';
 class TimeTablePage extends StatefulWidget {
   final String schoolId;
   final String classId;
+  final String username;
 
   const TimeTablePage({
     super.key,
     required this.schoolId,
-    required this.classId,
+    required this.classId, required this.username,
   });
 
   @override
@@ -65,12 +67,30 @@ class _TimeTablePageState extends State<TimeTablePage> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 600;
+    final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(
-      appBar:
-          isDesktop
-              ? StudentAppbarDesktop(title: 'Weekly Timetable')
-              : StudentAppbarMobile(title: 'Weekly Timetable'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+        isMobile
+            ? StudentAppbarMobile(
+          title: 'Student Attendance',enableDrawer: false,enableBack: true,onBack: () {
+          StudentDashboardState.selectedIndex = 1;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => StudentDashboard(
+                username: widget.username,
+              ),
+            ),
+          );
+        },
+
+        )
+            : const StudentAppbarDesktop(title: 'Student Attendance'),
+      ),
       body:
           isLoading
               ? Center(

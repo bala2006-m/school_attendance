@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../color/admin_custom_color.dart';
-
 class AdminAppbarMobile extends StatefulWidget {
   const AdminAppbarMobile({
     super.key,
@@ -65,9 +63,9 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
     final formattedDate = DateFormat('MMMM d, y').format(DateTime.now());
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AdminCustomColor.appbar,
+        color: Color(0xFF2B7CA8),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -124,6 +122,7 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
               Padding(
                 padding: const EdgeInsets.only(right: 20),
                 child: CircleAvatar(
+                  backgroundColor: Colors.transparent,
                   radius: 30,
                   backgroundImage: adminPhoto ?? defaultImage,
                 ),

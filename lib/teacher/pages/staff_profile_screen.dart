@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
 import '../../student/services/student_api_services.dart';
 import '../appbar/desktop_appbar.dart';
@@ -43,11 +44,29 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+
     return Scaffold(
-      appBar:
-          MediaQuery.sizeOf(context).width > 600
-              ? DesktopAppbar(title: 'MY Profile')
-              : MobileAppbar(title: 'MY Profile'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+        isMobile
+            ? MobileAppbar(
+          title: 'Profile',enableDrawer: false,enableBack: true,onBack: () {
+          StaffDashboardState.selectedIndex = 0;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => StaffDashboard(
+                username: widget.username,
+              ),
+            ),
+          );
+        },
+        )
+            : const DesktopAppbar(title: 'Profile'),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 600),

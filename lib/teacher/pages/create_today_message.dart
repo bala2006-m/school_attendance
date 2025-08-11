@@ -5,7 +5,6 @@ import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import '../../admin/services/admin_api_service.dart';
 import '../appbar/mobile_appbar.dart';
 
-
 class CreateTodayMessage extends StatefulWidget {
   final String schoolId;
   final String username;
@@ -48,10 +47,7 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => StaffDashboard(
-              username: widget.username,
-            ),
+        builder: (context) => StaffDashboard(username: widget.username),
       ),
     );
     return false;
@@ -78,9 +74,8 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => StaffDashboard(
-                                username: widget.username,
-                              ),
+                              (context) =>
+                                  StaffDashboard(username: widget.username),
                         ),
                       );
                     },

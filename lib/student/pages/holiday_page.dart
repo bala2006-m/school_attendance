@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
@@ -9,8 +10,14 @@ import '../Appbar/student_appbar_mobile.dart';
 class HolidayPage extends StatefulWidget {
   final String schoolId;
   final String classId;
+  final String username;
 
-  const HolidayPage({super.key, required this.schoolId, required this.classId});
+  const HolidayPage({
+    super.key,
+    required this.schoolId,
+    required this.classId,
+    required this.username,
+  });
 
   @override
   State<HolidayPage> createState() => _HolidayPageState();
@@ -61,11 +68,31 @@ class _HolidayPageState extends State<HolidayPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+
     return Scaffold(
-      appBar:
-          MediaQuery.of(context).size.width > 600
-              ? StudentAppbarDesktop(title: 'Holidays')
-              : StudentAppbarMobile(title: 'Holidays'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+            isMobile
+                ? StudentAppbarMobile(
+                  title: 'Holidays',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 0;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                StudentDashboard(username: widget.username),
+                      ),
+                    );
+                  },
+                )
+                : const StudentAppbarDesktop(title: 'Holidays'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child:

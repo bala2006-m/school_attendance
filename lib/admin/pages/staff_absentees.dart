@@ -26,7 +26,7 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
   Map<String, String> fnStatus = {};
   Map<String, String> anStatus = {};
   List<String> absentsList = [];
-  List<String> absentsDesg = [];
+  List<String> absentsMobile = [];
   @override
   void initState() {
     super.initState();
@@ -62,7 +62,7 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
       if (data != null && data['name'] != null && data['mobile'] != null) {
         userDetails[username] = {
           'name': data['name'],
-          'designation': data['mobile'],
+          'mobile': data['mobile'],
         };
       } else {
         debugPrint('Missing data for $username: $data');
@@ -74,8 +74,8 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
       anStatus = an;
       absentsList =
           userDetails.entries.map((e) => e.value['name'] ?? e.key).toList();
-      absentsDesg =
-          userDetails.entries.map((e) => e.value['designation'] ?? '').toList();
+      absentsMobile =
+          userDetails.entries.map((e) => e.value['mobile'] ?? '').toList();
     });
   }
 
@@ -110,18 +110,17 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
     }
   }
 
-  Future<void> loop(List<MapEntry<String, String>> absentees) async {
-    for (var absent in absentees) {
-      final data = await TeacherApiServices.fetchStaffDataUsername(absent.key);
-      print(' data:$data');
-      final name = data?['name'];
-      final designation = data?['mobile'];
-      setState(() {
-        absentsList.add(name);
-        absentsDesg.add(designation);
-      });
-    }
-  }
+  // Future<void> loop1(List<MapEntry<String, String>> absentees) async {
+  //   for (var absent in absentees) {
+  //     final data = await TeacherApiServices.fetchStaffDataUsername(absent.key);
+  //     final name = data?['name'];
+  //     final designation = data?['mobile'];
+  //     setState(() {
+  //       absentsList.add(name);
+  //       absentsDesg.add(designation);
+  //     });
+  //   }
+  // }
 
   Widget buildAbsenteeCard(
     String title,
@@ -193,16 +192,8 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                   );
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      absentsList.length > nameIndex && nameIndex >= 0
-                          ? absentsList[nameIndex]
-                          : entry.key,
-                    ),
-                    subtitle: Text(
-                      absentsDesg.length > nameIndex && nameIndex >= 0
-                          ? absentsDesg[nameIndex]
-                          : 'Mobile',
-                    ),
+                    title: Text(absentsList[index]),
+                    subtitle: Text(absentsMobile[index]),
                     leading: const Icon(Icons.person_off, color: Colors.red),
                   );
                 },

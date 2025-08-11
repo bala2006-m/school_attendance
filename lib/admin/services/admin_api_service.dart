@@ -6,8 +6,7 @@ import 'package:http_parser/http_parser.dart';
 
 class AdminApiService {
   static const String baseUrl = "http://51.20.189.225";
-  // static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
-  //static const String parthiUrl = "https://rdt3tvjb-3000.inc1.devtunnels.ms";
+
   static Future<Map<String, dynamic>?> uploadStudentExcelFile(
     File file,
     String schoolId,

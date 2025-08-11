@@ -42,10 +42,10 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
 
   Future<void> init() async {
     staff = await AdminApiService.fetchStaffData(widget.school_id);
-
+    //print(staff);
     staff.sort(
-      (a, b) => (a['username'] ?? '').toString().toLowerCase().compareTo(
-        (b['username'] ?? '').toString().toLowerCase(),
+      (a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo(
+        (b['name'] ?? '').toString().toLowerCase(),
       ),
     );
 
@@ -164,6 +164,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                     itemCount: staff.length,
                     itemBuilder: (context, index) {
                       final member = staff[index];
+                      final name = member['name'] ?? 'Unknown';
                       final username = member['username'] ?? 'Unknown';
                       final mobile = member['mobile'] ?? '';
                       final gender = (member['gender'] ?? '').toString();
@@ -203,17 +204,18 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                                     radius: 15,
                                     backgroundColor: Colors.blue.shade700,
                                     foregroundColor: Colors.white,
-                                    child: Text(username[0].toUpperCase()),
+                                    child: Text(name[0].toUpperCase()),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      username.toString().length < 11
-                                          ? username
-                                          : '${username.substring(0, 11)}...',
+                                      name.toString().length < 11
+                                          ? name
+                                          : '${name.substring(0, 11)}...',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,

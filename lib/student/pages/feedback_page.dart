@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide TextField;
+import 'package:school_attendance/student/pages/student_dashboard.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
 import '../Appbar/student_appbar_mobile.dart';
@@ -9,10 +10,11 @@ class FeedbackPage extends StatefulWidget {
   const FeedbackPage({
     super.key,
     required this.schoolId,
-    required this.classId,
+    required this.classId, required this.username,
   });
   final String schoolId;
   final String classId;
+  final String username;
   @override
   State<FeedbackPage> createState() => _FeedbackPageState();
 }
@@ -51,11 +53,30 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+
     return Scaffold(
-      appBar:
-          MediaQuery.of(context).size.width > 600
-              ? StudentAppbarDesktop(title: 'Send Feedback')
-              : StudentAppbarMobile(title: 'Send Feedback'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+        isMobile
+            ? StudentAppbarMobile(
+          title: 'Weekly TimeTable',enableDrawer: false,enableBack: true,onBack: () {
+          StudentDashboardState.selectedIndex = 1;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => StudentDashboard(
+                username: widget.username,
+              ),
+            ),
+          );
+        },
+
+        )
+            : const StudentAppbarDesktop(title: 'Weekly TimeTable'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Form(

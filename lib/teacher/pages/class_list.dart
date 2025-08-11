@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
 import '../appbar/mobile_appbar.dart';
-import '../color/teacher_custom_color.dart';
 import '../widget/desktop_class_list.dart';
 import '../widget/mobile_class_list.dart';
 
 class ClassList extends StatefulWidget {
   final String schoolId;
-  const ClassList({super.key, required this.schoolId});
+  final String username;
+  const ClassList({super.key, required this.schoolId, required this.username});
 
   @override
   State<ClassList> createState() => _ClassListState();
@@ -38,20 +39,40 @@ class _ClassListState extends State<ClassList> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
     return Scaffold(
-      appBar:
-          MediaQuery.sizeOf(context).width > 600
-              ? DesktopAppbar(title: 'Class List')
-              : MobileAppbar(title: 'Class List'),
-      backgroundColor: bdMid,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+            isMobile
+                ? MobileAppbar(
+                  title: 'Class List',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StaffDashboardState.selectedIndex = 0;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                StaffDashboard(username: widget.username),
+                      ),
+                    );
+                  },
+                )
+                : const DesktopAppbar(title: 'Class List'),
+      ),
       body:
           MediaQuery.sizeOf(context).width > 600
               ? DesktopClassList(
                 classList: classList,
                 schoolId: widget.schoolId,
                 isLoading: isLoading,
+                username: widget.username,
               )
               : MobileClassList(
+                username: widget.username,
                 classList: classList,
                 schoolId: widget.schoolId,
                 isLoading: isLoading,

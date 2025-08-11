@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
 import '../Appbar/student_appbar_mobile.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key, required this.userData});
+  const ProfilePage({super.key, required this.userData, required this.username});
   final Map<String, dynamic> userData;
+  final String username;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -16,16 +18,35 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
     final userData = widget.userData;
 
     return Scaffold(
-      appBar:
-          MediaQuery.of(context).size.width > 600
-              ? StudentAppbarDesktop(title: 'My Profile')
-              : StudentAppbarMobile(title: 'My Profile'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+        isMobile
+            ? StudentAppbarMobile(
+          title: 'Student Attendance', enableDrawer: false,enableBack: true,onBack: () {
+          StudentDashboardState.selectedIndex = 1;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => StudentDashboard(
+                username: widget.username,
+              ),
+            ),
+          );
+        },
+
+        )
+            : const StudentAppbarDesktop(title: 'Student Attendance'),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
+
           child: Column(
             children: [
               userData["photo"] != null && userData["photo"].isNotEmpty

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/admin/color/admin_custom_color.dart';
 import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,7 +41,7 @@ class AdminMobileDrawer extends StatelessWidget {
       child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: AdminCustomColor.appbar),
+            decoration: BoxDecoration(color: const Color(0xFF2B7CA8)),
             child: const Center(
               child: Text(
                 'Menu',

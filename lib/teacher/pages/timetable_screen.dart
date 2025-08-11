@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
 import '../../student/services/student_api_services.dart';
 import '../appbar/desktop_appbar.dart';
@@ -27,9 +28,13 @@ class CapitalizeFirstLetterFormatter extends TextInputFormatter {
 }
 
 class TimetableScreen extends StatefulWidget {
-  const TimetableScreen({super.key, required this.schoolId});
+  const TimetableScreen({
+    super.key,
+    required this.schoolId,
+    required this.username,
+  });
   final String schoolId;
-
+  final String username;
   @override
   State<TimetableScreen> createState() => _TimetableScreenState();
 }
@@ -285,11 +290,31 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 500;
+
     return Scaffold(
-      appBar:
-          MediaQuery.sizeOf(context).width > 600
-              ? DesktopAppbar(title: 'Manage Timetable')
-              : MobileAppbar(title: 'Manage Timetable'),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+            isMobile
+                ? MobileAppbar(
+                  title: 'Time Table',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StaffDashboardState.selectedIndex = 2;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                StaffDashboard(username: widget.username),
+                      ),
+                    );
+                  },
+                )
+                : const DesktopAppbar(title: 'Time Table'),
+      ),
       body:
           isLoading
               ? const Center(

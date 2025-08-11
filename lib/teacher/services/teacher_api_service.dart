@@ -108,7 +108,6 @@ class TeacherApiServices {
 
         if (data['status'] == 'success') {
           final staff = data['staff'];
-          print(staff);
           if (staff != null || staff is Map<String, dynamic>) {
             return staff;
           }

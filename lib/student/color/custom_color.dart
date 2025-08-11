@@ -6,7 +6,7 @@ LinearGradient appbarColor = LinearGradient(
   end: Alignment.bottomRight,
 );
 Decoration appbarDecoration = BoxDecoration(
-  gradient: appbarColor,
+  color: Color(0xFF2B7CA8),
   borderRadius: const BorderRadius.only(
     bottomLeft: Radius.circular(30),
     bottomRight: Radius.circular(30),

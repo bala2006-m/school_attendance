@@ -41,23 +41,94 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   Image? schoolPhoto;
   AttendanceSession session =
       DateTime.now().hour < 13 ? AttendanceSession.FN : AttendanceSession.AN;
-
+  List<Map<String, dynamic>> holidays = [];
   final List<Map<String, dynamic>> staffList = [];
   bool isLoading = true;
   bool allPresent = false;
   String submit = 'Submit';
+  bool isHolidayFn = false;
+  bool isHolidayAn = false;
+  String holidayReason = '';
 
   final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   Map<String, String> attendanceMap = {};
   Map<String, Map<String, String>> attendanceCache = {};
 
   String get sessionKey => session == AttendanceSession.FN ? 'fn' : 'an';
-
   @override
   void initState() {
     super.initState();
-    fetchSchoolInfo();
-    fetchStaff();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await fetchHolidays(); // Load holidays first
+
+      final now = DateTime.now();
+      final hour = now.hour;
+
+      // Determine session only if it's a working session
+      if (hour < 13 && !isHolidayFn) {
+        setState(() => session = AttendanceSession.FN);
+      } else if (hour >= 13 && !isHolidayAn) {
+        setState(() => session = AttendanceSession.AN);
+      } else if (!isHolidayFn) {
+        setState(() => session = AttendanceSession.FN);
+      } else if (!isHolidayAn) {
+        setState(() => session = AttendanceSession.AN);
+      }
+
+      await fetchSchoolInfo();
+      await fetchStaff(); // Fetch staff after setting session
+    });
+  }
+
+  Future<void> fetchHolidays() async {
+    final allHolidays = await ApiService.fetchHolidays(widget.schoolId);
+    final today = DateTime.now();
+    final todayStr = DateFormat('yyyy-MM-dd').format(today);
+
+    for (var holiday in allHolidays) {
+      final holidayDate = DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime.parse(holiday['date']));
+      if (holidayDate == todayStr) {
+        setState(() {
+          isHolidayFn = holiday['fn'] == 'H';
+          isHolidayAn = holiday['an'] == 'H';
+          holidayReason = holiday['reason'] ?? 'Holiday';
+        });
+
+        // If full day is holiday, show dialog and exit
+        if (isHolidayFn && isHolidayAn) {
+          Future.delayed(Duration.zero, () {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder:
+                  (_) => AlertDialog(
+                    title: const Text("Holiday"),
+                    content: Text(
+                      "Today is a holiday.\nReason: $holidayReason",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          Navigator.pop(context); // Go back
+                        },
+                        child: const Text("OK"),
+                      ),
+                    ],
+                  ),
+            );
+          });
+        }
+
+        break;
+      }
+    }
+
+    setState(() {
+      holidays = allHolidays;
+    });
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -393,17 +464,30 @@ class _StaffAttendanceState extends State<StaffAttendance> {
 
   Widget _buildSessionButton(String label, AttendanceSession type) {
     final isSelected = session == type;
+
+    final isDisabled =
+        (type == AttendanceSession.FN && isHolidayFn) ||
+        (type == AttendanceSession.AN && isHolidayAn);
+
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: isSelected ? Colors.teal : Colors.grey[300],
       ),
-      onPressed: () {
-        setState(() => session = type);
-        fetchStaff();
-      },
+      onPressed:
+          isDisabled
+              ? null
+              : () {
+                setState(() {
+                  session = type;
+                  fetchStaff();
+                });
+              },
       child: Text(
         label,
-        style: const TextStyle(color: Colors.black, fontSize: 20),
+        style: TextStyle(
+          color: isDisabled ? Colors.grey : Colors.black,
+          fontSize: 20,
+        ),
       ),
     );
   }

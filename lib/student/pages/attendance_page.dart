@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
@@ -13,6 +14,10 @@ class AttendancePage extends StatefulWidget {
   final String classId;
   final String gender;
   final String email;
+  final Image? schoolPhoto;
+  final String schoolName;
+  final String? schoolAddress;
+  final String? message;
 
   const AttendancePage({
     super.key,
@@ -22,6 +27,10 @@ class AttendancePage extends StatefulWidget {
     required this.classId,
     required this.gender,
     required this.email,
+    this.schoolPhoto,
+    required this.schoolName,
+    required this.schoolAddress,
+    required this.message,
   });
 
   @override
@@ -94,7 +103,23 @@ class _AttendancePageState extends State<AttendancePage> {
       case 'W':
         return Colors.grey;
       default:
-        return Colors.white;
+        return Colors.black;
+    }
+  }
+
+  // 👶 Convert codes to child-friendly labels
+  String _getStatusLabel(String? code) {
+    switch (code) {
+      case 'P':
+        return '✅ Present';
+      case 'A':
+        return '❌ Absent';
+      case 'H':
+        return '🏖️ Holiday';
+      case 'W':
+        return '🛌 Weekend';
+      default:
+        return 'N/A';
     }
   }
 
@@ -102,46 +127,71 @@ class _AttendancePageState extends State<AttendancePage> {
   Widget build(BuildContext context) {
     final formattedSelected =
         _selectedDay != null ? _formatDate(_selectedDay!) : '';
+    final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(
-      appBar:
-          MediaQuery.of(context).size.width > 600
-              ? StudentAppbarDesktop(title: 'Attendance')
-              : StudentAppbarMobile(title: 'Attendance'),
-      body:
-          MediaQuery.of(context).size.width > 600
-              ? StudentAttendanceCellsDesktop(
-                focusedDay: _focusedDay,
-                selectedDay: _selectedDay,
-                attendanceDataMap: _attendanceDataMap,
-                holidayDataMap: _holidayDataMap,
-                onDaySelectedCallback: (selected) {
-                  setState(() {
-                    _selectedDay = selected;
-                  });
-                },
-                onPageChangedCallback: (focused) {
-                  setState(() {
-                    _focusedDay = focused;
-                  });
-                },
-              )
-              : StudentAttendanceCellsMobile(
-                focusedDay: _focusedDay,
-                selectedDay: _selectedDay,
-                attendanceDataMap: _attendanceDataMap,
-                holidayDataMap: _holidayDataMap,
-                onDaySelectedCallback: (selected) {
-                  setState(() {
-                    _selectedDay = selected;
-                  });
-                },
-                onPageChangedCallback: (focused) {
-                  setState(() {
-                    _focusedDay = focused;
-                  });
-                },
-              ),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        child:
+            isMobile
+                ? StudentAppbarMobile(
+                  title: 'Student Attendance',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 0;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                StudentDashboard(username: widget.username),
+                      ),
+                    );
+                  },
+                )
+                : const StudentAppbarDesktop(title: 'Student Attendance'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            MediaQuery.of(context).size.width > 600
+                ? StudentAttendanceCellsDesktop(
+                  focusedDay: _focusedDay,
+                  selectedDay: _selectedDay,
+                  attendanceDataMap: _attendanceDataMap,
+                  holidayDataMap: _holidayDataMap,
+                  onDaySelectedCallback: (selected) {
+                    setState(() {
+                      _selectedDay = selected;
+                    });
+                  },
+                  onPageChangedCallback: (focused) {
+                    setState(() {
+                      _focusedDay = focused;
+                    });
+                  },
+                )
+                : StudentAttendanceCellsMobile(
+                  focusedDay: _focusedDay,
+                  selectedDay: _selectedDay,
+                  attendanceDataMap: _attendanceDataMap,
+                  holidayDataMap: _holidayDataMap,
+                  onDaySelectedCallback: (selected) {
+                    setState(() {
+                      _selectedDay = selected;
+                    });
+                  },
+                  onPageChangedCallback: (focused) {
+                    setState(() {
+                      _focusedDay = focused;
+                    });
+                  },
+                ),
+          ],
+        ),
+      ),
       bottomNavigationBar:
           _selectedDay != null
               ? Padding(
@@ -150,19 +200,22 @@ class _AttendancePageState extends State<AttendancePage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'FN: ${_attendanceDataMap[formattedSelected]?['fn'] ?? _holidayDataMap[formattedSelected]?['fn'] ?? 'N/A'}',
+                      'Morning (FN): ${_getStatusLabel(_attendanceDataMap[formattedSelected]?['fn'] ?? _holidayDataMap[formattedSelected]?['fn'])}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
                         color: _getColor(
                           _attendanceDataMap[formattedSelected]?['fn'] ??
                               _holidayDataMap[formattedSelected]?['fn'],
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8),
                     Text(
-                      'AN: ${_attendanceDataMap[formattedSelected]?['an'] ?? _holidayDataMap[formattedSelected]?['an'] ?? 'N/A'}',
+                      'Afternoon (AN): ${_getStatusLabel(_attendanceDataMap[formattedSelected]?['an'] ?? _holidayDataMap[formattedSelected]?['an'])}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
                         color: _getColor(
                           _attendanceDataMap[formattedSelected]?['an'] ??
                               _holidayDataMap[formattedSelected]?['an'],

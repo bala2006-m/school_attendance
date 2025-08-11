@@ -4,13 +4,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/services/api_service.dart';
+import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
+import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
+import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../services/api_service.dart';
-import '../../teacher/services/teacher_api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
 import '../components/build_profile_card_mobile.dart';
-import 'admin_dashboard.dart';
 import 'monthly_student_list.dart';
 
 class MonthlyAttendance extends StatefulWidget {
@@ -40,15 +40,11 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    AdminDashboardState.selectedIndex = 0;
+    StaffDashboardState.selectedIndex = 0;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder:
-            (_) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
+        builder: (_) => StaffDashboard(username: widget.username),
       ),
     );
     return false;
@@ -144,25 +140,23 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
           child:
               isMobile
-                  ? AdminAppbarMobile(
+                  ? MobileAppbar(
                     title: 'Monthly Attendance',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      AdminDashboardState.selectedIndex = 0;
+                      StaffDashboardState.selectedIndex = 0;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
+                              (context) =>
+                                  StaffDashboard(username: widget.username),
                         ),
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Monthly Attendance'),
+                  : const DesktopAppbar(title: 'Monthly Attendance'),
         ),
         body: SingleChildScrollView(
           child: Padding(
@@ -311,11 +305,7 @@ class _ClassesMonthState extends State<ClassesMonth> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              BuildProfileCard(
-                schoolPhoto: schoolPhoto,
-                schoolAddress: '$schoolAddress',
-                schoolName: '$schoolName',
-              ),
+              BuildProfileCard(),
               const SizedBox(height: 16),
               classes.isEmpty
                   ? const Text(

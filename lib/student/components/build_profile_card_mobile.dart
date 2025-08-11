@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../admin/color/admin_custom_color.dart';
 
-
 class BuildProfileCard extends StatefulWidget {
   const BuildProfileCard({
     super.key,
@@ -14,14 +13,12 @@ class BuildProfileCard extends StatefulWidget {
     required this.schoolAddress,
     this.heroTag = '',
     this.useHero = false,
-    required this.schoolPhoto,
   });
 
   final String schoolName;
   final String schoolAddress;
   final bool useHero;
   final String heroTag;
-  final Image? schoolPhoto;
   @override
   State<BuildProfileCard> createState() => _BuildProfileCardState();
 }

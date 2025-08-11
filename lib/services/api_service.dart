@@ -4,7 +4,47 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl = "http://51.20.189.225";
-  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static Future<Map<String, dynamic>> sendOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final url = Uri.parse('$baseUrl/auth/send_otp');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'otp': otp}),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 ||
+        data['message'] == "OTP sent successfully") {
+      return data;
+    } else {
+      return data;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updatePassword({
+    required String username,
+    required String password,
+  }) async {
+    final url = Uri.parse('$baseUrl/auth/update_password');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'username': username, 'newPassword': password}),
+    );
+    final data = jsonDecode(response.body);
+    print(data);
+    if (response.statusCode == 200 ||
+        data['message'] == "Password updated successfully") {
+      return data;
+    } else {
+      return data;
+    }
+  }
+
   static Future<bool> deleteUser({
     required String username,
     required String role,
@@ -174,6 +214,38 @@ class ApiService {
     return {'fn': [], 'an': []};
   }
 
+  static Future<Map<String, Map<String, dynamic>>>
+  fetchTodayStudentAttendanceClass(
+    String date,
+    String session,
+    String schoolId,
+  ) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/attendance/student/fetch_stu_attendance?date=$date&school_id=$schoolId',
+      ),
+    );
+    //print(response.body);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+
+      if (jsonData['status'] == 'success') {
+        final Map<String, Map<String, dynamic>> attendanceMap = {};
+
+        for (var entry in jsonData['staff']) {
+          attendanceMap[entry['username']] = {
+            'status': entry["${session}_status"] ?? 'A',
+            'class_id': entry['class_id'],
+          };
+        }
+
+        return attendanceMap;
+      }
+    }
+    return {};
+  }
+
   // Fetch student attendance
   static Future<Map<String, String>> fetchTodayStudentAttendance(
     String date,
@@ -185,7 +257,7 @@ class ApiService {
         '$baseUrl/attendance/student/fetch_stu_attendance?date=$date&school_id=$schoolId',
       ),
     );
-
+    //print(response.body);
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
       if (jsonData['status'] == 'success') {
@@ -722,7 +794,6 @@ class ApiService {
   //Count usernames
   static Future<int> countStaffUsernames(String schoolId) async {
     final url = Uri.parse('$baseUrl/staff/count?school_id=$schoolId');
-
     try {
       final response = await http.get(
         url,
@@ -834,7 +905,7 @@ class ApiService {
     }
   }
 
-  static Future<bool> sendOtp(String email, String otp) async {
+  static Future<bool> sendOTP(String email, String otp) async {
     final url = Uri.parse('$baseUrl/send_otp');
     final response = await http.post(
       url,

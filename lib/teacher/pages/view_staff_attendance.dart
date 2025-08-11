@@ -56,7 +56,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    StaffDashboardState.selectedIndex = 0;
+    StaffDashboardState.selectedIndex = 1;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -82,7 +82,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      StaffDashboardState.selectedIndex = 0;
+                      StaffDashboardState.selectedIndex = 1;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
