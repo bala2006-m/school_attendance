@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:school_attendance/student/widget/student_attendance_page.dart';
+import 'package:school_attendance/student/widget/student_home_page.dart';
+import 'package:school_attendance/student/widget/student_manage_page.dart';
 
 import '../pages/attendance_page.dart';
 import '../pages/holiday_page.dart';
@@ -15,6 +18,9 @@ class StudentMobileDashboard extends StatelessWidget {
     required this.gender,
     required this.schoolName,
     required this.className,
+    required this.selectedIndex,
+    required this.schoolAddress,
+    required this.message,
   });
 
   final String username;
@@ -25,44 +31,43 @@ class StudentMobileDashboard extends StatelessWidget {
   final String gender;
   final String schoolName;
   final String className;
+  final int selectedIndex;
+  final String schoolAddress;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return IndexedStack(
+      // padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      // child: Column(
+      //   crossAxisAlignment: CrossAxisAlignment.start,
+      index: selectedIndex,
         children: [
-          dashboardTile(
-            context: context,
-            icon: Icons.access_time,
-            title: 'Attendance',
-            page: AttendancePage(
-              username: username,
-              name: name,
-              schoolId: schoolId,
-              classId: classId,
-              email: email,
-              gender: gender,
-            ),
+          StudentAttendancePage(
+            username: username,
+            name: name,
+            email: email,
+            schoolId: schoolId,
+            classId: classId,
+            gender: gender,
+            schoolName: schoolName,
+            schoolAddress: schoolAddress,
+            message: message,
           ),
-          const SizedBox(height: 20),
-          dashboardTile(
-            context: context,
-            icon: Icons.calendar_today,
-            title: 'Timetable',
-            page: TimeTablePage(schoolId: schoolId, classId: classId),
+          StudentHomePage(
+            schoolId: schoolId,
+            classId: classId, username: username, schoolName: schoolName, schoolAddress: schoolAddress, message: message,
           ),
-          const SizedBox(height: 20),
-          dashboardTile(
-            context: context,
-            icon: Icons.beach_access,
-            title: 'Holidays',
-            page: HolidayPage(schoolId: schoolId, classId: classId),
+          StudentManagePage(
+            schoolId: schoolId,
+            classId: classId,
+            username: username,
+            schoolName: schoolName,
+            schoolAddress: schoolAddress,
+            message: message,
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget dashboardTile({

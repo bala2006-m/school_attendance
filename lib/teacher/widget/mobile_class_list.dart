@@ -8,11 +8,12 @@ class MobileClassList extends StatelessWidget {
     super.key,
     required this.isLoading,
     required this.classList,
-    required this.schoolId,
+    required this.schoolId, required this.username,
   });
   final bool isLoading;
   final List<dynamic> classList;
   final String schoolId;
+  final String username;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +58,7 @@ class MobileClassList extends StatelessWidget {
                               classId: '${classItem['id']}',
                               className: className,
                               section: section,
+                              username: username,
                             ),
                       ),
                     );

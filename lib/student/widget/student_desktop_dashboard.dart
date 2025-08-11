@@ -24,6 +24,9 @@ class StudentDesktopDashboard extends StatelessWidget {
     required this.mobile,
     required this.schoolName,
     required this.className,
+    required this.Message,
+    required this.SchoolAddress,
+    required this.SchoolPhoto,
   });
 
   final String username;
@@ -36,6 +39,10 @@ class StudentDesktopDashboard extends StatelessWidget {
   final String mobile;
   final String schoolName;
   final String className;
+  final String Message;
+  final String SchoolAddress;
+  final Image? SchoolPhoto;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -129,14 +136,14 @@ class StudentDesktopDashboard extends StatelessWidget {
                             "schoolName": schoolName,
                             "className": className,
                             "photo": photo,
-                          },
+                          }, username: username,
                         ),
                       ),
                       _menuItem(
                         context,
                         Icons.feedback,
                         'Feedback',
-                        FeedbackPage(schoolId: schoolId, classId: classId),
+                        FeedbackPage(username:username,schoolId: schoolId, classId: classId),
                       ),
                       const Divider(
                         thickness: 1,
@@ -199,7 +206,7 @@ class StudentDesktopDashboard extends StatelessWidget {
                     schoolId: schoolId,
                     classId: classId,
                     email: email,
-                    gender: gender,
+                    gender: gender, schoolPhoto: SchoolPhoto, schoolName: schoolName, schoolAddress: SchoolAddress, message: Message,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -207,14 +214,14 @@ class StudentDesktopDashboard extends StatelessWidget {
                   context: context,
                   icon: Icons.calendar_today,
                   title: 'Timetable',
-                  page: TimeTablePage(schoolId: schoolId, classId: classId),
+                  page: TimeTablePage(username:username,schoolId: schoolId, classId: classId),
                 ),
                 const SizedBox(height: 20),
                 dashboardTile(
                   context: context,
                   icon: Icons.beach_access,
                   title: 'Holidays',
-                  page: HolidayPage(classId: classId, schoolId: schoolId),
+                  page: HolidayPage(username:username,classId: classId, schoolId: schoolId),
                 ),
               ],
             ),

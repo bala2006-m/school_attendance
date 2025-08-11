@@ -8,11 +8,13 @@ class DesktopClassList extends StatelessWidget {
     super.key,
     required this.isLoading,
     required this.classList,
-    required this.schoolId,
+    required this.schoolId, required this.username,
   });
   final bool isLoading;
   final List<dynamic> classList;
   final String schoolId;
+  final String username;
+
   @override
   Widget build(BuildContext context) {
     return isLoading
@@ -62,6 +64,7 @@ class DesktopClassList extends StatelessWidget {
                                   classId: '${classItem['id']}',
                                   className: className,
                                   section: section,
+                                  username: username,
                                 ),
                           ),
                         );
