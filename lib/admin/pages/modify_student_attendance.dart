@@ -81,6 +81,8 @@ class _ModifyStudentAttendanceState extends State<ModifyStudentAttendance> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Update Attendance',
                     enableDrawer: false,
                     enableBack: true,
@@ -320,6 +322,8 @@ class _ClassesState extends State<Classes> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Class List',
                     enableDrawer: false,
                     enableBack: true,
@@ -483,6 +487,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
       session == AttendanceSession.FN ? 'fn_status' : 'an_status';
   List<Map<String, dynamic>> holidays = [];
   List<Map<String, dynamic>> students = [];
+  List<Map<String, dynamic>> originalStudents = [];
   bool isLoading = true;
   // Add at the top
   bool isFnHoliday = false;
@@ -689,11 +694,24 @@ class _StudentAttendanceState extends State<StudentAttendance> {
             final status = attendanceMap[username] ?? absentStatus;
             return {...student, sessionKey: status};
           }).toList();
+      originalStudents =
+          students.map((s) => Map<String, dynamic>.from(s)).toList();
     } catch (e) {
       debugPrint("Data loading error: $e");
     }
 
     if (mounted) setState(() => isLoading = false);
+  }
+
+  bool get hasChanges {
+    if (students.length != originalStudents.length) return true;
+
+    for (int i = 0; i < students.length; i++) {
+      if (students[i][sessionKey] != originalStudents[i][sessionKey]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<bool> onWillPop() async {
@@ -724,6 +742,8 @@ class _StudentAttendanceState extends State<StudentAttendance> {
         child:
             isMobile
                 ? AdminAppbarMobile(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
                   title: 'Attendance',
                   enableDrawer: false,
                   enableBack: true,
@@ -826,46 +846,58 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                 ),
               ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          bool success = true;
-          try {
-            await Future.wait(
-              students.map((student) async {
-                await AdminApiService.saveAttendance(
-                  username: student['username'],
-                  date: widget.date,
-                  session: session.name.toUpperCase(),
-                  status: student[sessionKey],
-                  schoolId: widget.schoolId,
-                  classId: widget.classId,
-                );
-              }),
-            );
-          } catch (_) {
-            success = false;
-          }
+        onPressed:
+            hasChanges
+                ? () async {
+                  bool success = true;
+                  try {
+                    await Future.wait(
+                      students.map((student) async {
+                        await AdminApiService.saveAttendance(
+                          username: student['username'],
+                          date: widget.date,
+                          session: session.name.toUpperCase(),
+                          status: student[sessionKey],
+                          schoolId: widget.schoolId,
+                          classId: widget.classId,
+                        );
+                      }),
+                    );
 
-          if (!mounted) return;
+                    // 🔑 reset original copy after successful save
+                    originalStudents =
+                        students
+                            .map((s) => Map<String, dynamic>.from(s))
+                            .toList();
+                    setState(() {}); // refresh UI so FAB disables
+                  } catch (_) {
+                    success = false;
+                  }
 
-          showDialog(
-            context: context,
-            builder:
-                (_) => StatusDialog(
-                  message1:
-                      success
-                          ? 'Attendance updated successfully'
-                          : 'Failed to update attendance',
-                  isSuccess: success,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-          );
-        },
+                  if (!mounted) return;
+
+                  showDialog(
+                    context: context,
+                    builder:
+                        (_) => StatusDialog(
+                          message1:
+                              success
+                                  ? 'Attendance updated successfully'
+                                  : 'Failed to update attendance',
+                          isSuccess: success,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                  );
+                }
+                : null,
+
         label: const Text(
           "Update",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         icon: const Icon(Icons.save, color: Colors.white),
-        backgroundColor: Colors.teal,
+        backgroundColor:
+            hasChanges ? Colors.teal : Colors.grey, // visual feedback
       ),
     );
   }

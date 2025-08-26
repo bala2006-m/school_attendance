@@ -22,36 +22,41 @@ class StudentTimetableMobile extends StatelessWidget {
     final double columnWidth = screenWidth / (1 + periodsPerHalfDay) - 5;
 
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+      //scrollDirection: Axis.horizontal,
       child: Center(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 20, left: 5, right: 1),
-          child: Card(
-            elevation: 10,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Table(
-              defaultColumnWidth: FixedColumnWidth(columnWidth),
-              border: TableBorder(
-                horizontalInside: BorderSide(color: Colors.grey.shade300),
-              ),
-              children: [
-                _buildHeaderRow('Forenoon', 0),
-                ...days.map((day) => _buildDayRow(day, 0)),
-                TableRow(
-                  children: List.generate(
-                    1 + periodsPerHalfDay,
-                    (_) => const SizedBox(height: 30),
-                  ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 20, left: 5, right: 1),
+              child: Card(
+                elevation: 10,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                _buildHeaderRow('Afternoon', periodsPerHalfDay),
-                ...days
-                    .map((day) => _buildDayRow(day, periodsPerHalfDay))
-                    .toList(),
-              ],
+                child: Table(
+                  defaultColumnWidth: FixedColumnWidth(columnWidth),
+                  border: TableBorder(
+                    horizontalInside: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  children: [
+                    _buildHeaderRow('Forenoon', 0),
+                    ...days.map((day) => _buildDayRow(day, 0)),
+                    TableRow(
+                      children: List.generate(
+                        1 + periodsPerHalfDay,
+                        (_) => const SizedBox(height: 30),
+                      ),
+                    ),
+                    _buildHeaderRow('Afternoon', periodsPerHalfDay),
+                    ...days
+                        .map((day) => _buildDayRow(day, periodsPerHalfDay))
+                        .toList(),
+                  ],
+                ),
+              ),
             ),
-          ),
+            SizedBox(height: 20),
+          ],
         ),
       ),
     );

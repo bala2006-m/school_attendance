@@ -45,7 +45,7 @@ class Uploads {
           onPressed: pickExcelFileStudent,
           icon: const Icon(Icons.upload_file, color: Colors.blue, size: 30),
           label: const Text(
-            'Select Excel File',
+            'Upload Excel File',
             style: TextStyle(color: Colors.black),
           ),
         ),
@@ -119,8 +119,11 @@ class Uploads {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Username: $username'),
-                  Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
+                  Text('Username: $username', style: TextStyle(fontSize: 13)),
+                  Text(
+                    'Mobile: ${data['mobile'] ?? 'N/A'}',
+                    style: TextStyle(fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -174,7 +177,7 @@ class Uploads {
           onPressed: pickExcelFileStaff,
           icon: const Icon(Icons.upload_file, color: Colors.blue, size: 30),
           label: const Text(
-            'Select Excel File',
+            'Upload Excel File',
             style: TextStyle(color: Colors.black),
           ),
         ),
@@ -250,15 +253,26 @@ class Uploads {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Username: $username'),
-                      Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
+                      Text(
+                        'Username: $username',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      Text(
+                        'Mobile: ${data['mobile'] ?? 'N/A'}',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ],
                   ),
                   Spacer(),
                   Column(
                     children: [
-                      Text('Designation:'),
-                      Text(data['designation'] ?? 'N/A'),
+                      Text('Designation:', style: TextStyle(fontSize: 13)),
+                      Text(
+                        data['designation'].toString().length > 10
+                            ? '${data['designation'].toString().substring(0, 10)}...'
+                            : data['designation'] ?? 'N/A',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ],
                   ),
                 ],
@@ -315,7 +329,7 @@ class Uploads {
           onPressed: pickExcelFileAdmin,
           icon: const Icon(Icons.upload_file, color: Colors.blue, size: 30),
           label: const Text(
-            'Select Excel File',
+            'Upload Excel File',
             style: TextStyle(color: Colors.black),
           ),
         ),
@@ -373,7 +387,13 @@ class Uploads {
         ...admin.map((adminUser) {
           final username = adminUser['username'];
           final data = adminData[username] ?? {};
-          final designation = data['designation'];
+          final designation = data['designation'] ?? 'Designation';
+          final name =
+              data['name'] == null || data['name'].isEmpty
+                  ? 'Name not available'
+                  : data['name'].toString().length < 12
+                  ? data['name'].toString()
+                  : '${data['name'].toString().substring(0, 12)}...';
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             elevation: 3,
@@ -386,7 +406,7 @@ class Uploads {
                 color: Colors.blue,
               ),
               title: Text(
-                data['name'] ?? 'Name not available',
+                name,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: Row(
@@ -394,15 +414,26 @@ class Uploads {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Username: $username'),
-                      Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
+                      Text(
+                        'Username: $username',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      Text(
+                        'Mobile: ${data['mobile'] ?? 'N/A'}',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ],
                   ),
                   Spacer(),
                   Column(
                     children: [
-                      Text('Designation:'),
-                      Text(designation ?? 'N/A'),
+                      Text('Designation:', style: TextStyle(fontSize: 13)),
+                      Text(
+                        designation.length > 10
+                            ? '${designation.substring(0, 10)}...'
+                            : designation ?? 'N/A',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ],
                   ),
                 ],

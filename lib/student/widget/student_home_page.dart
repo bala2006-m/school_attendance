@@ -100,10 +100,7 @@ class StudentHomePage extends StatelessWidget {
             // Profile Card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: BuildProfileCard(
-                schoolAddress: schoolAddress,
-                schoolName: schoolName,
-              ),
+              child: BuildProfileCard(),
             ),
 
             const SizedBox(height: 12),
@@ -153,7 +150,7 @@ class StudentHomePage extends StatelessWidget {
                               Icon(
                                 Icons.calendar_today_rounded,
                                 size: 28,
-                                color: Colors.deepPurple.shade700,
+                                color: Colors.blue.shade700,
                               ),
                               const SizedBox(width: 12),
                               Text(
@@ -161,7 +158,7 @@ class StudentHomePage extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple.shade700,
+                                  color: Colors.blue.shade700,
                                 ),
                               ),
                             ],
@@ -169,7 +166,7 @@ class StudentHomePage extends StatelessWidget {
                           IconButton(
                             icon: Icon(
                               Icons.arrow_forward_ios_rounded,
-                              color: Colors.deepPurple.shade300,
+                              color: Colors.blue.shade300,
                             ),
                             onPressed: () {
                               Navigator.push(
@@ -222,7 +219,7 @@ class StudentHomePage extends StatelessWidget {
             Center(
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

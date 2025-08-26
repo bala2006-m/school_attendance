@@ -158,6 +158,8 @@ class _StudentState extends State<Student> {
         child:
             isMobile
                 ? AdminAppbarMobile(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
                   title: 'Class List',
                   enableDrawer: false,
                   enableBack: true,
@@ -407,6 +409,8 @@ class _StudentAttendanceState extends State<StudentAttendance> {
         child:
             isMobile
                 ? AdminAppbarMobile(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
                   title: 'Attendance',
                   enableDrawer: false,
                   enableBack: true,

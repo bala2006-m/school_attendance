@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../pages/admin_dashboard.dart';
+import '../pages/change_password.dart';
 import '../pages/edit_profile.dart';
 import '../pages/profile.dart';
 
@@ -74,7 +76,7 @@ class AdminMobileDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.edit),
+            leading: const Icon(Icons.edit_note),
             title: const Text('Edit Profile', style: TextStyle(fontSize: 18)),
             onTap: () {
               Navigator.pop(context); // Close drawer
@@ -87,6 +89,38 @@ class AdminMobileDrawer extends StatelessWidget {
                         schoolName: schoolName,
                         schoolAddress: schoolAddress,
                         schoolId: schoolId,
+                        onBack: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => AdminDashboard(
+                                    schoolId: schoolId,
+                                    username: username,
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text(
+              'Change Password',
+              style: TextStyle(fontSize: 18),
+            ),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => EditPassword(
+                        username: username,
+                        schoolId: int.parse(schoolId),
                       ),
                 ),
               );

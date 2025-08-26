@@ -112,7 +112,11 @@ class _StudentAbsentState extends State<StudentAbsent> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => StaffDashboard(username: widget.username),
+        builder:
+            (context) => StaffDashboard(
+              username: widget.username,
+              schoolId: widget.schoolId,
+            ),
       ),
     );
     return false;
@@ -139,8 +143,10 @@ class _StudentAbsentState extends State<StudentAbsent> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) =>
-                                  StaffDashboard(username: widget.username),
+                              (context) => StaffDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
                         ),
                       );
                     },
@@ -158,7 +164,11 @@ class _StudentAbsentState extends State<StudentAbsent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      BuildProfileCard(),
+                      BuildProfileCard(
+                        schoolName: '$schoolName',
+                        schoolAddress: '$schoolAddress',
+                        schoolPhoto: schoolPhoto,
+                      ),
                       const SizedBox(height: 16),
                       classes.isEmpty
                           ? const Center(
@@ -328,6 +338,40 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
     }).toList();
   }
 
+  /// Reusable UI builder
+  Widget _buildInfoChip(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            TextSpan(
+              text: value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -398,7 +442,37 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 20),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8.0,
+                          horizontal: 12.0,
+                        ),
+                        child: Wrap(
+                          // Wrap handles responsive layout automatically
+                          alignment: WrapAlignment.center,
+                          spacing: 30,
+                          runSpacing: 8,
+                          children: [
+                            _buildInfoChip(
+                              'Class',
+                              widget.className,
+                              Colors.teal,
+                            ),
+                            _buildInfoChip(
+                              'Section',
+                              widget.section,
+                              Colors.teal,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+
                     Center(
                       child: Text(
                         "🕘 Forenoon Absentees",

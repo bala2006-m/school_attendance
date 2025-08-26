@@ -69,6 +69,8 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Create Today Message',
                     enableDrawer: false,
                     enableBack: true,

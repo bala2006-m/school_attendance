@@ -131,6 +131,8 @@ class HomePage extends StatelessWidget {
                   ],
                 )
                 : Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
                       width: double.infinity,
@@ -192,7 +194,7 @@ class HomePage extends StatelessWidget {
 
                     // Legends stacked
                     Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text(
                           "School Overview",

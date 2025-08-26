@@ -62,11 +62,21 @@ class _AdminRegistrationDesktopState extends State<AdminRegistrationDesktop> {
 
   Future<void> _fetchAllUsers() async {
     try {
-      final adminUsers = await ApiService.getUsersByRole('admin');
-      final staffUsers = await ApiService.getUsersByRole('staff');
-      final studentUsers = await ApiService.getUsersByRole('student');
+      final adminUsers = await ApiService.getUsersByRole(
+        role: 'admin',
+        schoolId: int.parse(widget.schoolId),
+      );
+      final staffUsers = await ApiService.getUsersByRole(
+        role: 'staff',
+        schoolId: int.parse(widget.schoolId),
+      );
+      final studentUsers = await ApiService.getUsersByRole(
+        role: 'student',
+        schoolId: int.parse(widget.schoolId),
+      );
       final administratorUsers = await ApiService.getUsersByRole(
-        'administrator',
+        role: 'administrator',
+        schoolId: int.parse(widget.schoolId),
       );
 
       users = [
@@ -78,7 +88,12 @@ class _AdminRegistrationDesktopState extends State<AdminRegistrationDesktop> {
 
       List<Future<Map<String, dynamic>?>> futures =
           adminUsers
-              .map((user) => AdminApiService.fetchAdminData(user['username']))
+              .map(
+                (user) => AdminApiService.fetchAdminData(
+                  username: user['username'],
+                  schoolId: widget.schoolId,
+                ),
+              )
               .toList();
 
       final results = await Future.wait(futures);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../../services/api_service.dart';
 
@@ -181,8 +182,9 @@ class _StudentRegistrationDesktopState
                     onPressed: _isSubmitting ? null : _handleSubmit,
                     child:
                         _isSubmitting
-                            ? const CircularProgressIndicator(
-                              color: Colors.white,
+                            ? const SpinKitFadingCircle(
+                              color: Colors.blueAccent,
+                              size: 60.0,
                             )
                             : const Text(
                               'Register',

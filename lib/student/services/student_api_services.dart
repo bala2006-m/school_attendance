@@ -1,10 +1,57 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 class StudentApiServices {
   static const String baseUrl = "http://51.20.189.225";
+  Future<Map<String, dynamic>> updateStudent({
+    required String username,
+    required int schoolId,
+    String? name,
+    String? email,
+    String? mobile,
+    String? gender,
+    File? photoFile,
+  }) async {
+    try {
+      // Convert file to Base64 string if provided
+      String? photoBase64;
+      if (photoFile != null) {
+        final bytes = await photoFile.readAsBytes();
+        photoBase64 = base64Encode(bytes);
+      }
+
+      final body = {
+        if (name != null) "name": name,
+        if (email != null) "email": email,
+        if (mobile != null) "mobile": mobile,
+        if (gender != null) "gender": gender,
+        if (photoBase64 != null) "photo": photoBase64,
+      };
+
+      final res = await http.put(
+        Uri.parse("$baseUrl/students/update").replace(
+          queryParameters: {'username': username, 'school_id': schoolId},
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      print(res.body);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      } else {
+        return {
+          "status": "error",
+          "message": "Server error: ${res.statusCode}",
+        };
+      }
+    } catch (e) {
+      return {"status": "error", "message": e.toString()};
+    }
+  }
+
   static Future<void> storeFeedback({
     required String name,
     required String email,
@@ -31,15 +78,16 @@ class StudentApiServices {
     }
   }
 
-  static Future<Map<String, dynamic>?> fetchStudentDataUsername(
-    String username,
-  ) async {
+  static Future<Map<String, dynamic>?> fetchStudentDataUsername({
+    required String username,
+    required int schoolId,
+  }) async {
     try {
       final uri = Uri.parse(
-        '$baseUrl/students/by-username',
-      ).replace(queryParameters: {'username': username});
-
+        '$baseUrl/students/by-username?username=$username&school_id=$schoolId',
+      );
       final response = await http.get(uri);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final staff = data['student'];
@@ -64,7 +112,7 @@ class StudentApiServices {
   //FetchSchoolData
   static Future<List<Map<String, dynamic>>> fetchSchoolData(String id) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/fetch_school_data?id=$id'),
+      Uri.parse('$baseUrl/school/fetch_school_data?id=$id'),
     );
 
     if (response.statusCode == 200) {

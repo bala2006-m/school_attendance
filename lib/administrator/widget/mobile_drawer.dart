@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
+import '../pages/edit_password.dart';
 
 class MobileDrawer extends StatelessWidget {
-  const MobileDrawer({super.key});
+  const MobileDrawer({
+    super.key,
+    required this.username,
+    required this.schoolId,
+  });
+  final String username;
+  final int schoolId;
 
   Widget build(BuildContext context) {
     return Drawer(
@@ -32,26 +39,24 @@ class MobileDrawer extends StatelessWidget {
               ),
             ),
           ),
-          // ListTile(
-          //   leading: const Icon(Icons.person),
-          //   title: const Text('Profile', style: TextStyle(fontSize: 18)),
-          // onTap: () {
-          //   Navigator.pop(context); // Close drawer
-          //   Navigator.push(
-          //     context,
-          //     MaterialPageRoute(
-          //       builder:
-          //           (_) => Profile(
-          //         username: username,
-          //
-          //         schoolName: schoolName,
-          //         schoolAddress: schoolAddress,
-          //         schoolId: schoolId,
-          //       ),
-          //     ),
-          //   );
-          // },
-          //),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text(
+              'Change Password',
+              style: TextStyle(fontSize: 18),
+            ),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) =>
+                          EditPassword(username: username, schoolId: schoolId),
+                ),
+              );
+            },
+          ),
           // ListTile(
           //   leading: const Icon(Icons.edit),
           //   title: const Text('Edit Profile', style: TextStyle(fontSize: 18)),

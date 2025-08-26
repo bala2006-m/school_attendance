@@ -161,6 +161,8 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Class Wise Attendance',
                     enableDrawer: false,
                     enableBack: true,

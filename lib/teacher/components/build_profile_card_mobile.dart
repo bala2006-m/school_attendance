@@ -1,62 +1,34 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:school_attendance/admin/color/admin_custom_color.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BuildProfileCard extends StatefulWidget {
-  const BuildProfileCard({super.key, this.heroTag = '', this.useHero = false});
+  const BuildProfileCard({
+    super.key,
+    required this.schoolName,
+    required this.schoolAddress,
+    this.heroTag = '',
+    this.useHero = false,
+    required this.schoolPhoto,
+  });
 
+  final String schoolName;
+  final String schoolAddress;
   final bool useHero;
   final String heroTag;
+  final Image? schoolPhoto;
   @override
   State<BuildProfileCard> createState() => _BuildProfileCardState();
 }
 
 class _BuildProfileCardState extends State<BuildProfileCard> {
-  ImageProvider? schoolPhoto;
-  String schoolName = '';
-  String schoolAddress = '';
-
-  @override
-  void initState() {
-    super.initState();
-    fetchPhoto();
-  }
-
-  Future<void> fetchPhoto() async {
-    final prefs = await SharedPreferences.getInstance();
-    final base64 = prefs.getString('schoolPhoto');
-    final name = prefs.getString('schoolName');
-    final address = prefs.getString('schoolAddress');
-    if (base64 != null && base64.isNotEmpty) {
-      try {
-        final clean = base64.contains(',') ? base64.split(',').last : base64;
-
-        Uint8List bytes = base64Decode(clean);
-        setState(() {
-          schoolPhoto = MemoryImage(bytes);
-          schoolAddress = address!;
-          schoolName = name!;
-        });
-      } catch (e) {
-        print('Failed to decode base64 image: $e');
-        setState(() {
-          schoolPhoto = null;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     Widget avatar = CircleAvatar(
       radius: 30,
       backgroundColor: Colors.white,
-      backgroundImage: schoolPhoto,
+      backgroundImage: widget.schoolPhoto?.image,
       child:
-          schoolPhoto == null
+          widget.schoolPhoto == null
               ? const Icon(Icons.person, size: 40, color: Colors.grey)
               : null,
     );
@@ -80,7 +52,7 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
               children: [
                 const SizedBox(height: 6),
                 Text(
-                  '$schoolName\n$schoolAddress',
+                  '${widget.schoolName}\n${widget.schoolAddress}',
                   style: const TextStyle(color: Colors.white70, fontSize: 16),
                 ),
               ],

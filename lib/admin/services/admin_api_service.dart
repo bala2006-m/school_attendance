@@ -6,13 +6,13 @@ import 'package:http_parser/http_parser.dart';
 
 class AdminApiService {
   static const String baseUrl = "http://51.20.189.225";
-
+  //static String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
   static Future<Map<String, dynamic>?> uploadStudentExcelFile(
     File file,
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/excel-upload/students');
+      final uri = Uri.parse('$baseUrl/auth/excel-upload/students/$schoolId');
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
           await http.MultipartFile.fromPath(
@@ -29,6 +29,7 @@ class AdminApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final respStr = await response.stream.bytesToString();
+        print(jsonDecode(respStr));
         return jsonDecode(respStr);
       } else {
         print('Upload failed with code: ${response.statusCode}');
@@ -45,7 +46,7 @@ class AdminApiService {
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/excel-upload/staff');
+      final uri = Uri.parse('$baseUrl/auth/excel-upload/staff/$schoolId');
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
           await http.MultipartFile.fromPath(
@@ -59,9 +60,9 @@ class AdminApiService {
         );
 
       final response = await request.send();
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final respStr = await response.stream.bytesToString();
+
         return jsonDecode(respStr);
       } else {
         print('Upload failed with code: ${response.statusCode}');
@@ -78,7 +79,7 @@ class AdminApiService {
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/excel-upload/admin');
+      final uri = Uri.parse('$baseUrl/auth/excel-upload/admin/$schoolId');
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
           await http.MultipartFile.fromPath(
@@ -93,9 +94,12 @@ class AdminApiService {
 
       final response = await request.send();
 
+      // ✅ Read stream only once
+      final responseBody = await response.stream.bytesToString();
+      final decoded = jsonDecode(responseBody);
+      print(decoded);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final respStr = await response.stream.bytesToString();
-        return jsonDecode(respStr);
+        return decoded;
       } else {
         print('Upload failed with code: ${response.statusCode}');
         return null;
@@ -110,12 +114,14 @@ class AdminApiService {
     required String username,
     required DateTime fromDate,
     required DateTime toDate,
+    required int schoolId,
   }) async {
     final url = Uri.parse(
       '$baseUrl/attendance/student/betweensummary'
       '?username=$username'
       '&fromDate=${fromDate.toIso8601String().split("T").first}'
-      '&toDate=${toDate.toIso8601String().split("T").first}',
+      '&toDate=${toDate.toIso8601String().split("T").first}'
+      '&school_id=$schoolId',
     );
 
     try {
@@ -132,18 +138,18 @@ class AdminApiService {
     return null;
   }
 
-  static Future<Map<String, dynamic>> fetchStudentMonthlyAttendance(
-    String username,
-    String month,
-    String year,
-  ) async {
+  static Future<Map<String, dynamic>> fetchStudentMonthlyAttendance({
+    required String username,
+    required String month,
+    required String year,
+    required int schoolId,
+  }) async {
     int mon = int.parse(month);
     int yr = int.parse(year);
 
     final url = Uri.parse(
-      '$baseUrl/attendance/student/monthly?username=$username&month=$mon&year=$yr',
+      '$baseUrl/attendance/student/monthly?username=$username&month=$mon&year=$yr&school_id=$schoolId',
     );
-
     try {
       final response = await http.get(url);
 
@@ -219,8 +225,13 @@ class AdminApiService {
     }
   }
 
-  static Future<String> fetchStaffUsername(String mobile) async {
-    final url = Uri.parse('$baseUrl/staff/fetch-by-mobile?mobile=$mobile');
+  static Future<String> fetchStaffUsername({
+    required String mobile,
+    required int schoolId,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/staff/fetch-by-mobile?mobile=$mobile&school_id=$schoolId',
+    );
 
     try {
       final response = await http.get(url);
@@ -368,6 +379,9 @@ class AdminApiService {
     required String name,
     required String designation,
     required String mobile,
+    required String email,
+    required String gender,
+    required int schoolId,
     File? imageFile,
   }) async {
     try {
@@ -376,15 +390,16 @@ class AdminApiService {
         final bytes = await imageFile.readAsBytes();
         photoBase64 = base64Encode(bytes);
       }
-
       final response = await http.patch(
-        Uri.parse('$baseUrl/admin/$username'),
+        Uri.parse('$baseUrl/admin/$username/$schoolId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': name,
           'designation': designation,
           'mobile': mobile,
           if (photoBase64 != null) 'photoBase64': photoBase64,
+          'email': email,
+          'gender': gender,
         }),
       );
 
@@ -436,9 +451,7 @@ class AdminApiService {
   ) async {
     int id = int.parse(schoolId);
     try {
-      final uri = Uri.parse(
-        '$baseUrl/staff/all-by-school',
-      ).replace(queryParameters: {'school_id': id.toString()});
+      final uri = Uri.parse('$baseUrl/staff/all-by-school?school_id=$id');
 
       final response = await http.get(uri);
       if (response.body.isNotEmpty) {
@@ -457,16 +470,22 @@ class AdminApiService {
   }
 
   //FETCH ADMIN DATA
-  static Future<Map<String, dynamic>?> fetchAdminData(String username) async {
+  static Future<Map<String, dynamic>?> fetchAdminData({
+    required String username,
+    required String schoolId,
+  }) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/admin/fetch_admin?username=$username'),
+        Uri.parse(
+          '$baseUrl/admin/fetch_admin?username=$username&school_id=$schoolId',
+        ),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
+        // print(decoded['data']);
         if (decoded['status'] == 'success' && decoded['data'].isNotEmpty) {
-          return decoded['data'][0]; // Assuming you fetch a single admin
+          return decoded['data']; // Assuming you fetch a single admin
         }
       }
     } catch (e) {

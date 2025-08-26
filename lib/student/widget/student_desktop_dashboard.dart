@@ -136,14 +136,20 @@ class StudentDesktopDashboard extends StatelessWidget {
                             "schoolName": schoolName,
                             "className": className,
                             "photo": photo,
-                          }, username: username,
+                          },
+                          username: username,
+                          schoolId: int.parse(schoolId),
                         ),
                       ),
                       _menuItem(
                         context,
                         Icons.feedback,
                         'Feedback',
-                        FeedbackPage(username:username,schoolId: schoolId, classId: classId),
+                        FeedbackPage(
+                          username: username,
+                          schoolId: schoolId,
+                          classId: classId,
+                        ),
                       ),
                       const Divider(
                         thickness: 1,
@@ -175,7 +181,7 @@ class StudentDesktopDashboard extends StatelessWidget {
                       await prefs.remove('username');
 
                       await prefs.remove('rememberMe');
-
+                      await prefs.clear();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -206,7 +212,11 @@ class StudentDesktopDashboard extends StatelessWidget {
                     schoolId: schoolId,
                     classId: classId,
                     email: email,
-                    gender: gender, schoolPhoto: SchoolPhoto, schoolName: schoolName, schoolAddress: SchoolAddress, message: Message,
+                    gender: gender,
+                    schoolPhoto: SchoolPhoto,
+                    schoolName: schoolName,
+                    schoolAddress: SchoolAddress,
+                    message: Message,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -214,14 +224,22 @@ class StudentDesktopDashboard extends StatelessWidget {
                   context: context,
                   icon: Icons.calendar_today,
                   title: 'Timetable',
-                  page: TimeTablePage(username:username,schoolId: schoolId, classId: classId),
+                  page: TimeTablePage(
+                    username: username,
+                    schoolId: schoolId,
+                    classId: classId,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 dashboardTile(
                   context: context,
                   icon: Icons.beach_access,
                   title: 'Holidays',
-                  page: HolidayPage(username:username,classId: classId, schoolId: schoolId),
+                  page: HolidayPage(
+                    username: username,
+                    classId: classId,
+                    schoolId: schoolId,
+                  ),
                 ),
               ],
             ),

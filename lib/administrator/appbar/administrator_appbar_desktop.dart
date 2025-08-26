@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../teacher/color/teacher_custom_color.dart' as AdminCustomColor;
 
-class AdminAppbarDesktop extends StatelessWidget {
-  const AdminAppbarDesktop({super.key, required this.title});
+class AdministratorAppbarDesktop extends StatelessWidget {
+  const AdministratorAppbarDesktop({super.key, required this.title});
   final String title;
   @override
   Widget build(BuildContext context) {

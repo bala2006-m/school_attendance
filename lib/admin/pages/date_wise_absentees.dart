@@ -117,6 +117,8 @@ class _DateWiseAbsenteesState extends State<DateWiseAbsentees> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Date wise Absentees',
                     enableDrawer: false,
                     enableBack: true,

@@ -307,8 +307,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
-                                StaffDashboard(username: widget.username),
+                            (context) => StaffDashboard(
+                              username: widget.username,
+                              schoolId: widget.schoolId,
+                            ),
                       ),
                     );
                   },

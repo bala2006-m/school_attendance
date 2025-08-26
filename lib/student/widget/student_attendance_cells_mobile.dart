@@ -23,61 +23,66 @@ class StudentAttendanceCellsMobile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: focusedDay,
-            selectedDayPredicate: (day) => isSameDay(selectedDay, day),
-            onDaySelected: (selected, focused) {
-              onDaySelectedCallback(selected);
-              onPageChangedCallback(focused);
-            },
-            onPageChanged: (focused) {
-              onPageChangedCallback(focused);
-            },
-            calendarFormat: CalendarFormat.month,
-            availableCalendarFormats: const {CalendarFormat.month: ''},
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(10),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: focusedDay,
+              selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+              onDaySelected: (selected, focused) {
+                onDaySelectedCallback(selected);
+                onPageChangedCallback(focused);
+              },
+              onPageChanged: (focused) {
+                onPageChangedCallback(focused);
+              },
+              calendarFormat: CalendarFormat.month,
+              availableCalendarFormats: const {CalendarFormat.month: ''},
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                titleTextStyle: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: Colors.white,
+                ),
               ),
-              titleTextStyle: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.blue, width: 2),
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.indigo,
+                  shape: BoxShape.circle,
+                ),
+                outsideDaysVisible: false,
               ),
-              leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
-              rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
-            ),
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.blue, width: 2),
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, _) => _buildDayCell(day),
+                todayBuilder:
+                    (context, day, _) => _buildDayCell(day, isToday: true),
+                selectedBuilder:
+                    (context, day, _) => _buildDayCell(day, isSelected: true),
               ),
-              selectedDecoration: BoxDecoration(
-                color: Colors.indigo,
-                shape: BoxShape.circle,
-              ),
-              outsideDaysVisible: false,
-            ),
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, _) => _buildDayCell(day),
-              todayBuilder:
-                  (context, day, _) => _buildDayCell(day, isToday: true),
-              selectedBuilder:
-                  (context, day, _) => _buildDayCell(day, isSelected: true),
             ),
           ),
-        ),
-        _buildLegend(),
-      ],
+          _buildLegend(),
+        ],
+      ),
     );
   }
 

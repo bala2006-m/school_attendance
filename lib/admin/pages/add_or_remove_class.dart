@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -22,23 +24,27 @@ class ClassRegistration extends StatefulWidget {
 }
 
 class _ClassRegistrationState extends State<ClassRegistration> {
-  final GlobalKey _formKey = GlobalKey();
-  final GlobalKey _formKey1 = GlobalKey();
   final TextEditingController _classController = TextEditingController();
   final TextEditingController _sectionController = TextEditingController();
+
   bool _isFormValid = false;
-  int _selectedIndex = 0;
-  final _classFocus = FocusNode();
   bool _isLoading = false;
-  String? _responseMessage;
   bool showForm = false;
+
+  String? _responseMessage;
+  final _classFocus = FocusNode();
+
   List<Map<String, dynamic>> classes = [];
+
+  // 🔴 Field errors map
+  Map<String, String?> fieldErrors = {'class': null, 'section': null};
+
   @override
   void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _classFocus.requestFocus();
     });
-    super.initState();
     init();
   }
 
@@ -46,15 +52,38 @@ class _ClassRegistrationState extends State<ClassRegistration> {
     final classValue = _classController.text.trim();
     final sectionValue = _sectionController.text.trim();
 
-    final isValid =
-        classValue.isNotEmpty &&
-        sectionValue.isNotEmpty &&
-        int.tryParse(classValue) != null &&
-        int.parse(classValue) <= 12 &&
-        RegExp(r'^[A-Z]$').hasMatch(sectionValue);
+    String? classError;
+    String? sectionError;
+
+    if (classValue.isEmpty) {
+      classError = 'Enter class';
+    } else if (int.tryParse(classValue) == null) {
+      classError = 'Class must be a number';
+    } else if (int.parse(classValue) < 1 || int.parse(classValue) > 12) {
+      classError = 'Class must be between 1 and 12';
+    }
+
+    if (sectionValue.isEmpty) {
+      sectionError = 'Enter section';
+    } else if (!RegExp(r'^[A-Z]$').hasMatch(sectionValue)) {
+      sectionError = 'Only one capital letter allowed';
+    } else {
+      // 🔴 Duplicate Check
+      final duplicate = classes.any(
+        (cls) =>
+            cls['class'].toString() == classValue &&
+            cls['section'].toString().toUpperCase() ==
+                sectionValue.toUpperCase(),
+      );
+      if (duplicate) {
+        sectionError = 'This class and section already exists';
+      }
+    }
 
     setState(() {
-      _isFormValid = isValid;
+      fieldErrors['class'] = classError;
+      fieldErrors['section'] = sectionError;
+      _isFormValid = classError == null && sectionError == null;
     });
   }
 
@@ -66,17 +95,14 @@ class _ClassRegistrationState extends State<ClassRegistration> {
       if (classCompare != 0) return classCompare;
       return a['section'].compareTo(b['section']);
     });
-    List<Future<void>> futures = [];
-    await Future.wait(futures);
     if (!mounted) return;
     setState(() => _isLoading = false);
+
     _classController.addListener(_checkFormValidity);
     _sectionController.addListener(_checkFormValidity);
   }
 
   Future<void> _submitForm() async {
-    final String schoolId = widget.schoolId;
-
     setState(() {
       _isLoading = true;
       _responseMessage = null;
@@ -85,16 +111,23 @@ class _ClassRegistrationState extends State<ClassRegistration> {
     final result = await ApiService.addClass(
       _classController.text.trim(),
       _sectionController.text.trim(),
-      schoolId,
+      widget.schoolId,
     );
+
     if (mounted) {
       init();
-      _classController.text = '';
-      _sectionController.text = '';
+      _classController.clear();
+      _sectionController.clear();
     }
+
     setState(() {
       _isLoading = false;
       _responseMessage = result.isNotEmpty ? result : '❌ Unexpected error';
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) {
+          setState(() => _responseMessage = null);
+        }
+      });
     });
   }
 
@@ -123,6 +156,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: Colors.white,
@@ -131,7 +165,9 @@ class _ClassRegistrationState extends State<ClassRegistration> {
         ),
       );
     }
-    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final isMobile = size.width < 600;
+
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
@@ -140,7 +176,9 @@ class _ClassRegistrationState extends State<ClassRegistration> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    title: 'Add Or Remove Class',
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Class',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -164,218 +202,158 @@ class _ClassRegistrationState extends State<ClassRegistration> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                showForm
-                    ? Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Container(
-                        width: size.width * 0.8,
-                        padding: const EdgeInsets.all(20),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'Class Registration',
-                                style: TextStyle(
-                                  fontSize: 26, // Increased font size
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Class Field
-                              TextFormField(
-                                focusNode: _classFocus,
-                                controller: _classController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Class',
-                                  labelStyle: TextStyle(
-                                    fontSize: 18,
-                                  ), // Increased font size
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.class_),
-                                ),
-                                validator:
-                                    (value) =>
-                                        value == null || value.isEmpty
-                                            ? 'Enter class'
-                                            : null,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(2),
-                                ],
-                                onChanged: (value) {
-                                  if (value.isEmpty) return;
-
-                                  final intVal = int.tryParse(value);
-
-                                  if (intVal != null && intVal > 12) {
-                                    // Prevent invalid input > 12
-                                    _classController.text = '12';
-                                    _classController
-                                        .selection = TextSelection.fromPosition(
-                                      TextPosition(
-                                        offset: _classController.text.length,
-                                      ),
-                                    );
-                                  }
-
-                                  if (value.length == 2) {
-                                    FocusScope.of(context).nextFocus();
-                                  }
-                                  _checkFormValidity();
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Section Field
-                              TextFormField(
-                                controller: _sectionController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Section (A-Z)',
-                                  labelStyle: TextStyle(
-                                    fontSize: 18,
-                                  ), // Increased font size
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.school),
-                                ),
-                                textCapitalization:
-                                    TextCapitalization.characters,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[A-Za-z]'),
-                                  ),
-                                  LengthLimitingTextInputFormatter(1),
-                                  UpperCaseTextFormatter(),
-                                ],
-                                onChanged: (value) => _checkFormValidity(),
-
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Enter section';
-                                  }
-                                  if (!RegExp(r'^[A-Z]$').hasMatch(value)) {
-                                    return 'Only one capital letter allowed';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Submit Button
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed:
-                                      (_isLoading || !_isFormValid)
-                                          ? null
-                                          : _submitForm,
-
-                                  icon:
-                                      _isLoading
-                                          ? const Center(
-                                            child: SpinKitFadingCircle(
-                                              color: Colors.blueAccent,
-                                              size: 60.0,
-                                            ),
-                                          )
-                                          : const Icon(Icons.add),
-                                  label: Text(
-                                    _isLoading ? 'Please wait...' : 'Add Class',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                    ), // Increased font size
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              if (_responseMessage != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        _responseMessage!.contains('✅')
-                                            ? Colors.green.shade100
-                                            : Colors.red.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _responseMessage!.contains('✅')
-                                            ? Icons.check_circle
-                                            : Icons.error,
-                                        color:
-                                            _responseMessage!.contains('✅')
-                                                ? Colors.green
-                                                : Colors.red,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          _responseMessage!,
-                                          style: TextStyle(
-                                            fontSize: 16, // Increased font size
-                                            color:
-                                                _responseMessage!.contains('✅')
-                                                    ? Colors.green.shade900
-                                                    : Colors.red.shade900,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
+                // Form Card
+                if (showForm)
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Container(
+                      width: size.width * 0.8,
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Class Registration',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 24),
+
+                          // Class Field
+                          TextField(
+                            focusNode: _classFocus,
+                            controller: _classController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Class',
+                              border: OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.class_),
+                              errorText: fieldErrors['class'],
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(2),
+                            ],
+                            onChanged: (_) => _checkFormValidity(),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Section Field
+                          TextField(
+                            controller: _sectionController,
+                            decoration: InputDecoration(
+                              labelText: 'Section (A-Z)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.school),
+                              errorText: fieldErrors['section'],
+                            ),
+                            textCapitalization: TextCapitalization.characters,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[A-Za-z]'),
+                              ),
+                              LengthLimitingTextInputFormatter(1),
+                              UpperCaseTextFormatter(),
+                            ],
+                            onChanged: (_) => _checkFormValidity(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Submit Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed:
+                                  (_isLoading || !_isFormValid)
+                                      ? null
+                                      : _submitForm,
+                              icon:
+                                  _isLoading
+                                      ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Icon(Icons.add),
+                              label: Text(
+                                _isLoading ? 'Please wait...' : 'Add Class',
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          if (_responseMessage != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    _responseMessage!.contains('✅')
+                                        ? Colors.green.shade100
+                                        : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                _responseMessage!,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color:
+                                      _responseMessage!.contains('✅')
+                                          ? Colors.green.shade900
+                                          : Colors.red.shade900,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    )
-                    : const SizedBox(),
-                SizedBox(height: 20),
-                Center(
-                  child: const Text(
-                    'Registered Classes',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal,
                     ),
                   ),
+
+                const SizedBox(height: 20),
+
+                // Registered Classes Title
+                const Text(
+                  'Registered Classes',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal,
+                  ),
                 ),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Text(
-                      'Total : ${classes.length}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Text(
+                    'Total : ${classes.length}',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
+
+                // Classes list
                 ...classes.map((classData) {
                   return Card(
                     margin: const EdgeInsets.symmetric(
@@ -431,8 +409,16 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                             );
 
                             if (!mounted) return;
-
-                            // Show the result message
+                            if (result == '❌ Failed: Internal Server Error') {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Class ${classData['class']} Section ${classData['section']} is used in other services',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
                             ScaffoldMessenger.of(
                               context,
                             ).showSnackBar(SnackBar(content: Text(result)));

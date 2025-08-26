@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../pages/notifications.dart';
+import '../services/admin_api_service.dart';
+
 class AdminAppbarMobile extends StatefulWidget {
   const AdminAppbarMobile({
     super.key,
@@ -12,13 +15,16 @@ class AdminAppbarMobile extends StatefulWidget {
     required this.enableDrawer,
     required this.enableBack,
     required this.onBack,
+    required this.schoolId,
+    required this.username,
   });
 
   final String title;
   final bool enableDrawer;
   final bool enableBack;
   final VoidCallback onBack;
-
+  final String schoolId;
+  final String username;
   @override
   State<AdminAppbarMobile> createState() => _AdminAppbarMobileState();
 }
@@ -26,21 +32,55 @@ class AdminAppbarMobile extends StatefulWidget {
 class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
   String username = 'Admin';
   ImageProvider? adminPhoto;
-
+  Uint8List? photoBytes;
   final ImageProvider defaultImage = const NetworkImage(
     'https://th.bing.com/th?q=Admin+Icon.png&w=120&h=120&c=1&rs=1&qlt=70&r=0&o=7&cb=1&pid=InlineBlock&rm=3&mkt=en-IN&cc=IN&setlang=en&adlt=moderate&t=1&mw=247',
   );
-
+  int unseenCount = 0;
   @override
   void initState() {
     super.initState();
     fetchData();
+    _loadUnseenCount();
+  }
+
+  Future<void> _loadUnseenCount() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final seenLeaveIds =
+        (prefs.getStringList("seenLeaveIds") ?? []).map(int.parse).toSet();
+    final seenFeedbackIds =
+        (prefs.getStringList("seenFeedbackIds") ?? []).map(int.parse).toSet();
+
+    // Fetch latest data
+    final leave = await AdminApiService.fetchLeaveRequest(widget.schoolId);
+    final feed = await AdminApiService.fetchFeedback(widget.schoolId);
+
+    // Filter unseen
+    final unseenLeave =
+        leave.where((item) => !seenLeaveIds.contains(item['id'])).length;
+    final unseenFeedback =
+        feed.where((item) => !seenFeedbackIds.contains(item['id'])).length;
+
+    setState(() {
+      unseenCount = unseenLeave + unseenFeedback;
+    });
   }
 
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final storedUsername = prefs.getString('adminName');
     final photoBase64 = prefs.getString('adminPhoto');
+    final base64Photo = prefs.getString('adminPhoto');
+
+    if (base64Photo != null && base64Photo.isNotEmpty) {
+      try {
+        photoBytes = base64Decode(base64Photo);
+      } catch (e) {
+        debugPrint('Error decoding admin photo: $e');
+      }
+    }
+
     setState(() {
       username =
           (storedUsername!.length < 15
@@ -106,13 +146,36 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
                 child: Text(
                   widget.title,
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
               ),
               const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => Notifications(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                    _loadUnseenCount();
+                  },
+                  icon: Badge(
+                    isLabelVisible: unseenCount > 0,
+                    label: Text(unseenCount.toString()),
+                    child: const Icon(Icons.notifications, color: Colors.white),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -124,17 +187,24 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
                 child: CircleAvatar(
                   backgroundColor: Colors.transparent,
                   radius: 30,
-                  backgroundImage: adminPhoto ?? defaultImage,
+                  backgroundImage:
+                      photoBytes.toString() != 'null'
+                          ? MemoryImage(photoBytes!)
+                          : NetworkImage(
+                            'https://tse1.explicit.bing.net/th/id/OIP.KW8WUwEuVpHgCw5jZ2rTJgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3',
+                          ),
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    username,
+                    username.length < 10
+                        ? username
+                        : '${username.substring(0, 10)}...',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 19,
                       color: Colors.white,
                     ),
                   ),
@@ -154,7 +224,7 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
                   formattedDate,
                   style: const TextStyle(
                     color: Colors.black,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

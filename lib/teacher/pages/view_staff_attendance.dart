@@ -56,11 +56,15 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    StaffDashboardState.selectedIndex = 1;
+    StaffDashboardState.selectedIndex = 0;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => StaffDashboard(username: widget.username),
+        builder:
+            (context) => StaffDashboard(
+              username: widget.username,
+              schoolId: widget.schoolId,
+            ),
       ),
     );
     return false;
@@ -82,13 +86,15 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      StaffDashboardState.selectedIndex = 1;
+                      StaffDashboardState.selectedIndex = 0;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) =>
-                                  StaffDashboard(username: widget.username),
+                              (context) => StaffDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
                         ),
                       );
                     },

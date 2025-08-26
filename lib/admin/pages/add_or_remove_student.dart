@@ -33,6 +33,8 @@ class _StudentRegistrationState extends State<StudentRegistration> {
   bool showForm = false;
   int _selectedIndex = 0;
 
+  String searchQuery = "";
+
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
     Navigator.pushReplacement(
@@ -56,14 +58,24 @@ class _StudentRegistrationState extends State<StudentRegistration> {
 
   Future<void> init() async {
     setState(() => isLoading = true);
-    student = await ApiService.getUsersByRole('student');
+    student = await ApiService.getUsersByRole(
+      role: 'student',
+      schoolId: int.parse(widget.schoolId),
+    );
+    student =
+        student
+            .where((e) => e["school_id"] == int.parse(widget.schoolId))
+            .toList();
     studentData.clear();
     List<Future<void>> futures = [];
 
     for (var user in student) {
       final username = user['username'];
       futures.add(
-        StudentApiServices.fetchStudentDataUsername(username).then((data) {
+        StudentApiServices.fetchStudentDataUsername(
+          username: username,
+          schoolId: int.parse(widget.schoolId),
+        ).then((data) {
           studentData[username] = data;
         }),
       );
@@ -78,6 +90,19 @@ class _StudentRegistrationState extends State<StudentRegistration> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
+    // filter students based on search query
+    final filteredStudents =
+        student.where((adminUser) {
+          final username = adminUser['username'].toString().toLowerCase();
+          final data = studentData[username] ?? {};
+          final name = (data['name'] ?? '').toString().toLowerCase();
+          final mobile = (data['mobile'] ?? '').toString().toLowerCase();
+
+          return username.contains(searchQuery.toLowerCase()) ||
+              name.contains(searchQuery.toLowerCase()) ||
+              mobile.contains(searchQuery.toLowerCase());
+        }).toList();
+
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
@@ -86,7 +111,9 @@ class _StudentRegistrationState extends State<StudentRegistration> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    title: 'Add Or Remove Student',
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Student',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -122,8 +149,8 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                           SizedBox(key: _formKey, height: 10),
                           isMobile
                               ? StudentRegistrationMobile(
-                                schoolId: widget.schoolId,
                                 username: widget.username,
+                                schoolId: widget.schoolId,
                                 onRegistered: () async {
                                   await init();
                                   if (!mounted) return;
@@ -141,6 +168,24 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                         ],
                       ),
                     const SizedBox(height: 20),
+
+                    // 🔍 Search Bar
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: "Search by name, username, or mobile",
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
                     const Center(
                       child: Text(
                         'Registered Students',
@@ -155,7 +200,7 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Text(
-                          'Total : ${student.length}',
+                          'Total : ${filteredStudents.length}',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -164,7 +209,9 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    ...student.map((adminUser) {
+
+                    // student list
+                    ...filteredStudents.map((adminUser) {
                       final username = adminUser['username'];
                       final data = studentData[username] ?? {};
                       final name = data['name'] ?? 'Name not available';
@@ -242,7 +289,7 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        'Failed to delete $username',
+                                        'Failed to delete $username\n$username is used in other services',
                                       ),
                                     ),
                                   );

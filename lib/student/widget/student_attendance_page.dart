@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../components/build_profile_card_mobile.dart';
 import '../pages/attendance_page.dart';
-import '../pages/holiday_page.dart';
+import '../pages/post_leave_request.dart';
 
 class StudentAttendancePage extends StatelessWidget {
   final String username;
@@ -31,91 +31,91 @@ class StudentAttendancePage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: BuildProfileCard(
-              schoolAddress: schoolAddress,
-              schoolName: schoolName,
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: BuildProfileCard(),
             ),
-          ),
-          SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.black26, width: 2),
-              boxShadow: [
-                BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  // Padding(
-                  //   padding: const EdgeInsets.all(8.0),
-                  //   child: Row(
-                  //     mainAxisSize: MainAxisSize.min,
-                  //
-                  //     children: [
-                  //       Text(
-                  //         '',
-                  //         style: TextStyle(
-                  //           color: Colors.blue.shade900,
-                  //           fontWeight: FontWeight.bold,
-                  //           fontSize: 25,
-                  //         ),
-                  //       ),
-                  //       // Icon(
-                  //       //   Icons.arrow_drop_down,
-                  //       //   color: Colors.blue.shade900,
-                  //       //   size: 50,
-                  //       // ),
-                  //     ],
-                  //   ),
-                  // ),
-                  // SizedBox(height: 10),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      buildElevatedButton(
-                        context,
-                        "Attendance",
-                        AttendancePage(
-                          username: username,
-                          name: name,
-                          schoolId: schoolId,
-                          classId: classId,
-                          email: email,
-                          gender: gender,
-                          schoolPhoto: schoolPhoto,
-                          schoolName: schoolName,
-                          schoolAddress: schoolAddress,
-                          message: message,
-                        ),
-                        Icons.access_time_outlined,
-                      ),
-                      buildElevatedButton(
-                        context,
-                        "Holidays",
-                        HolidayPage(
-                          schoolId: schoolId,
-                          classId: classId,
-                          username: username,
-                        ),
-                        Icons.view_day,
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
+            SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.black26, width: 2),
+                boxShadow: [
+                  BoxShadow(color: Colors.transparent.withOpacity(0.02)),
                 ],
               ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+
+                        children: [
+                          Text(
+                            'Myself',
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.blue.shade900,
+                            size: 50,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        buildElevatedButton(
+                          context,
+                          "View\nAttendance",
+                          AttendancePage(
+                            username: username,
+                            name: name,
+                            schoolId: schoolId,
+                            classId: classId,
+                            email: email,
+                            gender: gender,
+                            schoolPhoto: schoolPhoto,
+                            schoolName: schoolName,
+                            schoolAddress: schoolAddress,
+                            message: message,
+                          ),
+                          Icons.access_time_outlined,
+                        ),
+                        buildElevatedButton(
+                          context,
+                          "Apply Leave\nRequest",
+                          PostLeaveRequest(
+                            username: username,
+                            schoolId: schoolId,
+                            classId: classId,
+                          ),
+                          Icons.post_add,
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

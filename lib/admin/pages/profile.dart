@@ -30,6 +30,8 @@ class _ProfileState extends State<Profile> {
   String adminName = '';
   String adminMobileNumber = '';
   String adminDesignation = '';
+  String adminEmail = '';
+  String adminGender = '';
   Image? adminPhoto;
   Map<String, dynamic>? adminData;
   bool _isLoading = true;
@@ -42,14 +44,20 @@ class _ProfileState extends State<Profile> {
   Future<void> initializeInitialData() async {
     try {
       setState(() => _isLoading = true);
-      adminData = await AdminApiService.fetchAdminData(widget.username);
+      adminData = await AdminApiService.fetchAdminData(
+        username: widget.username,
+        schoolId: widget.schoolId,
+      );
       setState(() {
         adminName = adminData?['name'] ?? '';
         adminMobileNumber = adminData?['mobile'] ?? '';
         adminDesignation = adminData?['designation'] ?? '';
+        adminEmail = adminData?['email'];
+        adminGender = adminData?['gender'];
         if (adminData?['photo'] != null) {
           adminPhoto = Image.memory(base64Decode(adminData!['photo']));
         }
+
         _isLoading = false;
       });
     } catch (e) {
@@ -95,6 +103,8 @@ class _ProfileState extends State<Profile> {
         child:
             isMobile
                 ? AdminAppbarMobile(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
                   title: 'My Profile',
                   enableDrawer: false,
                   enableBack: true,
@@ -158,6 +168,17 @@ class _ProfileState extends State<Profile> {
                   Divider(color: Colors.grey[300]),
                   const SizedBox(height: 16),
                   _buildProfileDetailRow(Icons.phone, adminMobileNumber),
+                  const SizedBox(height: 12),
+                  _buildProfileDetailRow(Icons.email, adminEmail),
+                  const SizedBox(height: 12),
+                  _buildProfileDetailRow(
+                    Icons.person,
+                    adminGender == 'M'
+                        ? 'Male'
+                        : adminGender == 'F'
+                        ? 'Female'
+                        : 'Other',
+                  ),
                   const SizedBox(height: 12),
                   _buildProfileDetailRow(Icons.school, widget.schoolName),
                   const SizedBox(height: 12),

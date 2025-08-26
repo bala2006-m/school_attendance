@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
-import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/administrator/appbar/administrator_appbar_desktop.dart';
 import 'package:school_attendance/administrator/appbar/administrator_appbar_mobile.dart';
 
+import '../services/administrator_api_service.dart';
 import 'first_page.dart';
 
 class ViewTicket extends StatefulWidget {
@@ -35,10 +35,31 @@ class _ViewTicketState extends State<ViewTicket> {
 
   Future<void> init() async {
     try {
-      feedbacks = await AdminApiService.fetchFeedback(widget.schoolId);
+      final allTickets = await AdministratorApiService.fetchTicket(
+        widget.schoolId,
+      );
+
+      feedbacks =
+          allTickets
+              .where(
+                (ticket) =>
+                    ticket['school_id'].toString() == widget.schoolId &&
+                    (ticket['status']?.toString().toLowerCase() == 'pending'),
+              )
+              .toList();
+
+      // ✅ Sort by modified_at (latest first)
+      feedbacks.sort((a, b) {
+        final aDate =
+            DateTime.tryParse(a['modified_at'] ?? '') ?? DateTime(1970);
+        final bDate =
+            DateTime.tryParse(b['modified_at'] ?? '') ?? DateTime(1970);
+        return bDate.compareTo(aDate);
+      });
+
+      print("Filtered + sorted tickets: $feedbacks");
     } catch (e) {
-      // Optional: Handle fetch error
-      print("Error fetching feedbacks: $e");
+      print("Error fetching tickets: $e");
     } finally {
       setState(() {
         isLoading = false;
@@ -47,16 +68,23 @@ class _ViewTicketState extends State<ViewTicket> {
   }
 
   Widget buildFeedbackCard(Map<String, dynamic> feedback) {
-    final name = (feedback['name'] ?? '').toString().trim();
+    final name1 = (feedback['name'] ?? '').toString().trim();
+    final name = name1.length > 15 ? '${name1.substring(0, 15)}...' : name1;
     final email = (feedback['email'] ?? '').toString().trim();
-    final message = feedback['feedback'] ?? 'No feedback provided';
+    final message = feedback['tickets'] ?? 'No ticket provided';
     final createdAt = feedback['created_at'];
-    final formattedDateTime =
+    final modifiedAt = feedback['modified_at'];
+    final status = feedback['status'] ?? 'Unknown';
+
+    final formattedCreatedAt =
         createdAt != null
-            ? DateFormat(
-              'MMM d, yyyy', // • hh:mm a',
-            ).format(DateTime.parse(createdAt))
-            : 'Unknown time';
+            ? DateFormat('MMM d, yyyy').format(DateTime.parse(createdAt))
+            : 'Unknown created date';
+
+    final formattedModifiedAt =
+        modifiedAt != null
+            ? DateFormat('MMM d, yyyy').format(DateTime.parse(modifiedAt))
+            : 'Unknown modified date';
 
     return Card(
       elevation: 4,
@@ -80,12 +108,13 @@ class _ViewTicketState extends State<ViewTicket> {
               ),
             ),
             const SizedBox(width: 16),
+
             // Feedback details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name and timestamp
+                  // Name + Created Date
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -97,7 +126,7 @@ class _ViewTicketState extends State<ViewTicket> {
                         ),
                       ),
                       Text(
-                        formattedDateTime,
+                        formattedCreatedAt,
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -105,6 +134,7 @@ class _ViewTicketState extends State<ViewTicket> {
                       ),
                     ],
                   ),
+
                   if (email.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
@@ -113,8 +143,47 @@ class _ViewTicketState extends State<ViewTicket> {
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ),
+
                   const SizedBox(height: 10),
                   Text(message, style: const TextStyle(fontSize: 16)),
+
+                  const SizedBox(height: 12),
+
+                  // ✅ Status Button + Modified At
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              status == "Pending"
+                                  ? Colors.orange
+                                  : Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                        onPressed: () {
+                          // Future: Add update status API call here
+                        },
+                        child: Text(
+                          status,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      Text(
+                        "Modified: $formattedModifiedAt",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

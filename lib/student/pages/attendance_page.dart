@@ -51,6 +51,44 @@ class _AttendancePageState extends State<AttendancePage> {
     _loadAttendanceData();
   }
 
+  Map<String, dynamic> _getMonthlyAttendanceStats(DateTime month) {
+    int present = 0;
+    int total = 0;
+
+    final monthKey = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+
+    // Loop through attendance data
+    _attendanceDataMap.forEach((date, statusMap) {
+      if (date.startsWith(monthKey)) {
+        final fn = statusMap['fn'];
+        final an = statusMap['an'];
+
+        // count FN
+        if (fn == 'P') present++;
+        if (fn == 'P' || fn == 'A') total++;
+
+        // count AN
+        if (an == 'P') present++;
+        if (an == 'P' || an == 'A') total++;
+      }
+    });
+
+    // Loop through holidays (only if you want them in total count, otherwise skip)
+    _holidayDataMap.forEach((date, statusMap) {
+      if (date.startsWith(monthKey)) {
+        // do not add to total (holidays shouldn't affect percentage)
+      }
+    });
+
+    final percentage = total > 0 ? (present / total * 100) : 0;
+
+    return {
+      'present': present,
+      'total': total,
+      'percentage': percentage.toStringAsFixed(1),
+    };
+  }
+
   Future<void> _loadAttendanceData() async {
     final data = await StudentApiServices.fetchStudentAttendanceByClassid(
       username: widget.username,
@@ -128,7 +166,7 @@ class _AttendancePageState extends State<AttendancePage> {
     final formattedSelected =
         _selectedDay != null ? _formatDate(_selectedDay!) : '';
     final isMobile = MediaQuery.of(context).size.width < 500;
-
+    final stats = _getMonthlyAttendanceStats(_focusedDay);
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isMobile ? 190 : 60),
@@ -144,8 +182,10 @@ class _AttendancePageState extends State<AttendancePage> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
-                                StudentDashboard(username: widget.username),
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
                       ),
                     );
                   },
@@ -192,40 +232,49 @@ class _AttendancePageState extends State<AttendancePage> {
           ],
         ),
       ),
-      bottomNavigationBar:
-          _selectedDay != null
-              ? Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Morning (FN): ${_getStatusLabel(_attendanceDataMap[formattedSelected]?['fn'] ?? _holidayDataMap[formattedSelected]?['fn'])}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: _getColor(
-                          _attendanceDataMap[formattedSelected]?['fn'] ??
-                              _holidayDataMap[formattedSelected]?['fn'],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Afternoon (AN): ${_getStatusLabel(_attendanceDataMap[formattedSelected]?['an'] ?? _holidayDataMap[formattedSelected]?['an'])}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: _getColor(
-                          _attendanceDataMap[formattedSelected]?['an'] ??
-                              _holidayDataMap[formattedSelected]?['an'],
-                        ),
-                      ),
-                    ),
-                  ],
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_selectedDay != null) ...[
+            Text(
+              'Morning (FN): ${_getStatusLabel(_attendanceDataMap[formattedSelected]?['fn'] ?? _holidayDataMap[formattedSelected]?['fn'])}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: _getColor(
+                  _attendanceDataMap[formattedSelected]?['fn'] ??
+                      _holidayDataMap[formattedSelected]?['fn'],
                 ),
-              )
-              : null,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Afternoon (AN): ${_getStatusLabel(_attendanceDataMap[formattedSelected]?['an'] ?? _holidayDataMap[formattedSelected]?['an'])}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: _getColor(
+                  _attendanceDataMap[formattedSelected]?['an'] ??
+                      _holidayDataMap[formattedSelected]?['an'],
+                ),
+              ),
+            ),
+            const Divider(),
+          ],
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              'Monthly Attendance: ${stats['percentage']}% '
+              '(${stats['present']}/${stats['total']} sessions)',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

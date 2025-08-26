@@ -21,6 +21,7 @@ class StaffDashboardMobile extends StatelessWidget {
     required this.presentStudentFN,
     required this.presentStudentAN,
     required this.classIds,
+    required this.schoolPhoto,
   });
 
   final String schoolId;
@@ -37,6 +38,8 @@ class StaffDashboardMobile extends StatelessWidget {
   final String presentStudentFN;
   final String presentStudentAN;
   final List<dynamic> classIds;
+  final Image? schoolPhoto;
+
   @override
   Widget build(BuildContext context) {
     return IndexedStack(
@@ -46,8 +49,14 @@ class StaffDashboardMobile extends StatelessWidget {
           schoolId: schoolId,
           username: username,
           classIds: classIds,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
+          schoolPhoto: schoolPhoto,
         ),
         HomePage(
+          schoolPhoto: schoolPhoto,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
           schoolId: schoolId,
           username: username,
           message: message,
@@ -56,7 +65,14 @@ class StaffDashboardMobile extends StatelessWidget {
           presentStudentAN: presentStudentAN,
           classIds: classIds,
         ),
-        ManagePage(schoolId: schoolId, username: username, classIds: classIds),
+        ManagePage(
+          schoolId: schoolId,
+          username: username,
+          classIds: classIds,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
+          schoolPhoto: schoolPhoto,
+        ),
       ],
     );
   }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/administrator/services/administrator_api_service.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
+
+import '../Appbar/student_appbar_desktop.dart';
+import '../Appbar/student_appbar_mobile.dart';
 
 class EditPassword extends StatefulWidget {
   const EditPassword({
@@ -23,9 +27,40 @@ class _EditPasswordState extends State<EditPassword> {
   final _confirmPasswordController = TextEditingController();
 
   bool isLoading = false;
+  bool isChanged = false; // 🔹 Track changes
   bool _obscureOld = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 🔹 Add listeners to detect changes
+    _oldPasswordController.addListener(_onChanged);
+    _newPasswordController.addListener(_onChanged);
+    _confirmPasswordController.addListener(_onChanged);
+  }
+
+  void _onChanged() {
+    final hasChanges =
+        _oldPasswordController.text.isNotEmpty &&
+        _newPasswordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty &&
+        _newPasswordController.text == _confirmPasswordController.text;
+
+    if (hasChanges != isChanged) {
+      setState(() => isChanged = hasChanges);
+    }
+  }
+
+  @override
+  void dispose() {
+    _oldPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -42,7 +77,7 @@ class _EditPasswordState extends State<EditPassword> {
     try {
       final res = await AdministratorApiService.editPassword(
         username: widget.username,
-        role: "admin",
+        role: "student",
         schoolId: widget.schoolId,
         oldPassword: _oldPasswordController.text.trim(),
         newPassword: _newPasswordController.text.trim(),
@@ -107,9 +142,9 @@ class _EditPasswordState extends State<EditPassword> {
           context,
           MaterialPageRoute(
             builder:
-                (_) => AdminDashboard(
+                (_) => StudentDashboard(
                   username: widget.username,
-                  schoolId: '${widget.schoolId}',
+                  schoolId: widget.schoolId,
                 ),
           ),
         );
@@ -121,9 +156,7 @@ class _EditPasswordState extends State<EditPassword> {
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
           child:
               isMobile
-                  ? AdminAppbarMobile(
-                    username: widget.username,
-                    schoolId: '${widget.schoolId}',
+                  ? StudentAppbarMobile(
                     title: 'Change Password',
                     enableDrawer: false,
                     enableBack: true,
@@ -132,15 +165,15 @@ class _EditPasswordState extends State<EditPassword> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (_) => AdminDashboard(
+                              (_) => StudentDashboard(
                                 username: widget.username,
-                                schoolId: '${widget.schoolId}',
+                                schoolId: widget.schoolId,
                               ),
                         ),
                       );
                     },
                   )
-                  : AdminAppbarDesktop(title: 'Change Password'),
+                  : StudentAppbarDesktop(title: 'Change Password'),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -204,7 +237,8 @@ class _EditPasswordState extends State<EditPassword> {
                       ),
                     )
                     : ElevatedButton.icon(
-                      onPressed: _submit,
+                      onPressed:
+                          isChanged ? _submit : null, // ✅ Enabled only if valid
                       icon: const Icon(Icons.save_alt_outlined, size: 20),
                       label: const Text("Update Password"),
                       style: ElevatedButton.styleFrom(
@@ -218,6 +252,9 @@ class _EditPasswordState extends State<EditPassword> {
                         ),
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            Colors.grey, // 🔹 Grey when disabled
+                        disabledForegroundColor: Colors.white70,
                       ),
                     ),
               ],

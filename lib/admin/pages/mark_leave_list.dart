@@ -8,7 +8,6 @@ import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/api_service.dart';
-import '../../teacher/color/teacher_custom_color.dart' as AdminCustomColor;
 import './admin_dashboard.dart';
 
 class MarkLeaveList extends StatefulWidget {
@@ -35,6 +34,21 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
   bool showAll = false, isLoading = true, hasError = false;
   String errorMessage = '';
   Map<int, String> classNamesById = {};
+  DateTime _getValidInitialDate(Set<String> markedDates) {
+    DateTime candidate = DateTime.now();
+
+    while (true) {
+      final formatted =
+          "${candidate.year.toString().padLeft(4, '0')}-${candidate.month.toString().padLeft(2, '0')}-${candidate.day.toString().padLeft(2, '0')}";
+
+      // Must not be Sunday and not already marked
+      if (candidate.weekday != DateTime.sunday &&
+          !markedDates.contains(formatted)) {
+        return candidate;
+      }
+      candidate = candidate.add(const Duration(days: 1));
+    }
+  }
 
   @override
   void initState() {
@@ -45,7 +59,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
 
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
-    final storedUsername = prefs.getString('username');
+    final storedUsername = prefs.getString('adminName');
     final photoBase64 = prefs.getString('adminPhoto');
     setState(() {
       username =
@@ -139,6 +153,8 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
   Widget buildHoliday(Map<String, dynamic> h) {
     final fn = h['fn'] ?? '-';
     final an = h['an'] ?? '-';
+    final classes = getClassNames(h['class_ids']).split(", ");
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: ListTile(
@@ -151,7 +167,39 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
           children: [
             Text(_formatDate(h['date'])),
             Text('FN: $fn | AN: $an'),
-            Text('Classes: ${getClassNames(h['class_ids'])}'),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Classes:",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(
+                  height:
+                      (classes.length / 4).ceil() *
+                      30, // adjust row height as needed
+                  child: GridView.builder(
+                    physics:
+                        const NeverScrollableScrollPhysics(), // prevent scrolling inside
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 5,
+                          mainAxisSpacing: 2,
+                          crossAxisSpacing: 4,
+                          childAspectRatio: 3,
+                        ),
+                    itemCount: classes.length,
+                    itemBuilder: (context, index) {
+                      return Text(
+                        classes[index],
+                        style: const TextStyle(fontSize: 14),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         trailing: IconButton(
@@ -176,17 +224,16 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
   Future<String?> pickDate() async {
     final markedDates = allHolidays.map((h) => h['date'] as String).toSet();
 
+    final initial = _getValidInitialDate(markedDates);
+
     return await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: initial,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       selectableDayPredicate: (day) {
-        // Format day to 'yyyy-MM-dd' string to match your data
         final formatted =
             "${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
-
-        // Disable Sundays and already marked holidays
         return day.weekday != DateTime.sunday &&
             !markedDates.contains(formatted);
       },
@@ -588,7 +635,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AdminCustomColor.appbar,
+              color: Color(0xFF2B7CA8),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -636,7 +683,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
                     Padding(
                       padding: const EdgeInsets.only(top: 20),
                       child: Text(
-                        'Mark Leave List',
+                        'Create Holiday List',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,

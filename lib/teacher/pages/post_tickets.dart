@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
 import '../../services/api_service.dart';
-
+import '../services/teacher_api_service.dart';
 
 class PostTickets extends StatefulWidget {
   const PostTickets({
@@ -21,10 +22,10 @@ class PostTickets extends StatefulWidget {
 }
 
 class _PostTicketsState extends State<PostTickets> {
-  String adminName = '';
+  String staffName = '';
   String email = '';
-  Map<String, dynamic>? adminData;
-  List<Map<String, dynamic>>? schoolData;
+  Map<String, dynamic> staff = {};
+  Map<String, dynamic> schoolData = {};
 
   final _formKey = GlobalKey<FormState>();
   final _ticketsController = TextEditingController();
@@ -37,7 +38,7 @@ class _PostTicketsState extends State<PostTickets> {
   @override
   void initState() {
     super.initState();
-    initializeInitialData();
+    _loadStaffData();
     _ticketsController.addListener(_validateForm);
   }
 
@@ -56,34 +57,27 @@ class _PostTicketsState extends State<PostTickets> {
     }
   }
 
-  Future<void> initializeInitialData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadStaffData() async {
     try {
-      final responses = await Future.wait([
-        AdminApiService.fetchAdminData(widget.username),
-        ApiService.fetchSchoolData(widget.schoolId),
-      ]);
+      setState(() => _isLoading = true);
 
-      if (responses[0] is Map<String, dynamic>) {
-        adminData = responses[0] as Map<String, dynamic>;
-        adminName = adminData?['name'] ?? '';
-        email = adminData?['email'] ?? '';
-      }
+      final data = await TeacherApiServices.fetchStaffDataUsername(
+        username: widget.username,
+        schoolId: int.parse(widget.schoolId),
+      );
+      print(data);
+      if (!mounted) return;
 
-      if (responses[1] is List) {
-        schoolData = List<Map<String, dynamic>>.from(responses[1] as List);
-      }
+      setState(() {
+        staff = data!;
+        _isLoading = false;
+      });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to load initial data. Please try again."),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      print("Error loading staff data: $e");
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -93,8 +87,8 @@ class _PostTicketsState extends State<PostTickets> {
       try {
         await _apiService.storeTickets(
           username: widget.username,
-          name: adminName,
-          email: email,
+          name: staff['name'],
+          email: staff['email'],
           tickets: _ticketsController.text,
           schoolId: int.parse(widget.schoolId),
         );
@@ -131,6 +125,7 @@ class _PostTicketsState extends State<PostTickets> {
         builder:
             (context) => StaffDashboard(
               username: widget.username,
+              schoolId: widget.schoolId,
             ),
       ),
     );
@@ -160,6 +155,7 @@ class _PostTicketsState extends State<PostTickets> {
                           builder:
                               (context) => StaffDashboard(
                                 username: widget.username,
+                                schoolId: widget.schoolId,
                               ),
                         ),
                       );
@@ -169,7 +165,12 @@ class _PostTicketsState extends State<PostTickets> {
         ),
         body:
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : SingleChildScrollView(
                   child: Center(
                     child: Container(
@@ -229,9 +230,9 @@ class _PostTicketsState extends State<PostTickets> {
                                       ? const SizedBox(
                                         height: 20,
                                         width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
+                                        child: SpinKitFadingCircle(
+                                          color: Colors.blueAccent,
+                                          size: 60.0,
                                         ),
                                       )
                                       : const Text("Submit Ticket"),

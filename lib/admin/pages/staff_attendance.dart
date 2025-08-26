@@ -49,6 +49,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   bool isHolidayFn = false;
   bool isHolidayAn = false;
   String holidayReason = '';
+  Map<String, String> originalAttendance = {};
 
   final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   Map<String, String> attendanceMap = {};
@@ -64,7 +65,6 @@ class _StaffAttendanceState extends State<StaffAttendance> {
       final now = DateTime.now();
       final hour = now.hour;
 
-      // Determine session only if it's a working session
       if (hour < 13 && !isHolidayFn) {
         setState(() => session = AttendanceSession.FN);
       } else if (hour >= 13 && !isHolidayAn) {
@@ -162,70 +162,79 @@ class _StaffAttendanceState extends State<StaffAttendance> {
     if (!mounted) return;
     setState(() => isLoading = true);
 
-    final fetchedStaff = await AdminApiService.fetchStaffData(widget.schoolId);
-    if (!mounted) return;
-
-    final cacheKey = '${currentDate}_$sessionKey';
-    Map<String, String> currentAttendance;
-
-    if (attendanceCache.containsKey(cacheKey)) {
-      currentAttendance = attendanceCache[cacheKey]!;
-    } else {
-      currentAttendance = await ApiService.fetchTodayAttendance(
-        currentDate,
-        sessionKey,
+    try {
+      final fetchedStaff = await AdminApiService.fetchStaffData(
         widget.schoolId,
       );
       if (!mounted) return;
-      attendanceCache[cacheKey] = currentAttendance;
-    }
 
-    setState(() {
-      staffList.clear();
-      staffList.addAll(fetchedStaff);
-      attendanceMap = {
-        for (var staff in staffList)
-          staff['username']:
-              currentAttendance[staff['username']] == 'NM'
-                  ? presentStatus
-                  : currentAttendance[staff['username']] == 'A'
-                  ? absentStatus
-                  : presentStatus,
-      };
-      allPresent = attendanceMap.values.every((s) => s == presentStatus);
-      isLoading = false;
-      submit =
-          currentAttendance.values.any(
-                (s) => s == presentStatus || s == absentStatus,
-              )
-              ? 'Submitted'
-              : 'Submit';
-    });
+      final cacheKey = '${currentDate}_$sessionKey';
+      Map<String, String> currentAttendance;
 
-    if (submit == 'Submitted') {
-      Future.delayed(Duration.zero, () {
+      if (attendanceCache.containsKey(cacheKey)) {
+        currentAttendance = attendanceCache[cacheKey]!;
+      } else {
+        currentAttendance = await ApiService.fetchTodayAttendance(
+          currentDate,
+          sessionKey,
+          widget.schoolId,
+        );
         if (!mounted) return;
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (_) => WillPopScope(
-                onWillPop: () async {
-                  Navigator.of(context).pop();
-                  Navigator.pop(context);
-                  return false;
-                },
-                child: AttendanceAlreadyMarkedDialog(
+        attendanceCache[cacheKey] = currentAttendance;
+      }
+
+      setState(() {
+        staffList
+          ..clear()
+          ..addAll(fetchedStaff);
+
+        attendanceMap = {
+          for (var staff in staffList)
+            staff['username']:
+                currentAttendance[staff['username']] == 'NM'
+                    ? presentStatus
+                    : currentAttendance[staff['username']] == 'A'
+                    ? absentStatus
+                    : presentStatus,
+        };
+
+        originalAttendance = Map<String, String>.from(attendanceMap);
+        allPresent = attendanceMap.values.every((s) => s == presentStatus);
+
+        submit =
+            currentAttendance.values.any(
+                  (s) => s == presentStatus || s == absentStatus,
+                )
+                ? 'Update'
+                : 'Submit';
+      });
+
+      if (submit == 'Update') {
+        Future.delayed(Duration.zero, () {
+          if (!mounted) return;
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder:
+                (_) => AttendanceAlreadyMarkedDialog(
                   onYesPressed: () => Navigator.of(context).pop(),
                   onNoPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
-                    Navigator.pop(context); // Pop the StaffAttendance screen
+                    Navigator.of(context).pop();
+                    Navigator.pop(context);
                   },
                 ),
-              ),
-        );
-      });
+          );
+        });
+      }
+    } catch (e, s) {
+      debugPrint("fetchStaff error: $e\n$s");
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  bool get hasChanges {
+    return !mapEquals(attendanceMap, originalAttendance);
   }
 
   Future<bool> onWillPop() async {
@@ -255,6 +264,8 @@ class _StaffAttendanceState extends State<StaffAttendance> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Staff Attendance',
                     enableDrawer: false,
                     enableBack: true,
@@ -339,32 +350,49 @@ class _StaffAttendanceState extends State<StaffAttendance> {
                     ),
                     const SizedBox(height: 8),
                     ...staffList.map(_buildStaffCard).toList(),
-                    SizedBox(height: 80),
+                    SizedBox(height: 100),
                   ],
                 ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: SizedBox(
-          width: MediaQuery.sizeOf(context).width / 1.5,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              backgroundColor:
-                  submit == 'Submitted' ? Colors.green : Colors.blue,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-            ),
-            onPressed: _submitAttendance,
-            child: Text(
-              submit,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton:
+            isLoading
+                ? SizedBox()
+                : SizedBox(
+                  width: MediaQuery.sizeOf(context).width / 2.5,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor:
+                          submit == 'Update' ? Colors.green : Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                    ),
+                    onPressed:
+                        (submit == 'Update' && !hasChanges)
+                            ? null // 🔴 Disable when no changes
+                            : _submitAttendance, // 🟢 Enable only when changed
+                    child: Row(
+                      children: [
+                        Spacer(),
+                        Icon(
+                          submit == 'Update' ? Icons.update : Icons.check,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          submit,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Spacer(),
+                      ],
+                    ),
+                  ),
+                ),
       ),
     );
   }
@@ -512,7 +540,11 @@ class _StaffAttendanceState extends State<StaffAttendance> {
     final success = failedUsernames.isEmpty;
     final message =
         success
-            ? 'Attendance submitted successfully'
+            ? submit == 'Update'
+                ? 'Attendance updated successfully'
+                : 'Attendance submitted successfully'
+            : submit == 'Update'
+            ? 'Failed to update attendance'
             : 'Failed to submit attendance';
 
     showDialog(
@@ -524,7 +556,10 @@ class _StaffAttendanceState extends State<StaffAttendance> {
             onPressed: () {
               Navigator.of(context).pop();
               if (success) {
-                setState(() => submit = 'Submitted');
+                setState(() {
+                  submit = 'Update';
+                  originalAttendance = Map<String, String>.from(attendanceMap);
+                });
                 fetchStaff();
                 Navigator.pop(context);
               }

@@ -4,6 +4,42 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl = "http://51.20.189.225";
+  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+
+  Future<Map<String, dynamic>> storeTickets({
+    required String username,
+    required String name,
+    required String email,
+    required String tickets,
+    required int schoolId,
+  }) async {
+    final url = Uri.parse("$baseUrl/Tickets/post");
+
+    final body = {
+      "username": username,
+      "name": name,
+      "email": email,
+      "tickets": tickets,
+      "schoolId": schoolId,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+      // print(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("Error: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      throw Exception("Failed to connect to API: $e");
+    }
+  }
+
   static Future<Map<String, dynamic>> sendOtp({
     required String email,
     required String otp,
@@ -27,13 +63,18 @@ class ApiService {
   static Future<Map<String, dynamic>> updatePassword({
     required String username,
     required String password,
+    required int schoolId,
   }) async {
     final url = Uri.parse('$baseUrl/auth/update_password');
 
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'newPassword': password}),
+      body: jsonEncode({
+        'username': username,
+        'newPassword': password,
+        'school_id': schoolId,
+      }),
     );
     final data = jsonDecode(response.body);
     print(data);
@@ -70,10 +111,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getSchoolAndClassByUsername(
-    String username,
-  ) async {
-    final url = Uri.parse('$baseUrl/students/school-class?username=$username');
+  static Future<Map<String, dynamic>> getSchoolAndClassByUsername({
+    required String username,
+    required int schoolId,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/students/school-class?username=$username&school_id=$schoolId',
+    );
 
     try {
       final response = await http.get(url);
@@ -90,12 +134,17 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getUsersByRole(String role) async {
-    final url = Uri.parse('$baseUrl/attendance-users?role=$role');
+  static Future<List<dynamic>> getUsersByRole({
+    required String role,
+    required int schoolId,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/attendance-users?role=$role&school_id=$schoolId',
+    );
 
     try {
       final response = await http.get(url);
-      // print(response.body);
+      //print(response.body);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -106,9 +155,8 @@ class ApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchSchools() async {
-    final url = Uri.parse('$baseUrl/fetch_school');
-
+  static Future<List<Map<String, dynamic>>> fetchSchools() async {
+    final url = Uri.parse('$baseUrl/school/fetch_all_schools');
     try {
       final response = await http.get(url);
 
@@ -391,9 +439,9 @@ class ApiService {
   //FetchSchoolData
   static Future<List<Map<String, dynamic>>> fetchSchoolData(String id) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/fetch_school_data?id=$id'),
+      Uri.parse('$baseUrl/school/fetch_school_data?id=$id'),
     );
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final jsonData = json.decode(response.body);
 
       if (jsonData['status'] == 'success') {
@@ -746,6 +794,7 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
+      print(data);
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           data['status'] == 'success') {

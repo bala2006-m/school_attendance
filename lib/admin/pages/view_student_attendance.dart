@@ -133,6 +133,8 @@ class _ClassListState extends State<ClassList> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Class List',
                     enableDrawer: false,
                     enableBack: true,
@@ -275,13 +277,15 @@ class ViewStudentAttendance extends StatefulWidget {
 
 class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
   final GlobalKey _attendanceKey = GlobalKey();
-  final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _searchController =
+      TextEditingController(); // ✅ for search
   String userName = '';
   List<Map<String, dynamic>> attendance = [];
   List<Map<String, dynamic>> holidayList = [];
   bool isLoading = false;
   bool enableAttendance = false;
   List<Map<String, dynamic>> students = [];
+  List<Map<String, dynamic>> filteredStudents = []; // ✅ filtered list
 
   @override
   void initState() {
@@ -294,6 +298,8 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
       classId: widget.classId,
       schoolId: widget.school_id,
     );
+
+    filteredStudents = students; // ✅ initially show all
     setState(() {});
   }
 
@@ -352,9 +358,27 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
     }
   }
 
+  /// ✅ Search filter
+  void _filterStudents(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredStudents = students;
+      } else {
+        filteredStudents =
+            students.where((student) {
+              final name = (student['name'] ?? '').toString().toLowerCase();
+              final username =
+                  (student['username'] ?? '').toString().toLowerCase();
+              final search = query.toLowerCase();
+              return name.contains(search) || username.contains(search);
+            }).toList();
+      }
+    });
+  }
+
   @override
   void dispose() {
-    _mobileController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -370,6 +394,8 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.school_id,
+                    username: widget.username,
                     title: 'View Student Attendance',
                     enableDrawer: false,
                     enableBack: true,
@@ -390,7 +416,12 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
         ),
         body:
             students.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : Stack(
                   children: [
                     SingleChildScrollView(
@@ -408,6 +439,21 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                             ),
                           ),
 
+                          /// ✅ Search Bar
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: "Search by name or username",
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onChanged: _filterStudents,
+                          ),
+
+                          const SizedBox(height: 16),
+
                           const Text(
                             'Select a Student',
                             style: TextStyle(
@@ -422,11 +468,14 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                             child: ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: students.length,
+                              itemCount:
+                                  filteredStudents
+                                      .length, // ✅ use filtered list
                               separatorBuilder:
                                   (_, __) => const Divider(height: 1),
                               itemBuilder: (context, index) {
-                                final student = students[index];
+                                final student =
+                                    filteredStudents[index]; // ✅ use filtered list
                                 return ListTile(
                                   leading: const Icon(Icons.person),
                                   title: Text(student['name']),
@@ -495,7 +544,12 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                     if (isLoading)
                       Container(
                         color: Colors.black.withOpacity(0.3),
-                        child: const Center(child: CircularProgressIndicator()),
+                        child: const Center(
+                          child: SpinKitFadingCircle(
+                            color: Colors.blueAccent,
+                            size: 60.0,
+                          ),
+                        ),
                       ),
                   ],
                 ),

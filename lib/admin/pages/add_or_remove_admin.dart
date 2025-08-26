@@ -35,6 +35,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
   final TextEditingController _countryCodeController = TextEditingController(
     text: '+91',
   );
+  final TextEditingController _searchController = TextEditingController();
 
   late FocusNode _usernameFocus;
   late FocusNode _passwordFocus;
@@ -43,9 +44,10 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
 
   List<dynamic> admin = [];
   Map<String, dynamic> adminData = {};
+  List<dynamic> filteredAdmins = []; // 🔹 For search results
+
   bool showForm = false;
   bool isLoading = true;
-  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -55,18 +57,47 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
     _passwordFocus = FocusNode();
     _mobileFocus = FocusNode();
     _countryCodeFocus = FocusNode();
+
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _designationController.dispose();
+    _mobileController.dispose();
+    _countryCodeController.dispose();
+    _searchController.dispose();
+    _usernameFocus.dispose();
+    _passwordFocus.dispose();
+    _mobileFocus.dispose();
+    _countryCodeFocus.dispose();
+    super.dispose();
   }
 
   Future<void> init() async {
     setState(() => isLoading = true);
-    admin = await ApiService.getUsersByRole('admin');
+    final admin1 = await ApiService.getUsersByRole(
+      schoolId: int.parse(widget.schoolId),
+      role: 'admin',
+    );
+
+    admin =
+        admin1
+            .where((e) => e["school_id"] == int.parse(widget.schoolId))
+            .toList();
+
     List<Future<void>> futures = [];
     adminData.clear();
 
     for (var user in admin) {
       final username = user['username'];
       futures.add(
-        AdminApiService.fetchAdminData(username).then((data) {
+        AdminApiService.fetchAdminData(
+          username: username,
+          schoolId: widget.schoolId,
+        ).then((data) {
           adminData[username] = data;
         }),
       );
@@ -74,7 +105,31 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
 
     await Future.wait(futures);
     if (!mounted) return;
+
+    filteredAdmins = List.from(admin); // Initially all
     setState(() => isLoading = false);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredAdmins =
+          admin.where((adminUser) {
+            final username = adminUser['username'].toString().toLowerCase();
+            final name =
+                (adminData[adminUser['username']]?['name'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final mobile =
+                (adminData[adminUser['username']]?['mobile'] ?? '')
+                    .toString()
+                    .toLowerCase();
+
+            return username.contains(query) ||
+                name.contains(query) ||
+                mobile.contains(query);
+          }).toList();
+    });
   }
 
   Future<bool> onWillPop() async {
@@ -104,7 +159,9 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    title: 'Add Or Remove Admin',
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Admin',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -141,12 +198,10 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                           SizedBox(key: _formKey, height: 10),
                           isMobile
                               ? AdminRegistrationMobile(
-                                usernameController: _usernameController,
                                 passwordController: _passwordController,
                                 designationController: _designationController,
                                 mobileController: _mobileController,
                                 countryCodeController: _countryCodeController,
-                                usernameFocus: _usernameFocus,
                                 passwordFocus: _passwordFocus,
                                 mobileFocus: _mobileFocus,
                                 countryCodeFocus: _countryCodeFocus,
@@ -170,6 +225,20 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                         ],
                       ),
                     const SizedBox(height: 20),
+
+                    // 🔹 Search Bar
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        hintText: "Search by name, username, or mobile",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     Center(
                       child: const Text(
                         'Registered Admins',
@@ -184,7 +253,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Text(
-                          'Total : ${admin.length}',
+                          'Total : ${filteredAdmins.length}',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -192,8 +261,19 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 10),
-                    ...admin.map((adminUser) {
+
+                    // 🔹 Show "No results found" if search is empty
+                    if (filteredAdmins.isEmpty)
+                      const Center(
+                        child: Text(
+                          "No results found",
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ),
+
+                    ...filteredAdmins.map((adminUser) {
                       final username = adminUser['username'];
                       final data = adminData[username] ?? {};
 

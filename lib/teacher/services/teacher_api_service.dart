@@ -7,13 +7,67 @@ import '../models/staff_models.dart';
 class TeacherApiServices {
   static const String baseUrl = "http://51.20.189.225";
   //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static Future<Map<String, dynamic>> createLeaveRequest({
+    required String username,
+    required String email,
+    String? role,
+    required int schoolId,
+    required int classId,
+    required DateTime fromDate,
+    required DateTime toDate,
+    String? reason,
+  }) async {
+    final url = Uri.parse("$baseUrl/leave-request/create");
 
-  static Future<void> updateProfile(
-    String username,
-    Map<String, dynamic> data,
-  ) async {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "username": username,
+        "role": role,
+        "school_id": schoolId,
+        "class_id": classId,
+        "from_date": fromDate.toIso8601String(),
+        "to_date": toDate.toIso8601String(),
+        "reason": reason,
+        'email': email,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+        "Failed to create leave request: ${response.statusCode} ${response.body}",
+      );
+    }
+  }
+
+  static Future<String> updateLeaveStatus(int id, String status) async {
+    final url = Uri.parse('$baseUrl/leave-request/$id/status');
+
+    final response = await http.patch(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'status': status}),
+    );
+
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception(
+        'Failed to update status. Code: ${response.statusCode}, Body: ${response.body}',
+      );
+    }
+  }
+
+  static Future<void> updateProfile({
+    required String username,
+    required Map<String, dynamic> data,
+    required int schoolId,
+  }) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/staff/update/$username'),
+      Uri.parse('$baseUrl/staff/update/$username/$schoolId'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
@@ -22,8 +76,13 @@ class TeacherApiServices {
     }
   }
 
-  static Future<Staff> fetchProfile(String username) async {
-    final url = Uri.parse('$baseUrl/staff/fetch-staffs?username=$username');
+  static Future<Staff> fetchProfile({
+    required String username,
+    required int schoolId,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/staff/fetch-staffs?username=$username&school_id=$schoolId',
+    );
     final response = await http.get(url);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -41,6 +100,7 @@ class TeacherApiServices {
     required String username,
     required String newPassword,
     required String confirmPassword,
+    required int schoolId,
   }) async {
     final url = Uri.parse('$baseUrl/students/change-password');
 
@@ -51,6 +111,7 @@ class TeacherApiServices {
         'username': username,
         'newPassword': newPassword,
         'confirmPassword': confirmPassword,
+        'school_id': schoolId,
       }),
     );
     final data = jsonDecode(response.body);
@@ -65,7 +126,7 @@ class TeacherApiServices {
   static Future<bool> saveTimetable(
     List<Map<String, dynamic>> timetables,
   ) async {
-    const String url = '$baseUrl/timetable';
+    const String url = '$baseUrl/timetable/create';
 
     // Convert the list to the required plain-text format
     String timetableString = timetables
@@ -94,13 +155,14 @@ class TeacherApiServices {
   }
 
   /// Fetch staff data by username
-  static Future<Map<String, dynamic>?> fetchStaffDataUsername(
-    String username,
-  ) async {
+  static Future<Map<String, dynamic>?> fetchStaffDataUsername({
+    required String username,
+    required int schoolId,
+  }) async {
     try {
       final uri = Uri.parse(
-        '$baseUrl/staff/fetch-by-username',
-      ).replace(queryParameters: {'username': username});
+        '$baseUrl/staff/fetch-by-username?username=$username&school_id=$schoolId',
+      );
 
       final response = await http.get(uri);
       if (response.statusCode == 200) {

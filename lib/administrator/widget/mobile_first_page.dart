@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import './home_page.dart';
+import './manage_page.dart';
 
 class MobileFirstPage extends StatelessWidget {
   const MobileFirstPage({
@@ -10,12 +11,20 @@ class MobileFirstPage extends StatelessWidget {
     required this.staffs,
     required this.students,
     required this.admins,
+    required this.username,
+    required this.schoolName,
+    required this.schoolAddress,
+    required this.schoolId,
   });
   final int selectedIndex;
   final List<dynamic> classes;
   final List<dynamic> staffs;
   final List<dynamic> students;
   final List<dynamic> admins;
+  final String username;
+  final String schoolName;
+  final String schoolAddress;
+  final String schoolId;
   @override
   Widget build(BuildContext context) {
     return IndexedStack(
@@ -36,12 +45,12 @@ class MobileFirstPage extends StatelessWidget {
           staffs: staffs,
           students: students,
         ),
-        // AdminManagement(
-        //   adminUsername: widget.username,
-        //   schoolId: widget.schoolId,
-        //   schoolName: widget.schoolName,
-        //   schoolAddress: widget.schoolAddress,
-        // ),
+        ManagePage(
+          username: username,
+          schoolName: schoolName,
+          schoolAddress: schoolAddress,
+          schoolId: schoolId,
+        ),
       ],
     );
   }

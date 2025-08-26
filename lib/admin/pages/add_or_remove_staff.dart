@@ -27,28 +27,32 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
   final GlobalKey _formKey1 = GlobalKey();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _designationController = TextEditingController(
-    text: 'staff',
-  );
+  final TextEditingController _designationController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _countryCodeController = TextEditingController(
     text: '+91',
   ); // Default to +91
+  final TextEditingController _searchController = TextEditingController();
+
   late FocusNode _usernameFocus;
+  late FocusNode _designationFocus;
   late FocusNode _passwordFocus;
   late FocusNode _mobileFocus;
   late FocusNode _countryCodeFocus;
+
   List<dynamic> staff = [];
+  List<dynamic> filteredStaff = [];
   Map<String, dynamic> staffData = {};
   bool showForm = false;
   bool isLoading = true;
-  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
     init();
+    _searchController.addListener(_filterStaff);
     _usernameFocus = FocusNode();
+    _designationFocus = FocusNode();
     _passwordFocus = FocusNode();
     _mobileFocus = FocusNode();
     _countryCodeFocus = FocusNode();
@@ -56,14 +60,26 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
 
   Future<void> init() async {
     setState(() => isLoading = true);
-    staff = await ApiService.getUsersByRole('staff');
+    staff = await ApiService.getUsersByRole(
+      role: 'staff',
+      schoolId: int.parse(widget.schoolId),
+    );
+
+    staff =
+        staff
+            .where((e) => e["school_id"] == int.parse(widget.schoolId))
+            .toList();
+
     List<Future<void>> futures = [];
     staffData.clear();
 
     for (var user in staff) {
       final username = user['username'];
       futures.add(
-        TeacherApiServices.fetchStaffDataUsername(username).then((data) {
+        TeacherApiServices.fetchStaffDataUsername(
+          username: username,
+          schoolId: int.parse(widget.schoolId),
+        ).then((data) {
           staffData[username] = data;
         }),
       );
@@ -71,7 +87,29 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
 
     await Future.wait(futures);
     if (!mounted) return;
-    setState(() => isLoading = false);
+
+    setState(() {
+      isLoading = false;
+      filteredStaff = List.from(staff); // initialize filtered list
+    });
+  }
+
+  void _filterStaff() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredStaff =
+          staff.where((staffUser) {
+            final username =
+                staffUser['username']?.toString().toLowerCase() ?? '';
+            final data = staffData[staffUser['username']] ?? {};
+            final name = data['name']?.toString().toLowerCase() ?? '';
+            final mobile = data['mobile']?.toString().toLowerCase() ?? '';
+
+            return username.contains(query) ||
+                name.contains(query) ||
+                mobile.contains(query);
+          }).toList();
+    });
   }
 
   @override
@@ -80,10 +118,11 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     _passwordController.dispose();
     _usernameFocus.dispose();
     _passwordFocus.dispose();
-    super.dispose();
     _designationController.dispose();
     _mobileController.dispose();
     _countryCodeController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<bool> onWillPop() async {
@@ -112,7 +151,9 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    title: 'Add Or Remove Staff',
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Staff',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -149,12 +190,9 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                           SizedBox(key: _formKey, height: 10),
                           isMobile
                               ? StaffRegistrationMobile(
-                                usernameController: _usernameController,
                                 passwordController: _passwordController,
-                                designationController: _designationController,
                                 mobileController: _mobileController,
                                 countryCodeController: _countryCodeController,
-                                usernameFocus: _usernameFocus,
                                 passwordFocus: _passwordFocus,
                                 mobileFocus: _mobileFocus,
                                 countryCodeFocus: _countryCodeFocus,
@@ -177,6 +215,20 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                         ],
                       ),
                     const SizedBox(height: 20),
+
+                    // 🔍 Search Bar
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search by name, username, or mobile',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     Center(
                       child: const Text(
                         'Registered Staffs',
@@ -191,7 +243,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Text(
-                          'Total : ${staff.length}',
+                          'Total : ${filteredStaff.length}',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -200,7 +252,8 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    ...staff.map((staffUser) {
+
+                    ...filteredStaff.map((staffUser) {
                       final username = staffUser['username'];
                       final data = staffData[username] ?? {};
 
@@ -281,7 +334,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        'Failed to delete $username',
+                                        'Failed to delete $username\n$username is used in other services',
                                       ),
                                     ),
                                   );
@@ -312,6 +365,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     );
   }
 
+  // 🔹 Reusable Animated Input Field
   Widget buildAnimatedField({
     required String label,
     required TextEditingController controller,
@@ -319,7 +373,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     bool isPassword = false,
     bool obscureText = false,
     void Function()? toggleObscure,
-    TextInputType? keyboardType, // Add keyboardType
+    TextInputType? keyboardType,
   }) {
     bool isFocused = focusNode.hasFocus || controller.text.isNotEmpty;
 
@@ -351,7 +405,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
               controller: controller,
               focusNode: focusNode,
               obscureText: isPassword && obscureText,
-              keyboardType: keyboardType, // Apply keyboardType
+              keyboardType: keyboardType,
               decoration: InputDecoration(
                 labelText: label,
                 border: InputBorder.none,

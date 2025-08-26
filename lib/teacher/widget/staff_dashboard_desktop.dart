@@ -1,20 +1,31 @@
-import 'package:flutter/material.dart';
 import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+
 import '../components/staff_components.dart';
 import '../pages/change_password_screen.dart';
 import '../pages/class_list.dart';
 import '../pages/timetable_screen.dart';
 import 'desktop_drawer.dart';
 
-
 class StaffDashboardDesktop extends StatelessWidget {
   const StaffDashboardDesktop({
     super.key,
     required this.name,
     required this.schoolId,
-    required this.username, required this.email, required this.classId, required this.gender, required this.photo, required this.mobile, required this.message, required this.schoolAddress, required this.schoolPhoto, required this.schoolName,
+    required this.username,
+    required this.email,
+    required this.classId,
+    required this.gender,
+    required this.photo,
+    required this.mobile,
+    required this.message,
+    required this.schoolAddress,
+    required this.schoolPhoto,
+    required this.schoolName,
+    required this.submit,
   });
-
+  final VoidCallback submit;
   final String name;
   final String schoolId;
   final String username;
@@ -38,10 +49,12 @@ class StaffDashboardDesktop extends StatelessWidget {
         children: [
           /// Sidebar drawer
           DesktopDrawer(
+            submit: submit,
             name: name,
             width: screenWidth,
             height: screenHeight,
             username: username,
+            schoolId: int.parse(schoolId),
           ),
 
           /// Main dashboard content
@@ -73,7 +86,11 @@ class StaffDashboardDesktop extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ClassList(schoolId: schoolId,username: username,),
+                                builder:
+                                    (_) => ClassList(
+                                      schoolId: schoolId,
+                                      username: username,
+                                    ),
                               ),
                             );
                           },
@@ -87,7 +104,10 @@ class StaffDashboardDesktop extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (_) => TimetableScreen(schoolId: schoolId,username: username,),
+                                    (_) => TimetableScreen(
+                                      schoolId: schoolId,
+                                      username: username,
+                                    ),
                               ),
                             );
                           },
@@ -100,7 +120,11 @@ class StaffDashboardDesktop extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ChangePasswordScreen(username: username,),
+                                builder:
+                                    (_) => ChangePasswordScreen(
+                                      username: username,
+                                      schoolId: int.parse(schoolId),
+                                    ),
                               ),
                             );
                           },

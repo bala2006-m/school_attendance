@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
+import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
 import '../../admin/services/admin_api_service.dart';
 
@@ -32,32 +34,42 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
 
   Future<void> init() async {
     try {
-      leaveRequest = await AdminApiService.fetchLeaveRequest(widget.schoolId);
+      final allRequests = await AdminApiService.fetchLeaveRequest(
+        widget.schoolId,
+      );
+
+      // Keep only student requests
+      leaveRequest =
+          allRequests
+              .where(
+                (req) =>
+                    (req['role'] ?? '').toString().toLowerCase() == 'student',
+              )
+              .toList();
 
       await Future.wait(
         leaveRequest.map((request) async {
-          if ((request['role'] ?? '').toString().toLowerCase() == 'student') {
-            try {
-              final classInfo = await StudentApiServices.fetchClassDatas(
-                widget.schoolId,
-                '${request['class_id']}',
-              );
-              request['class_name'] = classInfo?['class'] ?? '';
-              request['section'] = classInfo?['section'] ?? '';
-            } catch (e) {
-              request['class_name'] = '';
-              request['section'] = '';
-              print('Error fetching class for ${request['username']}: $e');
-            }
+          try {
+            final classInfo = await StudentApiServices.fetchClassDatas(
+              widget.schoolId,
+              '${request['class_id']}',
+            );
+            request['class_name'] = classInfo?['class'] ?? '';
+            request['section'] = classInfo?['section'] ?? '';
+          } catch (e) {
+            request['class_name'] = '';
+            request['section'] = '';
           }
         }),
       );
     } catch (e) {
-      print("Error fetching leave requests: $e");
+      debugPrint("Error fetching leave requests: $e");
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -66,30 +78,37 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => StaffDashboard(username: widget.username),
+        builder:
+            (context) => StaffDashboard(
+              username: widget.username,
+              schoolId: widget.schoolId,
+            ),
       ),
     );
     return false;
   }
 
+  String formatDate(String? dateStr, {String format = 'MMM d, yyyy'}) {
+    if (dateStr == null || dateStr.isEmpty) return 'Unknown';
+    try {
+      return DateFormat(format).format(DateTime.parse(dateStr));
+    } catch (_) {
+      return 'Invalid date';
+    }
+  }
+
   Widget buildLeaveCard(Map<String, dynamic> request) {
     final username = request['username'] ?? 'Unknown';
-    final role = request['role'] ?? '';
-    final fromDate = DateFormat(
-      'MMM d, yyyy',
-    ).format(DateTime.parse(request['from_date']));
-    final toDate = DateFormat(
-      'MMM d, yyyy',
-    ).format(DateTime.parse(request['to_date']));
+    final int id = int.tryParse(request['id']?.toString() ?? '') ?? 0;
+    final role = (request['role'] ?? '').toString();
+    final fromDate = formatDate(request['from_date']);
+    final toDate = formatDate(request['to_date']);
     final reason = request['reason'] ?? 'No reason provided';
-    final status = request['status'] ?? 'pending';
-    final createdAt =
-        request['created_at'] != null
-            ? DateFormat(
-              'MMM d, yyyy • hh:mm a',
-            ).format(DateTime.parse(request['created_at']))
-            : 'Unknown';
-
+    final status = (request['status'] ?? 'pending').toString();
+    final createdAt = formatDate(
+      request['created_at'],
+      format: 'MMM d, yyyy • hh:mm a',
+    );
     final className = request['class_name'] ?? '';
     final section = request['section'] ?? '';
 
@@ -114,7 +133,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Header: Username, role, date
+            /// Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -133,13 +152,13 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
             ),
             const SizedBox(height: 6),
 
-            /// If student, show class name and section
-            if (role == 'student')
+            /// If student, show class info
+            if (role.toLowerCase() == 'student')
               Text(
                 "Class: $className  |  Section: $section",
                 style: const TextStyle(fontSize: 15, color: Colors.black87),
               ),
-            if (role == 'student') const SizedBox(height: 6),
+            if (role.toLowerCase() == 'student') const SizedBox(height: 6),
 
             /// Date Range
             Text(
@@ -152,14 +171,25 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
             Text("Reason: $reason", style: const TextStyle(fontSize: 15)),
             const SizedBox(height: 10),
 
-            /// Status
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
-                border: Border.all(color: statusColor),
-                borderRadius: BorderRadius.circular(20),
+            /// Status Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: statusColor,
+                elevation: 0,
+                side: BorderSide(color: statusColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               ),
+              onPressed:
+                  status.toLowerCase() == 'pending'
+                      ? () => _showApproveRejectDialog(context, id)
+                      : null,
               child: Text(
                 status.toUpperCase(),
                 style: TextStyle(
@@ -172,6 +202,63 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
         ),
       ),
     );
+  }
+
+  void _showApproveRejectDialog(BuildContext context, int id) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Update Status'),
+            content: const Text(
+              'Do you want to approve or reject this request?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _updateLeaveStatus('approved', id);
+                },
+                child: const Text(
+                  'Approve',
+                  style: TextStyle(color: Colors.green),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _updateLeaveStatus('rejected', id);
+                },
+                child: const Text(
+                  'Reject',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _updateLeaveStatus(String newStatus, int leaveId) async {
+    try {
+      final res = await TeacherApiServices.updateLeaveStatus(
+        leaveId,
+        newStatus,
+      );
+
+      if (!mounted) return; // Widget no longer exists
+
+      if (!mounted) return; // Double-check before showing SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Leave status updated to $newStatus')),
+      );
+      init();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+    }
   }
 
   @override
@@ -195,8 +282,10 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) =>
-                                  StaffDashboard(username: widget.username),
+                              (context) => StaffDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
                         ),
                       );
                     },
@@ -205,15 +294,19 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
         ),
         body:
             isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : leaveRequest.isEmpty
                 ? const Center(child: Text('No leave requests found.'))
                 : ListView.builder(
                   itemCount: leaveRequest.length,
                   padding: const EdgeInsets.only(bottom: 24),
-                  itemBuilder: (context, index) {
-                    return buildLeaveCard(leaveRequest[index]);
-                  },
+                  itemBuilder:
+                      (context, index) => buildLeaveCard(leaveRequest[index]),
                 ),
       ),
     );

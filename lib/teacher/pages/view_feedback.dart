@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
@@ -48,7 +49,11 @@ class _ViewFeedbackState extends State<ViewFeedback> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => StaffDashboard(username: widget.username),
+        builder:
+            (context) => StaffDashboard(
+              username: widget.username,
+              schoolId: widget.schoolId,
+            ),
       ),
     );
     return false;
@@ -153,8 +158,10 @@ class _ViewFeedbackState extends State<ViewFeedback> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) =>
-                                  StaffDashboard(username: widget.username),
+                              (context) => StaffDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
                         ),
                       );
                     },
@@ -163,7 +170,12 @@ class _ViewFeedbackState extends State<ViewFeedback> {
         ),
         body:
             isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : feedbacks.isEmpty
                 ? const Center(child: Text('No feedbacks available.'))
                 : ListView.builder(

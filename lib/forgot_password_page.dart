@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
@@ -10,15 +11,15 @@ import 'login_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
-
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  TextEditingController username = TextEditingController();
-  TextEditingController otpController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  final TextEditingController username = TextEditingController();
+  final TextEditingController otpController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController schoolIdController = TextEditingController();
 
   String email = '';
   Map<String, dynamic>? adminData;
@@ -36,14 +37,24 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => isLoading = true);
 
     try {
+      final schoolId = int.tryParse(schoolIdController.text.trim());
+      if (schoolId == null) {
+        showSnackBar("Please enter a valid School ID");
+        return;
+      }
+
       List<String> roles = ['student', 'staff', 'admin', 'administrator'];
       Map<String, dynamic>? user;
       String foundRole = '';
 
       for (String role in roles) {
-        final users = await ApiService.getUsersByRole(role);
-        user = users.firstWhere(
-          (u) => u['username'].toString() == username.text,
+        final users = await ApiService.getUsersByRole(
+          schoolId: schoolId,
+          role: role,
+        );
+
+        user = users.cast<Map<String, dynamic>?>().firstWhere(
+          (u) => u?['username']?.toString() == username.text.trim(),
           orElse: () => null,
         );
 
@@ -66,6 +77,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           await fetchStaff();
           break;
         case 'admin':
+        case 'administrator': // ✅ Added administrator support
           await fetchAdmin();
           break;
       }
@@ -81,24 +93,40 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   Future<void> updatePassword() async {
     if (isLoading) return;
-    final res = await ApiService.updatePassword(
-      username: username.text,
-      password: passwordController.text,
-    );
-    if (res['status'] == 'success') {
-      showSnackBar('Password updated successfully!');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+
+    final newPassword = passwordController.text.trim();
+    if (newPassword.isEmpty) {
+      showSnackBar("Password cannot be empty");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final res = await ApiService.updatePassword(
+        username: username.text.trim(),
+        password: newPassword,
+        schoolId: int.parse(schoolIdController.text.trim()),
       );
-    } else {
-      showSnackBar('Password update failed');
+
+      if (res['status'] == 'success') {
+        showSnackBar('Password updated successfully!');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      } else {
+        showSnackBar('Password update failed');
+      }
+    } catch (e) {
+      showSnackBar("Error: $e");
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
   Future<void> sendOtp() async {
-    otp = Random().nextInt(900000) + 100000;
-    print(email);
+    otp = Random().nextInt(900000) + 100000; // ✅ 6-digit OTP
     final response = await ApiService.sendOtp(email: email, otp: '$otp');
     setState(() => otpSent = true);
 
@@ -116,18 +144,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> fetchAdmin() async {
-    adminData = await AdminApiService.fetchAdminData(username.text);
+    adminData = await AdminApiService.fetchAdminData(
+      username: username.text.trim(),
+      schoolId: schoolIdController.text.trim(),
+    );
     setState(() => email = adminData?['email'] ?? '');
   }
 
   Future<void> fetchStaff() async {
-    staffData = await TeacherApiServices.fetchStaffDataUsername(username.text);
+    staffData = await TeacherApiServices.fetchStaffDataUsername(
+      username: username.text.trim(),
+      schoolId: int.parse(schoolIdController.text.trim()),
+    );
     setState(() => email = staffData?['email'] ?? '');
   }
 
   Future<void> fetchStudent() async {
     studentData = await StudentApiServices.fetchStudentDataUsername(
-      username.text,
+      username: username.text.trim(),
+      schoolId: int.parse(schoolIdController.text.trim()),
     );
     setState(() => email = studentData?['email'] ?? '');
   }
@@ -165,6 +200,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
               const SizedBox(height: 40),
 
+              /// School ID
+              buildInputField(
+                controller: schoolIdController,
+                hint: 'Enter your School ID',
+                icon: Icons.school,
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 20),
+
               /// Username
               buildInputField(
                 controller: username,
@@ -175,20 +219,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
               /// Send OTP
               ElevatedButton(
-                onPressed: isLoading ? null : () => init(),
+                onPressed: isLoading ? null : init,
                 style: elevatedButtonStyle(),
                 child:
                     isLoading
                         ? Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            SizedBox(
+                          children: [
+                            const SizedBox(
                               height: 18,
                               width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: SpinKitFadingCircle(
+                                color: Colors.white,
+                                size: 18.0,
+                              ),
                             ),
-                            SizedBox(width: 12),
-                            Text("Sending OTP..."),
+                            const SizedBox(width: 12),
+                            const Text("Sending OTP..."),
                           ],
                         )
                         : const Text("Send OTP"),
@@ -214,6 +261,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   if (val == otp.toString()) {
                                     setState(() => validOtp = true);
                                   } else {
+                                    setState(() => validOtp = false);
                                     showSnackBar('OTP is incorrect');
                                   }
                                 }

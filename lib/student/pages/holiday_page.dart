@@ -85,8 +85,10 @@ class _HolidayPageState extends State<HolidayPage> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
-                                StudentDashboard(username: widget.username),
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
                       ),
                     );
                   },

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
 import '../color/custom_color.dart';
+import '../pages/change_password.dart';
+import '../pages/edit_profile.dart';
 import '../pages/feedback_page.dart';
 import '../pages/profile_page.dart';
 
@@ -20,8 +22,9 @@ class StudentMobileDrawer extends StatelessWidget {
     required this.username,
     required this.schoolName,
     required this.className,
+    required this.onSave,
   });
-
+  final VoidCallback onSave;
   final String schoolId;
   final String classId;
   final String name;
@@ -111,14 +114,39 @@ class StudentMobileDrawer extends StatelessWidget {
                       "schoolName": schoolName,
                       "className": className,
                       "photo": photo,
-                    }, username: username,
+                    },
+                    username: username,
+                    schoolId: int.parse(schoolId),
+                  ),
+                ),
+                _buildListTile(
+                  context,
+                  icon: Icons.edit_note,
+                  text: 'Edit Profile',
+                  page: EditProfile(
+                    username: username,
+                    onSave: onSave,
+                    schoolId: int.parse(schoolId),
+                  ),
+                ),
+                _buildListTile(
+                  context,
+                  icon: Icons.edit,
+                  text: 'Change Password',
+                  page: EditPassword(
+                    username: username,
+                    schoolId: int.parse(schoolId),
                   ),
                 ),
                 _buildListTile(
                   context,
                   icon: Icons.feedback,
                   text: 'Feedback',
-                  page: FeedbackPage(username:username,schoolId: schoolId, classId: classId),
+                  page: FeedbackPage(
+                    username: username,
+                    schoolId: schoolId,
+                    classId: classId,
+                  ),
                 ),
                 const Divider(thickness: 1, indent: 16, endIndent: 16),
               ],
@@ -135,10 +163,11 @@ class StudentMobileDrawer extends StatelessWidget {
               title: const Text('Logout', style: TextStyle(color: Colors.red)),
               onTap: () async {
                 SharedPreferences prefs = await SharedPreferences.getInstance();
+
                 await prefs.remove('role');
                 await prefs.remove('username');
                 await prefs.remove('rememberMe');
-
+                await prefs.clear();
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginPage()),

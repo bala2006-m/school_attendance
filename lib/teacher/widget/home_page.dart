@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../admin/components/desktop_stats.dart';
 import '../../admin/components/message_box.dart';
 import '../components/build_profile_card_mobile.dart';
-import '../pages/view_staff_attendance.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -17,6 +16,9 @@ class HomePage extends StatefulWidget {
     required this.schoolId,
     required this.username,
     required this.classIds,
+    required this.schoolName,
+    required this.schoolAddress,
+    this.schoolPhoto,
   });
   final String message;
   final String totalStudents;
@@ -25,6 +27,9 @@ class HomePage extends StatefulWidget {
   final String schoolId;
   final String username;
   final List<dynamic> classIds;
+  final String schoolName;
+  final String schoolAddress;
+  final Image? schoolPhoto;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -42,72 +47,15 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           child: Column(
             children: [
-              BuildProfileCard(),
+              BuildProfileCard(
+                schoolName: widget.schoolName,
+                schoolAddress: widget.schoolAddress,
+                schoolPhoto: widget.schoolPhoto,
+              ),
               SizedBox(height: 10),
               MessageBox(message: widget.message),
               const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.black26, width: 2),
-                    boxShadow: [
-                      BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Myself',
-                                style: TextStyle(
-                                  color: Colors.blue.shade900,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 25,
-                                ),
-                              ),
-                              Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.blue.shade900,
-                                size: 50,
-                              ),
-                            ],
-                          ),
-                        ),
 
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            buildButtons(
-                              context,
-                              screenWidth,
-                              buttonHeight,
-                              'View Your Attendance',
-                              Icons.insert_chart,
-                              ViewStaffAttendance(
-                                username: widget.username,
-                                schoolId: widget.schoolId,
-                              ),
-                              Colors.white,
-                              Colors.black,
-                              Colors.blue,
-                              Colors.blue,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
               SizedBox(height: 10),
               DesktopStats(
                 screenWidth: screenWidth,
@@ -116,8 +64,8 @@ class _HomePageState extends State<HomePage> {
                 name: 'Students',
                 presentFN: widget.presentStudentFN,
                 presentAN: widget.presentStudentAN,
-                isClassShown: true,
-                classIds: widget.classIds,
+                isClassShown: false,
+                classIds: [],
                 schoolId: widget.schoolId,
               ),
             ],

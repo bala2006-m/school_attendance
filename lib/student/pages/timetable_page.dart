@@ -16,7 +16,8 @@ class TimeTablePage extends StatefulWidget {
   const TimeTablePage({
     super.key,
     required this.schoolId,
-    required this.classId, required this.username,
+    required this.classId,
+    required this.username,
   });
 
   @override
@@ -73,23 +74,26 @@ class _TimeTablePageState extends State<TimeTablePage> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isMobile ? 190 : 60),
         child:
-        isMobile
-            ? StudentAppbarMobile(
-          title: 'Student Attendance',enableDrawer: false,enableBack: true,onBack: () {
-          StudentDashboardState.selectedIndex = 1;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => StudentDashboard(
-                username: widget.username,
-              ),
-            ),
-          );
-        },
-
-        )
-            : const StudentAppbarDesktop(title: 'Student Attendance'),
+            isMobile
+                ? StudentAppbarMobile(
+                  title: 'Weekly TimeTable',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 1;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
+                      ),
+                    );
+                  },
+                )
+                : const StudentAppbarDesktop(title: 'Weekly TimeTable'),
       ),
       body:
           isLoading

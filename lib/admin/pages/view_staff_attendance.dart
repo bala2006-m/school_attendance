@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 
 import '../../services/api_service.dart';
@@ -27,12 +28,15 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
   final GlobalKey _attendanceKey = GlobalKey();
 
   List<Map<String, dynamic>> staff = [];
+  List<Map<String, dynamic>> filteredStaff = []; // ✅ for search results
   List<Map<String, dynamic>> attendance = [];
   List<Map<String, dynamic>> holidayList = [];
   bool isLoading = false;
   bool enableAttendance = false;
   String userName = '';
   String? selectedUsername;
+
+  final TextEditingController _searchController = TextEditingController(); // ✅
 
   @override
   void initState() {
@@ -42,14 +46,33 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
 
   Future<void> init() async {
     staff = await AdminApiService.fetchStaffData(widget.school_id);
-    //print(staff);
+
     staff.sort(
       (a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo(
         (b['name'] ?? '').toString().toLowerCase(),
       ),
     );
 
+    filteredStaff = staff; // ✅ initially show all staff
     setState(() {});
+  }
+
+  /// ✅ Search logic
+  void _filterStaff(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredStaff = staff;
+      } else {
+        filteredStaff =
+            staff.where((member) {
+              final name = (member['name'] ?? '').toString().toLowerCase();
+              final mobile = (member['mobile'] ?? '').toString().toLowerCase();
+              final search = query.toLowerCase();
+
+              return name.contains(search) || mobile.contains(search);
+            }).toList();
+      }
+    });
   }
 
   Future<void> fetchAttendanceData(String username) async {
@@ -118,6 +141,8 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.school_id,
+                    username: widget.username,
                     title: 'View Staff Attendance',
                     enableDrawer: false,
                     enableBack: true,
@@ -151,7 +176,25 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                   ),
                   const SizedBox(height: 16),
 
-                  /// Grid of Staff Cards
+                  /// ✅ Search Bar
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search by name or mobile",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                      ),
+                    ),
+                    onChanged: _filterStaff,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// Grid of Staff Cards (filtered)
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -161,9 +204,9 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                       mainAxisSpacing: 12,
                       childAspectRatio: 2.6,
                     ),
-                    itemCount: staff.length,
+                    itemCount: filteredStaff.length,
                     itemBuilder: (context, index) {
-                      final member = staff[index];
+                      final member = filteredStaff[index];
                       final name = member['name'] ?? 'Unknown';
                       final username = member['username'] ?? 'Unknown';
                       final mobile = member['mobile'] ?? '';
@@ -232,11 +275,6 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                                     ),
                                   ],
                                 ),
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.green,
-                                  ),
                               ],
                             ),
                           ),
@@ -249,9 +287,12 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
 
                   /// Attendance section
                   if (isLoading && !enableAttendance)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: CircularProgressIndicator(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: SpinKitFadingCircle(
+                        color: Colors.blueAccent,
+                        size: 60.0,
+                      ),
                     )
                   else if (enableAttendance && attendance.isEmpty)
                     Card(

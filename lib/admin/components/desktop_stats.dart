@@ -149,7 +149,7 @@ class _DesktopStatsState extends State<DesktopStats> {
                           ],
                         )
                         : const Text(
-                          'No classes found',
+                          'No classes Permitted',
                           style: TextStyle(color: Colors.grey),
                         ),
               ),

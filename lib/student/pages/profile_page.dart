@@ -5,10 +5,15 @@ import '../Appbar/student_appbar_desktop.dart';
 import '../Appbar/student_appbar_mobile.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key, required this.userData, required this.username});
+  const ProfilePage({
+    super.key,
+    required this.userData,
+    required this.username,
+    required this.schoolId,
+  });
   final Map<String, dynamic> userData;
   final String username;
-
+  final int schoolId;
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -25,23 +30,25 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isMobile ? 190 : 60),
         child:
-        isMobile
-            ? StudentAppbarMobile(
-          title: 'Student Attendance', enableDrawer: false,enableBack: true,onBack: () {
-          StudentDashboardState.selectedIndex = 1;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => StudentDashboard(
-                username: widget.username,
-              ),
-            ),
-          );
-        },
-
-        )
-            : const StudentAppbarDesktop(title: 'Student Attendance'),
+            isMobile
+                ? StudentAppbarMobile(
+                  title: ' Profile',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: widget.schoolId,
+                            ),
+                      ),
+                    );
+                  },
+                )
+                : const StudentAppbarDesktop(title: 'Profile'),
       ),
       body: SingleChildScrollView(
         child: Padding(

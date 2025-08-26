@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
 import '../../teacher/color/teacher_custom_color.dart' as AdminCustomColor;
+import '../pages/admin_dashboard.dart';
 import '../pages/edit_profile.dart';
 import '../pages/profile.dart';
 
@@ -120,6 +121,18 @@ class AdminDesktopDrawer extends StatelessWidget {
                         schoolName: schoolName,
                         schoolAddress: schoolAddress,
                         schoolId: schoolId,
+                        onBack: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => AdminDashboard(
+                                    schoolId: schoolId,
+                                    username: username,
+                                  ),
+                            ),
+                          );
+                        },
                       ),
                 ),
               );

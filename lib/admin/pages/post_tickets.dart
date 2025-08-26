@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../../services/api_service.dart';
 import '../appbar/admin_appbar_desktop.dart';
 import '../appbar/admin_appbar_mobile.dart';
+import '../services/admin_api_service.dart';
 import 'admin_dashboard.dart';
 
 class PostTickets extends StatefulWidget {
@@ -11,43 +13,114 @@ class PostTickets extends StatefulWidget {
     required this.schoolId,
     required this.username,
   });
+
   final String schoolId;
   final String username;
+
   @override
   State<PostTickets> createState() => _PostTicketsState();
 }
 
 class _PostTicketsState extends State<PostTickets> {
+  String adminName = '';
+  String email = '';
+  Map<String, dynamic>? adminData;
+  List<Map<String, dynamic>>? schoolData;
+
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _ticketsController = TextEditingController();
-  final _schoolIdController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isFormValid = false;
+
   final _apiService = ApiService();
 
-  Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+  @override
+  void initState() {
+    super.initState();
+    initializeInitialData();
+    _ticketsController.addListener(_validateForm);
+  }
 
+  @override
+  void dispose() {
+    _ticketsController.removeListener(_validateForm);
+    _ticketsController.dispose();
+    super.dispose();
+  }
+
+  void _validateForm() {
+    final text = _ticketsController.text.trim();
+    final isValid = text.isNotEmpty && text.length >= 5;
+    if (_isFormValid != isValid) {
+      setState(() => _isFormValid = isValid);
+    }
+  }
+
+  Future<void> initializeInitialData() async {
+    setState(() => _isLoading = true);
+    try {
+      final responses = await Future.wait([
+        AdminApiService.fetchAdminData(
+          username: widget.username,
+          schoolId: widget.schoolId,
+        ),
+        ApiService.fetchSchoolData(widget.schoolId),
+      ]);
+
+      if (responses[0] is Map<String, dynamic>) {
+        adminData = responses[0] as Map<String, dynamic>;
+        adminName = adminData?['name'] ?? '';
+        email = adminData?['email'] ?? '';
+      }
+
+      if (responses[1] is List) {
+        schoolData = List<Map<String, dynamic>>.from(responses[1] as List);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to load initial data. Please try again."),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isLoading = true);
       try {
-        final result = await _apiService.storeTickets(
-          username: _usernameController.text,
-          name: _nameController.text,
-          email: _emailController.text,
-          tickets: int.parse(_ticketsController.text),
-          schoolId: _schoolIdController.text,
+        await _apiService.storeTickets(
+          username: widget.username,
+          name: adminName,
+          email: email,
+          tickets: _ticketsController.text,
+          schoolId: int.parse(widget.schoolId),
         );
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Success: ${result['status']}")));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Ticket submitted successfully"),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _ticketsController.clear();
+        }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Error: $e"),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       } finally {
         setState(() => _isLoading = false);
       }
@@ -81,7 +154,9 @@ class _PostTicketsState extends State<PostTickets> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    title: 'View Feedback',
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Post Ticket',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -98,56 +173,100 @@ class _PostTicketsState extends State<PostTickets> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Feedback'),
+                  : const AdminAppbarDesktop(title: 'Post Ticket'),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(labelText: "Username"),
-                  validator: (v) => v!.isEmpty ? "Enter username" : null,
-                ),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: "Name"),
-                  validator: (v) => v!.isEmpty ? "Enter name" : null,
-                ),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: "Email"),
-                  keyboardType: TextInputType.emailAddress,
-                  validator:
-                      (v) =>
-                          v!.isEmpty || !v.contains('@')
-                              ? "Enter valid email"
-                              : null,
-                ),
-                TextFormField(
-                  controller: _ticketsController,
-                  decoration: const InputDecoration(labelText: "Tickets"),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? "Enter ticket count" : null,
-                ),
-                TextFormField(
-                  controller: _schoolIdController,
-                  decoration: const InputDecoration(labelText: "School ID"),
-                  validator: (v) => v!.isEmpty ? "Enter school ID" : null,
-                ),
-                const SizedBox(height: 20),
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text("Submit"),
+        body:
+            _isLoading
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
+                : SingleChildScrollView(
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 600),
+                      padding: const EdgeInsets.all(24.0),
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Icon(
+                              Icons.support_agent,
+                              size: 60,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Submit a Support Ticket',
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Describe the issue you are facing, and our support team will get back to you.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 24),
+                            TextFormField(
+                              controller: _ticketsController,
+                              decoration: InputDecoration(
+                                labelText: "Describe the issue",
+                                alignLabelWithHint: true,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                prefixIcon: const Icon(Icons.edit_note),
+                              ),
+                              maxLines: 5,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return "Please describe the issue";
+                                }
+                                if (value.trim().length < 5) {
+                                  return "Please provide more details";
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.send),
+                              label:
+                                  _isLoading
+                                      ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: SpinKitFadingCircle(
+                                          color: Colors.blueAccent,
+                                          size: 60.0,
+                                        ),
+                                      )
+                                      : const Text("Submit Ticket"),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                textStyle: const TextStyle(fontSize: 16),
+                                backgroundColor:
+                                    _isFormValid ? Colors.blue : Colors.grey,
+                              ),
+                              onPressed:
+                                  (_isFormValid && !_isLoading)
+                                      ? _submit
+                                      : null,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-              ],
-            ),
-          ),
-        ),
+                  ),
+                ),
       ),
     );
   }

@@ -1,14 +1,28 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
+import '../pages/change_password.dart';
 import '../pages/edit_profile_screen.dart';
 import '../pages/staff_profile_screen.dart';
 
 class MobileDrawer extends StatelessWidget {
-  const MobileDrawer({super.key, required this.name, required this.username, this.photo, this.schoolName, this.schoolAddress, this.mobile, this.email, this.classId, this.schoolId});
-
+  const MobileDrawer({
+    super.key,
+    required this.name,
+    required this.username,
+    this.photo,
+    this.schoolName,
+    this.schoolAddress,
+    this.mobile,
+    this.email,
+    this.classId,
+    this.schoolId,
+    required this.submit,
+  });
+  final VoidCallback submit;
   final String name;
   final String username;
   final Uint8List? photo;
@@ -23,14 +37,14 @@ class MobileDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-
       shape: const RoundedRectangleBorder(
         side: BorderSide(color: Colors.black12, width: 6),
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
-      ),width: MediaQuery.sizeOf(context).width / 1.5,
+      ),
+      width: MediaQuery.sizeOf(context).width / 1.5,
       child: Column(
         children: [
           DrawerHeader(
@@ -44,13 +58,18 @@ class MobileDrawer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  photo != null
-                      ? CircleAvatar(radius: 30, backgroundImage: MemoryImage(photo!))
-                      : const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: Colors.grey),
-                  ),
+                  photo!.isNotEmpty
+                      ? CircleAvatar(
+                        radius: 30,
+                        backgroundImage: MemoryImage(photo!),
+                      )
+                      : CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(
+                          'https://siscomsystems.com/mpng.png',
+                        ),
+                      ),
                   const SizedBox(height: 12),
                   Text(
                     'Welcome, $name',
@@ -74,20 +93,45 @@ class MobileDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder:
-                      (_) => StaffProfileScreen(username: username),
+                      (_) => StaffProfileScreen(
+                        username: username,
+                        schoolId: int.parse('$schoolId'),
+                      ),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.edit),
+            leading: const Icon(Icons.edit_note),
             title: const Text('Edit Profile'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => EditProfileScreen(username: username),
+                  builder:
+                      (_) => EditProfileScreen(
+                        username: username,
+                        submit: submit,
+                        schoolId: int.parse('$schoolId'),
+                      ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Change Password'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => EditPassword(
+                        username: username,
+                        schoolId: int.parse('$schoolId'),
+                      ),
                 ),
               );
             },
@@ -141,7 +185,15 @@ class MobileDrawer extends StatelessWidget {
                               await prefs.remove('role');
                               await prefs.remove('username');
                               await prefs.remove('rememberMe');
-
+                              await prefs.remove('schoolId');
+                              await prefs.remove('rememberMe');
+                              await prefs.remove('staffName');
+                              await prefs.remove('staffUsername');
+                              await prefs.remove('staffPhoto');
+                              await prefs.remove('schoolName');
+                              await prefs.remove('schoolAddress');
+                              await prefs.remove('schoolPhoto');
+                              await prefs.clear();
                               Navigator.pushAndRemoveUntil(
                                 rootContext,
                                 MaterialPageRoute(

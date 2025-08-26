@@ -25,8 +25,9 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
   DateTime selectedDate = DateTime.now();
   Map<String, String> fnStatus = {};
   Map<String, String> anStatus = {};
-  List<String> absentsList = [];
-  List<String> absentsMobile = [];
+  Map<String, Map<String, String>> userDetails = {}; // ✅ holds name+mobile
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +35,10 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
   }
 
   Future<void> init() async {
+    setState(() {
+      isLoading = true;
+    });
+
     final String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
     final fn = await ApiService.fetchTodayAttendance(
       formattedDate,
@@ -56,13 +61,16 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
       ...anAbsentees.map((e) => e.key),
     };
 
-    Map<String, Map<String, String>> userDetails = {};
+    Map<String, Map<String, String>> fetchedDetails = {};
     for (var username in uniqueUsernames) {
-      final data = await TeacherApiServices.fetchStaffDataUsername(username);
-      if (data != null && data['name'] != null && data['mobile'] != null) {
-        userDetails[username] = {
-          'name': data['name'],
-          'mobile': data['mobile'],
+      final data = await TeacherApiServices.fetchStaffDataUsername(
+        username: username,
+        schoolId: int.parse(widget.schoolId),
+      );
+      if (data != null) {
+        fetchedDetails[username] = {
+          'name': data['name'] ?? username,
+          'mobile': data['mobile'] ?? '',
         };
       } else {
         debugPrint('Missing data for $username: $data');
@@ -72,10 +80,8 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
     setState(() {
       fnStatus = fn;
       anStatus = an;
-      absentsList =
-          userDetails.entries.map((e) => e.value['name'] ?? e.key).toList();
-      absentsMobile =
-          userDetails.entries.map((e) => e.value['mobile'] ?? '').toList();
+      userDetails = fetchedDetails;
+      isLoading = false;
     });
   }
 
@@ -109,18 +115,6 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
       await init();
     }
   }
-
-  // Future<void> loop1(List<MapEntry<String, String>> absentees) async {
-  //   for (var absent in absentees) {
-  //     final data = await TeacherApiServices.fetchStaffDataUsername(absent.key);
-  //     final name = data?['name'];
-  //     final designation = data?['mobile'];
-  //     setState(() {
-  //       absentsList.add(name);
-  //       absentsDesg.add(designation);
-  //     });
-  //   }
-  // }
 
   Widget buildAbsenteeCard(
     String title,
@@ -187,13 +181,14 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                 itemCount: absentees.length,
                 itemBuilder: (context, index) {
                   final entry = absentees[index];
-                  final nameIndex = absentsList.indexWhere(
-                    (name) => name == entry.key || name.contains(entry.key),
-                  );
+                  final details = userDetails[entry.key] ?? {};
+                  final name = details['name'] ?? entry.key;
+                  final mobile = details['mobile'] ?? '';
+
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(absentsList[index]),
-                    subtitle: Text(absentsMobile[index]),
+                    title: Text(name),
+                    subtitle: Text(mobile),
                     leading: const Icon(Icons.person_off, color: Colors.red),
                   );
                 },
@@ -217,6 +212,8 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Staff Absentees',
                     enableDrawer: false,
                     enableBack: true,
@@ -236,93 +233,102 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                   )
                   : const AdminAppbarDesktop(title: 'Staff Absentees'),
         ),
-        body: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 4),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => _selectDate(context),
-                    icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                    label: const Text('Change Date'),
-                    style: ElevatedButton.styleFrom(
+        body:
+            isLoading
+                ? const Center(child: CircularProgressIndicator()) // ✅ Loader
+                : Column(
+                  children: [
+                    Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        vertical: 16,
+                        horizontal: 20,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 4),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _selectDate(context),
+                            icon: const Icon(
+                              Icons.calendar_today_outlined,
+                              size: 20,
+                            ),
+                            label: const Text('Change Date'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            if (constraints.maxWidth < 700) {
+                              return Column(
+                                children: [
+                                  buildAbsenteeCard(
+                                    'FN - Absentees',
+                                    fnStatus,
+                                    Colors.deepPurple,
+                                  ),
+                                  buildAbsenteeCard(
+                                    'AN - Absentees',
+                                    anStatus,
+                                    Colors.orange,
+                                  ),
+                                ],
+                              );
+                            } else {
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: buildAbsenteeCard(
+                                      'FN - Absentees',
+                                      fnStatus,
+                                      Colors.deepPurple,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: buildAbsenteeCard(
+                                      'AN - Absentees',
+                                      anStatus,
+                                      Colors.orange,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth < 700) {
-                      return Column(
-                        children: [
-                          buildAbsenteeCard(
-                            'FN - Absentees',
-                            fnStatus,
-                            Colors.deepPurple,
-                          ),
-                          buildAbsenteeCard(
-                            'AN - Absentees',
-                            anStatus,
-                            Colors.orange,
-                          ),
-                        ],
-                      );
-                    } else {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: buildAbsenteeCard(
-                              'FN - Absentees',
-                              fnStatus,
-                              Colors.deepPurple,
-                            ),
-                          ),
-                          Expanded(
-                            child: buildAbsenteeCard(
-                              'AN - Absentees',
-                              anStatus,
-                              Colors.orange,
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

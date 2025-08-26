@@ -1,16 +1,13 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 import '../services/admin_api_service.dart';
 
 class AdminRegistrationMobile extends StatefulWidget {
-  final TextEditingController usernameController;
   final TextEditingController passwordController;
   final TextEditingController designationController;
   final TextEditingController mobileController;
   final TextEditingController countryCodeController;
-  final FocusNode usernameFocus;
   final FocusNode passwordFocus;
   final FocusNode mobileFocus;
   final FocusNode countryCodeFocus;
@@ -20,12 +17,10 @@ class AdminRegistrationMobile extends StatefulWidget {
 
   const AdminRegistrationMobile({
     super.key,
-    required this.usernameController,
     required this.passwordController,
     required this.designationController,
     required this.mobileController,
     required this.countryCodeController,
-    required this.usernameFocus,
     required this.passwordFocus,
     required this.mobileFocus,
     required this.countryCodeFocus,
@@ -45,16 +40,22 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
   List<dynamic> staffs = [];
   List<dynamic> students = [];
   List<dynamic> administrators = [];
-  bool fillUsername = false;
   bool fillPass = false;
   bool fillMobile = false;
   bool fillCountry = true;
   bool obscureText = true;
 
+  /// Error messages per field
+  Map<String, String?> fieldErrors = {
+    'Mobile Number': null,
+    'Password': null,
+    'Country Code': null,
+  };
+
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.usernameFocus.requestFocus();
+      widget.mobileFocus.requestFocus();
     });
     super.initState();
     init();
@@ -62,14 +63,31 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
 
   Future<void> init() async {
     try {
-      admins = await ApiService.getUsersByRole('admin');
-      staffs = await ApiService.getUsersByRole('staff');
-      students = await ApiService.getUsersByRole('student');
-      administrators = await ApiService.getUsersByRole('administrator');
+      admins = await ApiService.getUsersByRole(
+        role: 'admin',
+        schoolId: int.parse(widget.schoolId),
+      );
+      staffs = await ApiService.getUsersByRole(
+        role: 'staff',
+        schoolId: int.parse(widget.schoolId),
+      );
+      students = await ApiService.getUsersByRole(
+        role: 'student',
+        schoolId: int.parse(widget.schoolId),
+      );
+      administrators = await ApiService.getUsersByRole(
+        role: 'administrator',
+        schoolId: int.parse(widget.schoolId),
+      );
 
       List<Future<Map<String, dynamic>?>> futures =
           admins
-              .map((user) => AdminApiService.fetchAdminData(user['username']))
+              .map(
+                (user) => AdminApiService.fetchAdminData(
+                  username: user['username'],
+                  schoolId: widget.schoolId,
+                ),
+              )
               .toList();
 
       List<Map<String, dynamic>?> results = await Future.wait(futures);
@@ -81,26 +99,14 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
         }
       }
     } catch (e) {
-      showSnackBar('Failed to load admin data', isError: true);
+      debugPrint('Failed to load admin data: $e');
     }
-  }
-
-  void showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : CupertinoColors.systemGreen,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     bool isFiled =
-        fillUsername &&
-        fillPass &&
-        fillMobile &&
-        widget.countryCodeController.text.isNotEmpty;
+        fillPass && fillMobile && widget.countryCodeController.text.isNotEmpty;
 
     return Center(
       child: SingleChildScrollView(
@@ -125,11 +131,29 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      buildAnimatedField(
-                        label: 'Username',
-                        controller: widget.usernameController,
-                        focusNode: widget.usernameFocus,
-                        onFocus: () {},
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: buildAnimatedField(
+                              label: widget.isMobile ? 'Code' : 'Country Code',
+                              controller: widget.countryCodeController,
+                              focusNode: widget.countryCodeFocus,
+                              keyboardType: TextInputType.phone,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 5,
+                            child: buildAnimatedField(
+                              label: 'Mobile Number',
+                              controller: widget.mobileController,
+                              focusNode: widget.mobileFocus,
+                              keyboardType: TextInputType.phone,
+                              isMobileNumber: true,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       buildAnimatedField(
@@ -144,34 +168,6 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                             obscureText = !obscureText;
                           });
                         },
-                        onFocus: () {},
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: buildAnimatedField(
-                              label: widget.isMobile ? 'Code' : 'Country Code',
-                              controller: widget.countryCodeController,
-                              focusNode: widget.countryCodeFocus,
-                              keyboardType: TextInputType.phone,
-                              onFocus: () {},
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 5,
-                            child: buildAnimatedField(
-                              label: 'Mobile Number',
-                              controller: widget.mobileController,
-                              focusNode: widget.mobileFocus,
-                              keyboardType: TextInputType.phone,
-                              isMobileNumber: true,
-                              onFocus: () {},
-                            ),
-                          ),
-                        ],
                       ),
                       const SizedBox(height: 16),
                       submitButton(isFiled),
@@ -197,15 +193,15 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
       onPressed:
           isFiled
               ? () async {
-                final username = widget.usernameController.text.trim();
+                final username = widget.mobileController.text.trim();
                 final password = widget.passwordController.text.trim();
                 final designation = widget.designationController.text.trim();
 
                 if (password.length < 6) {
-                  showSnackBar(
-                    'Password must be at least 6 characters',
-                    isError: true,
-                  );
+                  setState(() {
+                    fieldErrors['Password'] =
+                        'Password must be at least 6 characters';
+                  });
                   return;
                 }
 
@@ -219,10 +215,10 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                 if (!RegExp(
                   r'^\+\d{1,3}\d{4,14}$',
                 ).hasMatch(fullMobileNumber)) {
-                  showSnackBar(
-                    'Invalid mobile number format. Include a valid country code (e.g., +91).',
-                    isError: true,
-                  );
+                  setState(() {
+                    fieldErrors['Mobile Number'] =
+                        'Invalid mobile number format. Include a valid country code (e.g., +91).';
+                  });
                   return;
                 }
 
@@ -232,7 +228,7 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                   role: 'admin',
                   school_id: widget.schoolId,
                 );
-                print(result);
+
                 final res = await ApiService.registerUserDesignation(
                   username: username,
                   designation: designation,
@@ -240,23 +236,29 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                   mobile: fullMobileNumber,
                   table: 'admin',
                 );
-                print(res);
+
                 if (result['success'] && res['success']) {
-                  showSnackBar(result['message']);
-                  widget.usernameController.clear();
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(result['message'])));
                   widget.passwordController.clear();
                   widget.mobileController.clear();
-                  FocusScope.of(context).requestFocus(widget.usernameFocus);
+                  FocusScope.of(context).requestFocus(widget.mobileFocus);
                   init();
                   setState(() {
-                    fillUsername = false;
                     fillPass = false;
                     fillMobile = false;
                     fillCountry = true;
+                    fieldErrors.updateAll((key, value) => null);
                   });
                   widget.onRegistered();
                 } else {
-                  showSnackBar('Error: ${result['error']}', isError: true);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${result['error']}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
               }
               : null,
@@ -274,106 +276,141 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
     TextInputType? keyboardType,
     bool isMobileNumber = false,
     String hintText = '',
-    required void Function() onFocus,
   }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: focusNode.hasFocus ? Colors.blue : Colors.grey.shade400,
-          width: focusNode.hasFocus ? 2 : 1,
-        ),
-        boxShadow:
-            focusNode.hasFocus
-                ? [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+    final hasError = fieldErrors[label] != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color:
+                  hasError
+                      ? Colors.red
+                      : (focusNode.hasFocus
+                          ? Colors.blue
+                          : Colors.grey.shade400),
+              width: focusNode.hasFocus ? 2 : 1,
+            ),
+            boxShadow:
+                focusNode.hasFocus
+                    ? [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : [],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  onChanged: (val) {
+                    final trimmedVal = val.trim();
+
+                    if (label == 'Mobile Number') {
+                      bool exists =
+                          admins.any(
+                            (user) => user['username'] == trimmedVal,
+                          ) ||
+                          staffs.any(
+                            (user) => user['username'] == trimmedVal,
+                          ) ||
+                          students.any(
+                            (user) => user['username'] == trimmedVal,
+                          ) ||
+                          administrators.any(
+                            (user) => user['username'] == trimmedVal,
+                          );
+
+                      if (exists) {
+                        fieldErrors[label] = 'Mobile number already exists';
+                        fillMobile = false;
+                      } else if (trimmedVal.length != 10) {
+                        fieldErrors[label] = 'Enter a valid 10-digit number';
+                        fillMobile = false;
+                      } else {
+                        String country =
+                            widget.countryCodeController.text.trim();
+                        if (!country.startsWith('+')) country = '+$country';
+                        String full = '$country$trimmedVal';
+                        if (adminMobiles.contains(full)) {
+                          fieldErrors[label] = 'Mobile number already exists';
+                          fillMobile = false;
+                        } else {
+                          fieldErrors[label] = null;
+                          fillMobile = true;
+                        }
+                      }
+                    }
+
+                    if (label == 'Password') {
+                      if (trimmedVal.length < 6) {
+                        fieldErrors[label] =
+                            'Password must be at least 6 characters';
+                        fillPass = false;
+                      } else {
+                        fieldErrors[label] = null;
+                        fillPass = true;
+                      }
+                    }
+
+                    if (label == 'Country Code' || label == 'Code') {
+                      if (trimmedVal.isEmpty) {
+                        fieldErrors['Country Code'] =
+                            'Country code cannot be empty';
+                        fillCountry = false;
+                      } else {
+                        fieldErrors['Country Code'] = null;
+                        fillCountry = true;
+                      }
+                    }
+
+                    setState(() {});
+                  },
+                  maxLength: isMobileNumber ? 10 : 50,
+                  controller: controller,
+                  focusNode: focusNode,
+                  obscureText: isPassword && obscureText,
+                  keyboardType: keyboardType,
+                  decoration: InputDecoration(
+                    labelText: label,
+                    hintText: hintText.isNotEmpty ? hintText : null,
+                    counterText: '',
+                    border: InputBorder.none,
+                    labelStyle: const TextStyle(fontSize: 18),
                   ),
-                ]
-                : [],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              onTap: onFocus,
-              onChanged: (val) {
-                final trimmedVal = val.trim();
-                if (label == 'Username') {
-                  bool exists =
-                      admins.any((user) => user['username'] == trimmedVal) ||
-                      staffs.any((user) => user['username'] == trimmedVal) ||
-                      students.any((user) => user['username'] == trimmedVal) ||
-                      administrators.any(
-                        (user) => user['username'] == trimmedVal,
-                      );
-                  if (exists) {
-                    showSnackBar('Username already exists', isError: true);
-                    fillUsername = false;
-                  } else {
-                    fillUsername = trimmedVal.isNotEmpty;
-                  }
-                }
-
-                if (label == 'Password') {
-                  fillPass = trimmedVal.length >= 6;
-                }
-
-                if (label == 'Mobile Number') {
-                  fillMobile = trimmedVal.length == 10;
-                  String country = widget.countryCodeController.text.trim();
-                  if (!country.startsWith('+')) {
-                    country = '+$country';
-                  }
-                  String full = '$country$trimmedVal';
-
-                  if (adminMobiles.contains(full)) {
-                    showSnackBar('Mobile number already exists', isError: true);
-                    fillMobile = false;
-                  }
-                }
-
-                if (label == 'Country Code' || label == 'Code') {
-                  fillCountry = trimmedVal.isNotEmpty;
-                }
-
-                setState(() {});
-              },
-
-              maxLength: isMobileNumber ? 10 : 50,
-              controller: controller,
-              focusNode: focusNode,
-              obscureText: isPassword && obscureText,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(
-                labelText: label,
-                hint: Text(
-                  hintText,
-                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                  style: const TextStyle(fontSize: 18),
                 ),
-                counterText: '',
-                border: InputBorder.none,
-                labelStyle: const TextStyle(fontSize: 18),
               ),
-              style: const TextStyle(fontSize: 18),
+              if (isPassword)
+                IconButton(
+                  icon: Icon(
+                    obscureText ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                    size: 24,
+                  ),
+                  onPressed: toggleObscure,
+                ),
+            ],
+          ),
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              fieldErrors[label] ?? '',
+              style: const TextStyle(color: Colors.red, fontSize: 14),
             ),
           ),
-          if (isPassword)
-            IconButton(
-              icon: Icon(
-                obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
-                size: 24,
-              ),
-              onPressed: toggleObscure,
-            ),
-        ],
-      ),
+      ],
     );
   }
 }

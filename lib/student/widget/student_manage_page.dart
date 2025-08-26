@@ -29,10 +29,7 @@ class StudentManagePage extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(10.0),
-            child: BuildProfileCard(
-              schoolAddress: schoolAddress,
-              schoolName: schoolName,
-            ),
+            child: BuildProfileCard(),
           ),
           SizedBox(height: 20),
           Container(

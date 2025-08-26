@@ -3,6 +3,7 @@ import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
+import '../../services/api_service.dart';
 import '../appbar/mobile_appbar.dart';
 import '../widget/desktop_class_list.dart';
 import '../widget/mobile_class_list.dart';
@@ -19,6 +20,8 @@ class ClassList extends StatefulWidget {
 class _ClassListState extends State<ClassList> {
   List<dynamic> classList = [];
   bool isLoading = true;
+  Map<String, bool> attendanceStatusMapFn = {};
+  Map<String, bool> attendanceStatusMapAn = {};
 
   @override
   void initState() {
@@ -26,15 +29,54 @@ class _ClassListState extends State<ClassList> {
     init();
   }
 
+  Future<void> fetchAttendanceStatusForAll() async {
+    final today = DateTime.now();
+    final currentDate =
+        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+    await Future.wait(
+      classList.map((cls) async {
+        final classId = cls['id'].toString();
+        final result = await ApiService.checkAttendanceStatusSession(
+          widget.schoolId,
+          classId,
+          currentDate,
+          'FN',
+        );
+
+        setState(() {
+          attendanceStatusMapFn[classId] = result ?? false;
+        });
+      }),
+    );
+    await Future.wait(
+      classList.map((cls) async {
+        final classId = cls['id'].toString();
+        final result = await ApiService.checkAttendanceStatusSession(
+          widget.schoolId,
+          classId,
+          currentDate,
+          'AN',
+        );
+
+        setState(() {
+          attendanceStatusMapAn[classId] = result ?? false;
+        });
+      }),
+    );
+  }
+
   Future<void> init() async {
     final fetchedClassList = await TeacherApiServices.fetchClassData(
       widget.schoolId,
     );
+
     setState(() {
-      classList = fetchedClassList ?? [];
+      classList = fetchedClassList;
 
       isLoading = false;
     });
+    fetchAttendanceStatusForAll();
   }
 
   @override
@@ -55,8 +97,10 @@ class _ClassListState extends State<ClassList> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
-                                StaffDashboard(username: widget.username),
+                            (context) => StaffDashboard(
+                              username: widget.username,
+                              schoolId: widget.schoolId,
+                            ),
                       ),
                     );
                   },
@@ -72,6 +116,8 @@ class _ClassListState extends State<ClassList> {
                 username: widget.username,
               )
               : MobileClassList(
+                attendanceStatusMapFN: attendanceStatusMapFn,
+                attendanceStatusMapAN: attendanceStatusMapAn,
                 username: widget.username,
                 classList: classList,
                 schoolId: widget.schoolId,

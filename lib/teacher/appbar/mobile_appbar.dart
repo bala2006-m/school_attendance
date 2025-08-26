@@ -5,9 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../admin/color/admin_custom_color.dart';
-
-
 class MobileAppbar extends StatefulWidget {
   const MobileAppbar({
     super.key,
@@ -31,7 +28,7 @@ class _MobileAppbarState extends State<MobileAppbar> {
   ImageProvider? staffPhoto;
 
   final ImageProvider defaultImage = const NetworkImage(
-    'https://th.bing.com/th?q=Admin+Icon.png&w=120&h=120&c=1&rs=1&qlt=70&r=0&o=7&cb=1&pid=InlineBlock&rm=3&mkt=en-IN&cc=IN&setlang=en&adlt=moderate&t=1&mw=247',
+    'https://siscomsystems.com/mpng.png',
   );
 
   @override
@@ -46,16 +43,16 @@ class _MobileAppbarState extends State<MobileAppbar> {
     final photoBase64 = prefs.getString('staffPhoto');
     setState(() {
       username =
-      (storedUsername!.length < 15
-          ? storedUsername
-          : '${storedUsername.substring(0, 15)}...');
+          (storedUsername!.length < 15
+              ? storedUsername
+              : '${storedUsername.substring(0, 15)}...');
       if (photoBase64 != null && photoBase64.isNotEmpty) {
         try {
           Uint8List bytes = base64Decode(photoBase64);
           staffPhoto = MemoryImage(bytes);
         } catch (e) {
           debugPrint('Failed to decode base64 image: $e');
-         staffPhoto = null;
+          staffPhoto = null;
         }
       }
     });
@@ -88,19 +85,19 @@ class _MobileAppbarState extends State<MobileAppbar> {
                   child: Builder(
                     builder:
                         (context) => InkWell(
-                      onTap: () async {
-                        if (widget.enableDrawer) {
-                          Scaffold.of(context).openDrawer();
-                        } else if (widget.enableBack) {
-                          widget.onBack();
-                        }
-                      },
-                      child: Icon(
-                        size: 40,
-                        widget.enableDrawer ? Icons.menu : Icons.arrow_back,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
+                          onTap: () async {
+                            if (widget.enableDrawer) {
+                              Scaffold.of(context).openDrawer();
+                            } else if (widget.enableBack) {
+                              widget.onBack();
+                            }
+                          },
+                          child: Icon(
+                            size: 40,
+                            widget.enableDrawer ? Icons.menu : Icons.arrow_back,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
                   ),
                 ),
               const Spacer(),
@@ -125,6 +122,7 @@ class _MobileAppbarState extends State<MobileAppbar> {
               Padding(
                 padding: const EdgeInsets.only(right: 20),
                 child: CircleAvatar(
+                  backgroundColor: Colors.transparent,
                   radius: 30,
                   backgroundImage: staffPhoto ?? defaultImage,
                 ),
@@ -136,7 +134,7 @@ class _MobileAppbarState extends State<MobileAppbar> {
                     username,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 19,
                       color: Colors.white,
                     ),
                   ),

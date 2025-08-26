@@ -28,7 +28,7 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
   ImageProvider? adminPhoto;
 
   final ImageProvider defaultImage = const NetworkImage(
-    'https://th.bing.com/th?q=Admin+Icon.png&w=120&h=120&c=1&rs=1&qlt=70&r=0&o=7&cb=1&pid=InlineBlock&rm=3&mkt=en-IN&cc=IN&setlang=en&adlt=moderate&t=1&mw=247',
+    'https://img.favpng.com/9/16/11/student-cartoon-avatar-png-favpng-T0KuPNVPyfp00uNTwQVK2yk7D.jpg',
   );
 
   @override
@@ -41,7 +41,6 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
     final prefs = await SharedPreferences.getInstance();
     final storedUsername = prefs.getString('studentName');
     final photoJson = prefs.getString('studentPhoto');
-
     setState(() {
       username =
           (storedUsername != null && storedUsername.length < 15)
@@ -49,7 +48,9 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
               : '${storedUsername?.substring(0, 15) ?? 'Student'}...';
     });
 
-    if (photoJson != null && photoJson.isNotEmpty) {
+    if (photoJson != null &&
+        photoJson.isNotEmpty &&
+        photoJson.toString() != '[]') {
       try {
         List<dynamic> byteListDynamic = json.decode(photoJson);
 
@@ -70,7 +71,6 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
   @override
   Widget build(BuildContext context) {
     final formattedDate = DateFormat('MMMM d, y').format(DateTime.now());
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -143,7 +143,7 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
                     username,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 19,
                       color: Colors.white,
                     ),
                   ),

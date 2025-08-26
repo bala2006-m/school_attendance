@@ -55,20 +55,25 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
   @override
   void initState() {
     super.initState();
-
     initStaff();
   }
 
   Future<void> initStaff() async {
     setState(() => isLoading = true);
-    staff = await ApiService.getUsersByRole('staff');
+    staff = await ApiService.getUsersByRole(
+      role: 'staff',
+      schoolId: int.parse(widget.schoolId),
+    );
     staffData.clear();
     List<Future<void>> futures = [];
 
     for (var user in staff) {
       final username = user['username'];
       futures.add(
-        TeacherApiServices.fetchStaffDataUsername(username).then((data) {
+        TeacherApiServices.fetchStaffDataUsername(
+          username: username,
+          schoolId: int.parse(widget.schoolId),
+        ).then((data) {
           staffData[username] = data;
         }),
       );
@@ -168,6 +173,7 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
     final existing = result['alreadyExisting'] ?? <dynamic>[];
     final duplicates = result['duplicates'] ?? <dynamic>[];
     final empty = result['empty'] ?? <dynamic>[];
+    final mismatched = result['mismatched'] ?? <dynamic>[]; // ✅ NEW
     final errors = result['errors'] ?? <dynamic>[];
     final message = result['message'] ?? 'No details provided.';
 
@@ -175,6 +181,7 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
         existing.isEmpty &&
         duplicates.isEmpty &&
         empty.isEmpty &&
+        mismatched.isEmpty &&
         errors.isEmpty) {
       showDialog(
         context: context,
@@ -254,6 +261,22 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
                     ),
                     const SizedBox(height: 12),
                   ],
+                  if (mismatched.isNotEmpty) ...[
+                    // ✅ NEW HANDLING
+                    const Text(
+                      '⚠️ Mismatched School IDs:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    ...mismatched.map<Widget>(
+                      (e) => Text(
+                        'Row ${e['row']}: ${e['username']} - Expected: ${e['expected']}, Found: ${e['found']}',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (errors.isNotEmpty) ...[
                     const Text(
                       '❌ Errors:',
@@ -304,7 +327,9 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    title: 'Bulk Uploads',
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Bulk Upload Staff',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -321,7 +346,7 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Bulk Uploads'),
+                  : const AdminAppbarDesktop(title: 'Bulk Upload Staff'),
         ),
         body:
             isLoading

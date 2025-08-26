@@ -47,7 +47,11 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => StaffDashboard(username: widget.username),
+        builder:
+            (context) => StaffDashboard(
+              username: widget.username,
+              schoolId: widget.schoolId,
+            ),
       ),
     );
     return false;
@@ -74,8 +78,10 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) =>
-                                  StaffDashboard(username: widget.username),
+                              (context) => StaffDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
                         ),
                       );
                     },

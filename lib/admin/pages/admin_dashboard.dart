@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/admin/widget/admin_mobile_drawer.dart';
+import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../administrator/services/administrator_api_service.dart';
 import '../../services/api_service.dart';
 import '../../teacher/services/teacher_api_service.dart';
 import '../appbar/admin_appbar_desktop.dart';
 import '../appbar/admin_appbar_mobile.dart';
 import '../widget/admin_desktop_dashboard.dart';
 import '../widget/admin_mobile_dashboard.dart';
+import './edit_profile.dart';
 
 class AdminDashboard extends StatefulWidget {
   final String schoolId;
@@ -56,15 +59,61 @@ class AdminDashboardState extends State<AdminDashboard> {
   String message = '';
   bool _isLoading = true;
   bool _isAttendanceLoading = true;
-
   bool _hasLoadedOnce = false;
-
+  bool isBlocked = false;
+  String? reason;
   @override
   void initState() {
     super.initState();
     if (!_hasLoadedOnce) {
       initializeInitialData();
+      _checkBlocked(int.parse(widget.schoolId));
     }
+  }
+
+  Future<void> _checkBlocked(int schoolId) async {
+    try {
+      final result = await AdministratorApiService.isSchoolBlocked(schoolId);
+
+      setState(() {
+        isBlocked = result['isBlocked'] ?? false;
+        reason = result['reason'];
+      });
+
+      if (isBlocked) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('School Blocked'),
+                content: Text(reason ?? "This school is blocked."),
+                actions: [
+                  TextButton(
+                    onPressed: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+
+                      await prefs.clear();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error: $e");
+      setState(() {
+        isBlocked = false;
+      });
+    } finally {}
   }
 
   Future<void> initializeInitialData() async {
@@ -77,14 +126,37 @@ class AdminDashboardState extends State<AdminDashboard> {
 
     try {
       final List responses = await Future.wait([
-        AdminApiService.fetchAdminData(widget.username),
+        AdminApiService.fetchAdminData(
+          username: widget.username,
+          schoolId: widget.schoolId,
+        ),
         ApiService.fetchSchoolData(widget.schoolId),
       ]);
 
       adminData = responses[0] as Map<String, dynamic>?;
+      //print(adminData);
       schoolData = responses[1] as List<Map<String, dynamic>>?;
-
       adminName = adminData?['name'] ?? '';
+      if (adminName == '' || adminName.isEmpty || adminName == 'null') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => EditProfile(
+                  username: widget.username,
+                  schoolName: schoolData?[0]['name'],
+                  schoolAddress: schoolData?[0]['address'],
+                  schoolId: widget.schoolId,
+                  onBack: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => LoginPage()),
+                    );
+                  },
+                ),
+          ),
+        );
+      }
       adminDesignation = adminData?['designation'] ?? '';
       mobile = adminData?['mobile'];
 
@@ -285,6 +357,8 @@ class AdminDashboardState extends State<AdminDashboard> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Admin Dashboard',
                     enableDrawer: true,
                     enableBack: false,

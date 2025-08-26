@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'admin/pages/admin_dashboard.dart';
 import 'login_page.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Permission.manageExternalStorage.isGranted;
@@ -16,7 +18,13 @@ Future<void> main() async {
   bool isLoggedIn = prefs.getBool('rememberMe') ?? false;
   String role = prefs.getString('role') ?? '';
   String username = prefs.getString('username') ?? '';
-  String schoolId = prefs.getString('schoolId') ?? '';
+  String? schoolId = '';
+  if (role == 'administrator') {
+    schoolId = prefs.getInt('schoolId').toString() ?? '';
+  } else {
+    schoolId = prefs.getString('schoolId').toString() ?? '';
+  }
+  int id = int.tryParse(schoolId.toString()) ?? 0;
   // String schoolName = prefs.getString('schoolName') ?? '';
   // String schoolAddress = prefs.getString('schoolAddress') ?? '';
   // Image? adminPhoto = prefs.getString('adminPhoto') as Image;
@@ -24,25 +32,40 @@ Future<void> main() async {
 
   if (isLoggedIn) {
     if (role == 'student') {
-      startPage = StudentDashboard(username: username);
+      startPage = StudentDashboard(username: username, schoolId: id);
     } else if (role == 'staff') {
-      startPage = StaffDashboard(username: username);
-    } else if (role == 'admin') {
-      startPage = AdminDashboard(username: username, schoolId: schoolId);
-    } else if (role == 'administrator') {
-      startPage = AdministratorDashboard(
-        schoolId: '',
-        name: '',
-        address: '',
-        photo: Uint8List(1),
+      startPage = StaffDashboard(
+        username: username,
+        schoolId: schoolId.toString(),
       );
+    } else if (role == 'admin') {
+      startPage = AdminDashboard(
+        username: username,
+        schoolId: schoolId.toString(),
+      );
+    } else if (role == 'administrator') {
+      startPage = AdministratorDashboard(userName: username);
     } else {
       startPage = const LoginPage();
     }
   } else {
     startPage = const LoginPage();
   }
+  // Android init
+  const AndroidInitializationSettings androidInit =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
+  // iOS init
+  const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
+
+  // Combine
+  const InitializationSettings initSettings = InitializationSettings(
+    android: androidInit,
+    iOS: iosInit,
+  );
+
+  // Initialize
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
   runApp(MyApp(startPage: startPage));
 }
 
@@ -53,7 +76,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Admin Panel',
+      title: 'School Attendance',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.pink,

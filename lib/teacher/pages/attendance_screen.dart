@@ -46,11 +46,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   List<Map<String, dynamic>> students = [];
   bool isLoading = true;
   bool isSubmitting = false;
-
+  bool isFnMarked = false;
+  bool isAnMarked = false;
   DateTime selectedDate = DateTime.now();
   bool isFnHoliday = false;
   bool isAnHoliday = false;
   List<Map<String, dynamic>> holidays = [];
+  bool hasChanges = false;
 
   AttendanceSession session =
       DateTime.now().hour < 13 ? AttendanceSession.FN : AttendanceSession.AN;
@@ -66,36 +68,69 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await fetchStatus();
       await fetchHolidays();
 
-      // If both sessions are holiday
+      // Holiday check
       if (isFnHoliday && isAnHoliday) {
         _showHolidayDialog("Both Sessions");
         setState(() {
           isLoading = false;
-          students.clear(); // no list
+          students.clear();
         });
         return;
       }
-
-      // FN holiday and currently FN
       if (session == AttendanceSession.FN && isFnHoliday) {
         _showHolidayDialog("FN");
-        if (!isAnHoliday) {
-          setState(() => session = AttendanceSession.AN);
-        }
+        if (!isAnHoliday) setState(() => session = AttendanceSession.AN);
       }
-
-      // AN holiday and currently AN
       if (session == AttendanceSession.AN && isAnHoliday) {
         _showHolidayDialog("AN");
-        if (!isFnHoliday) {
-          setState(() => session = AttendanceSession.FN);
+        if (!isFnHoliday) setState(() => session = AttendanceSession.FN);
+      }
+
+      // NEW: Check if already marked for current session
+      if ((session == AttendanceSession.FN && isFnMarked) ||
+          (session == AttendanceSession.AN && isAnMarked)) {
+        bool? proceed = await _showAlreadyMarkedDialog();
+        if (proceed != true) {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => ClassList(
+                      username: widget.username,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          }
+          return;
         }
       }
 
       await init();
     });
+  }
+
+  Future<void> fetchStatus() async {
+    isAnMarked =
+        (await ApiService.checkAttendanceStatusSession(
+          widget.schoolId,
+          widget.classId,
+          DateFormat('yyyy-MM-dd').format(selectedDate),
+          'AN',
+        ))!;
+    isFnMarked =
+        (await ApiService.checkAttendanceStatusSession(
+          widget.schoolId,
+          widget.classId,
+          DateFormat('yyyy-MM-dd').format(selectedDate),
+          'FN',
+        ))!;
+    // print(isAnMarked);
+    // print(isFnMarked);
   }
 
   Future<void> fetchHolidays() async {
@@ -118,6 +153,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         break;
       }
     }
+  }
+
+  Future<bool?> _showAlreadyMarkedDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text("Attendance Already Marked"),
+            content: const Text(
+              "Attendance for this session has already been marked. Do you want to update it?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("No"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Yes"),
+              ),
+            ],
+          ),
+    );
   }
 
   void _showHolidayDialog(String sessionLabel) {
@@ -154,6 +212,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
+  List<Map<String, dynamic>> originalStudents = [];
   Future<void> init() async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
@@ -172,7 +231,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       for (var entry in attendance)
         if (entry['username'] != null)
           entry['username']:
-              (entry['fn_status'] ?? AttendanceConstants.absentStatus)
+              (entry['fn_status'] ?? AttendanceConstants.presentStatus)
                   .toString(),
     };
 
@@ -180,9 +239,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       for (var entry in attendance)
         if (entry['username'] != null)
           entry['username']:
-              (entry['an_status'] ?? AttendanceConstants.absentStatus)
+              (entry['an_status'] ?? AttendanceConstants.presentStatus)
                   .toString(),
     };
+
     students =
         studentJsonList
             .where((s) => s['username'] != null && s['name'] != null)
@@ -202,10 +262,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               return {...s, 'fn_status': fnStatus, 'an_status': anStatus};
             })
             .toList();
-
+    originalStudents =
+        students.map((s) => Map<String, dynamic>.from(s)).toList();
     setState(() {
       isLoading = false;
+      hasChanges = false;
     });
+  }
+
+  void _checkForChanges() {
+    bool changed = false;
+    for (int i = 0; i < students.length; i++) {
+      if (students[i][sessionKey] != originalStudents[i][sessionKey]) {
+        changed = true;
+        break;
+      }
+    }
+    setState(() => hasChanges = changed);
   }
 
   bool _isForenoonAllowed() {
@@ -266,7 +339,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             username: id,
             date: formattedDate,
             session: 'FN',
-            status: student['fn_status'] ?? AttendanceConstants.absentStatus,
+            status: student['fn_status'] ?? AttendanceConstants.presentStatus,
             schoolId: widget.schoolId,
             classId: widget.classId,
           ),
@@ -279,7 +352,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             username: id,
             date: formattedDate,
             session: 'AN',
-            status: student['an_status'] ?? AttendanceConstants.absentStatus,
+            status: student['an_status'] ?? AttendanceConstants.presentStatus,
             schoolId: widget.schoolId,
             classId: widget.classId,
           ),
@@ -309,6 +382,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 : AttendanceConstants.absentStatus;
       }
     });
+    _checkForChanges();
   }
 
   void _showSnack(String message, {bool success = false}) {
@@ -426,6 +500,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                         ? AttendanceConstants.absentStatus
                                         : AttendanceConstants.presentStatus;
                               });
+                              _checkForChanges();
                             },
                           ),
                     ),
@@ -433,28 +508,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ],
                 ),
               ),
-
       floatingActionButton:
           (isFnHoliday && isAnHoliday)
               ? null
               : FloatingActionButton.extended(
-                onPressed: () {
-                  if (isSubmitting) return;
-                  if (session == AttendanceSession.FN && !isForenoonAllowed())
-                    return;
-                  if (session == AttendanceSession.AN && !isAfternoonAllowed())
-                    return;
-                  _submitAttendance();
-                },
+                onPressed:
+                    (!hasChanges || isSubmitting)
+                        ? null
+                        : () {
+                          if (session == AttendanceSession.FN &&
+                              !_isForenoonAllowed()) {
+                            return;
+                          }
+                          if (session == AttendanceSession.AN &&
+                              !_isAfternoonAllowed()) {
+                            return;
+                          }
+                          _submitAttendance();
+                        },
                 label: Text(
                   "Submit",
                   style: TextStyle(
                     color:
-                        (isSubmitting ||
-                                (session == AttendanceSession.FN &&
-                                    !isForenoonAllowed()) ||
-                                (session == AttendanceSession.AN &&
-                                    !isAfternoonAllowed()))
+                        (!hasChanges || isSubmitting)
                             ? Colors.black
                             : Colors.white,
                     fontWeight: FontWeight.bold,
@@ -463,22 +539,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 icon: Icon(
                   Icons.save,
                   color:
-                      (isSubmitting ||
-                              (session == AttendanceSession.FN &&
-                                  !isForenoonAllowed()) ||
-                              (session == AttendanceSession.AN &&
-                                  !isAfternoonAllowed()))
+                      (!hasChanges || isSubmitting)
                           ? Colors.black
                           : Colors.white,
                 ),
                 backgroundColor:
-                    (isSubmitting ||
-                            (session == AttendanceSession.FN &&
-                                !isForenoonAllowed()) ||
-                            (session == AttendanceSession.AN &&
-                                !isAfternoonAllowed()))
-                        ? Colors.grey
-                        : Colors.teal,
+                    (!hasChanges || isSubmitting) ? Colors.grey : Colors.teal,
               ),
     );
   }
@@ -625,7 +691,7 @@ class StudentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rawStatus = student[sessionKey];
-    final displayStatus = rawStatus ?? AttendanceConstants.noMarkStatus;
+    final displayStatus = rawStatus ?? AttendanceConstants.presentStatus;
     final isPresent = displayStatus == AttendanceConstants.presentStatus;
 
     Color backgroundColor;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 
 import '../appbar/admin_appbar_desktop.dart';
@@ -66,7 +67,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
     final formattedDateTime =
         createdAt != null
             ? DateFormat(
-              'MMM d, yyyy • hh:mm a',
+              'MMM d, yyyy', // • hh:mm a',
             ).format(DateTime.parse(createdAt))
             : 'Unknown time';
 
@@ -148,6 +149,8 @@ class _ViewFeedbackState extends State<ViewFeedback> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'View Feedback',
                     enableDrawer: false,
                     enableBack: true,
@@ -169,7 +172,12 @@ class _ViewFeedbackState extends State<ViewFeedback> {
         ),
         body:
             isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : feedbacks.isEmpty
                 ? const Center(child: Text('No feedbacks available.'))
                 : ListView.builder(

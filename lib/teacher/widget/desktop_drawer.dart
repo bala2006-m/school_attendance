@@ -13,12 +13,15 @@ class DesktopDrawer extends StatelessWidget {
     required this.width,
     required this.height,
     required this.username,
+    required this.submit,
+    required this.schoolId,
   });
-
+  final VoidCallback submit;
   final String name;
   final double width;
   final double height;
   final String username;
+  final int schoolId;
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -83,7 +86,11 @@ class DesktopDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => StaffProfileScreen(username: username),
+                    builder:
+                        (_) => StaffProfileScreen(
+                          username: username,
+                          schoolId: schoolId,
+                        ),
                   ),
                 );
               },
@@ -98,7 +105,12 @@ class DesktopDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EditProfileScreen(username: username),
+                    builder:
+                        (_) => EditProfileScreen(
+                          username: username,
+                          submit: submit,
+                          schoolId: schoolId,
+                        ),
                   ),
                 );
               },
@@ -138,7 +150,7 @@ class DesktopDrawer extends StatelessWidget {
                             await prefs.remove('username');
 
                             await prefs.remove('rememberMe');
-
+                            await prefs.clear();
                             Navigator.push(
                               context,
                               MaterialPageRoute(

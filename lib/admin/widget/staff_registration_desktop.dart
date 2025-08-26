@@ -49,10 +49,22 @@ class _StaffRegistrationDesktopState extends State<StaffRegistrationDesktop> {
   }
 
   Future<void> _loadAllUsers() async {
-    admins = await ApiService.getUsersByRole('admin');
-    staffs = await ApiService.getUsersByRole('staff');
-    students = await ApiService.getUsersByRole('student');
-    administrators = await ApiService.getUsersByRole('administrator');
+    admins = await ApiService.getUsersByRole(
+      role: 'admin',
+      schoolId: int.parse(widget.schoolId),
+    );
+    staffs = await ApiService.getUsersByRole(
+      role: 'staff',
+      schoolId: int.parse(widget.schoolId),
+    );
+    students = await ApiService.getUsersByRole(
+      role: 'student',
+      schoolId: int.parse(widget.schoolId),
+    );
+    administrators = await ApiService.getUsersByRole(
+      role: 'administrator',
+      schoolId: int.parse(widget.schoolId),
+    );
   }
 
   void _showSnackBar(String message, {bool isError = false}) {

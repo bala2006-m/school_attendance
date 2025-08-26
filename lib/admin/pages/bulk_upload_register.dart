@@ -69,14 +69,20 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
 
   Future<void> init() async {
     setState(() => isLoading = true);
-    student = await ApiService.getUsersByRole('student');
+    student = await ApiService.getUsersByRole(
+      role: 'student',
+      schoolId: int.parse(widget.schoolId),
+    );
     studentData.clear();
     List<Future<void>> futures = [];
 
     for (var user in student) {
       final username = user['username'];
       futures.add(
-        StudentApiServices.fetchStudentDataUsername(username).then((data) {
+        StudentApiServices.fetchStudentDataUsername(
+          username: username,
+          schoolId: int.parse(widget.schoolId),
+        ).then((data) {
           studentData[username] = data;
         }),
       );
@@ -89,14 +95,20 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
 
   Future<void> initAdmin() async {
     setState(() => isLoading = true);
-    admin = await ApiService.getUsersByRole('admin');
+    admin = await ApiService.getUsersByRole(
+      role: 'admin',
+      schoolId: int.parse(widget.schoolId),
+    );
     adminData.clear();
     List<Future<void>> futures = [];
 
     for (var user in admin) {
       final username = user['username'];
       futures.add(
-        AdminApiService.fetchAdminData(username).then((data) {
+        AdminApiService.fetchAdminData(
+          username: username,
+          schoolId: widget.schoolId,
+        ).then((data) {
           adminData[username] = data;
         }),
       );
@@ -109,14 +121,20 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
 
   Future<void> initStaff() async {
     setState(() => isLoading = true);
-    staff = await ApiService.getUsersByRole('staff');
+    staff = await ApiService.getUsersByRole(
+      role: 'staff',
+      schoolId: int.parse(widget.schoolId),
+    );
     staffData.clear();
     List<Future<void>> futures = [];
 
     for (var user in staff) {
       final username = user['username'];
       futures.add(
-        TeacherApiServices.fetchStaffDataUsername(username).then((data) {
+        TeacherApiServices.fetchStaffDataUsername(
+          username: username,
+          schoolId: int.parse(widget.schoolId),
+        ).then((data) {
           staffData[username] = data;
         }),
       );
@@ -180,7 +198,7 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
       final fileName = file.path.split('/').last;
       if (fileName != expectedFileName) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please select only $expectedFileName')),
+          SnackBar(content: Text('Please upload only $expectedFileName')),
         );
         return null;
       }
@@ -380,6 +398,8 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
           child:
               isMobile
                   ? AdminAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Bulk Uploads',
                     enableDrawer: false,
                     enableBack: true,

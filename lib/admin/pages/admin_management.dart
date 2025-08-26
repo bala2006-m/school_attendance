@@ -6,6 +6,8 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/pages/add_or_remove_admin.dart';
 import 'package:school_attendance/admin/pages/add_or_remove_staff.dart';
 import 'package:school_attendance/admin/pages/add_or_remove_student.dart';
+import 'package:school_attendance/admin/pages/bulk_upload_register_student.dart';
+import 'package:school_attendance/admin/pages/post_tickets.dart';
 import 'package:school_attendance/admin/pages/view_feedback.dart';
 import 'package:school_attendance/admin/pages/view_leave_request.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
@@ -13,7 +15,8 @@ import 'package:school_attendance/admin/services/admin_api_service.dart';
 import '../components/build_profile_card_desktop.dart';
 import '../components/build_profile_card_mobile.dart';
 import 'add_or_remove_class.dart';
-import 'bulk_upload_register.dart';
+import 'bulk_upload_register_admin.dart';
+import 'bulk_upload_register_staff.dart';
 import 'create_today_message.dart';
 import 'mark_leave_list.dart';
 
@@ -51,7 +54,8 @@ class _AdminManagementState extends State<AdminManagement> {
   Future<void> loadProfileData() async {
     try {
       final adminData = await AdminApiService.fetchAdminData(
-        widget.adminUsername,
+        username: widget.adminUsername,
+        schoolId: widget.schoolId,
       );
       setState(() {
         adminName = adminData?['name'] ?? '';
@@ -118,7 +122,7 @@ class _AdminManagementState extends State<AdminManagement> {
 
                                 children: [
                                   Text(
-                                    'Management',
+                                    'Manage',
                                     style: TextStyle(
                                       color: Colors.blue.shade900,
                                       fontWeight: FontWeight.bold,
@@ -205,21 +209,6 @@ class _AdminManagementState extends State<AdminManagement> {
                                 ),
                               ],
                             ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                buildElevatedButton(
-                                  context,
-                                  'Bulk Uploads ',
-                                  BulkUploadRegister(
-                                    schoolId: widget.schoolId,
-                                    username: widget.adminUsername,
-                                  ),
-                                  Icons.remove_from_queue,
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
@@ -269,7 +258,7 @@ class _AdminManagementState extends State<AdminManagement> {
                               children: [
                                 buildElevatedButton(
                                   context,
-                                  'View Leave Request',
+                                  'View Leave\nRequest',
                                   ViewLeaveRequest(
                                     schoolId: widget.schoolId,
                                     username: widget.adminUsername,
@@ -279,12 +268,96 @@ class _AdminManagementState extends State<AdminManagement> {
 
                                 buildElevatedButton(
                                   context,
-                                  'View Feedback',
+                                  'View\nFeedback',
                                   ViewFeedback(
                                     schoolId: widget.schoolId,
                                     username: widget.adminUsername,
                                   ),
                                   Icons.feed,
+                                ),
+                                buildElevatedButton(
+                                  context,
+                                  'submit\nTicket',
+                                  PostTickets(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.feed,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.black26, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.transparent.withOpacity(0.02),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+
+                                children: [
+                                  Text(
+                                    'Bulk Upload',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade900,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 25,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.blue.shade900,
+                                    size: 50,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                buildElevatedButton(
+                                  context,
+                                  'Admin\nUpload',
+                                  BulkUploadRegisterAdmin(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.remove_from_queue,
+                                ),
+                                buildElevatedButton(
+                                  context,
+                                  'Staff\nUpload',
+                                  BulkUploadRegisterStaff(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.remove_from_queue,
+                                ),
+                                buildElevatedButton(
+                                  context,
+                                  'Student\nUpload',
+                                  BulkUploadRegisterStudent(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.remove_from_queue,
                                 ),
                               ],
                             ),
@@ -360,7 +433,10 @@ class _AdminManagementState extends State<AdminManagement> {
   }
 
   Future<Widget> buildProfileCard() async {
-    var adminData = await AdminApiService.fetchAdminData(widget.adminUsername);
+    var adminData = await AdminApiService.fetchAdminData(
+      username: widget.adminUsername,
+      schoolId: widget.schoolId,
+    );
     var adminName = adminData?['name'] ?? '';
     var adminDesignation = adminData?['designation'] ?? '';
     Image? adminPhoto;

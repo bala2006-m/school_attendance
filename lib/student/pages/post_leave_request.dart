@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
@@ -12,10 +13,12 @@ class PostLeaveRequest extends StatefulWidget {
     super.key,
     required this.username,
     required this.schoolId,
+    required this.classId,
   });
 
   final String username;
   final String schoolId;
+  final String classId;
 
   @override
   State<PostLeaveRequest> createState() => _PostLeaveRequestState();
@@ -30,7 +33,6 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
   String email = '';
   String mobile = '';
   String gender = '';
-
   DateTime? _fromDate;
   DateTime? _toDate;
   bool _isLoading = false;
@@ -56,7 +58,8 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
     setState(() => _isLoading = true);
     try {
       final data = await StudentApiServices.fetchStudentDataUsername(
-        widget.username,
+        username: widget.username,
+        schoolId: int.parse(widget.schoolId),
       );
 
       setState(() {
@@ -67,9 +70,9 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
         gender = data?['gender'] ?? '';
       });
     } catch (e) {
-      debugPrint("Error loading staff data: $e");
+      debugPrint("Error loading student data: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load staff data")),
+        const SnackBar(content: Text("Failed to load student data")),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -137,12 +140,13 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
     try {
       final response = await TeacherApiServices.createLeaveRequest(
         username: username,
-        role: 'staff',
+        role: 'student',
         schoolId: int.parse(widget.schoolId),
-        classId: 0,
+        classId: int.parse(widget.classId),
         fromDate: _fromDate!,
         toDate: _toDate!,
         reason: _reasonController.text.trim(),
+        email: email,
       );
 
       if (!mounted) return;
@@ -154,11 +158,11 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
         ),
       );
 
-      _formKey.currentState!.reset();
       setState(() {
         _fromDate = null;
         _toDate = null;
         _reasonController.clear();
+        _formKey.currentState?.reset();
       });
     } catch (e) {
       if (!mounted) return;
@@ -181,7 +185,7 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
         child:
             isMobile
                 ? StudentAppbarMobile(
-                  title: 'Post Leave Request',
+                  title: 'Apply Leave Request',
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
@@ -190,17 +194,24 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
-                               StudentDashboard(username: widget.username),
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
                       ),
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Post Leave Request'),
+                : const StudentAppbarDesktop(title: 'Apply Leave Request'),
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                child: SpinKitFadingCircle(
+                  color: Colors.blueAccent,
+                  size: 60.0,
+                ),
+              )
               : Padding(
                 padding: const EdgeInsets.all(16),
                 child: Form(
@@ -236,7 +247,14 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
                               _buildDetailRow("Name", name),
                               _buildDetailRow("Email", email),
                               _buildDetailRow("Mobile", mobile),
-                              _buildDetailRow("Gender", gender),
+                              _buildDetailRow(
+                                "Gender",
+                                gender == 'M'
+                                    ? 'Male'
+                                    : gender == 'F'
+                                    ? 'Female'
+                                    : 'Others',
+                              ),
                             ],
                           ),
                         ),
@@ -311,9 +329,9 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
                                   ? const SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
+                                    child: SpinKitFadingCircle(
+                                      color: Colors.blueAccent,
+                                      size: 60.0,
                                     ),
                                   )
                                   : const Icon(Icons.send),
