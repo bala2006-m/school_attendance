@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 
-import '../../services/api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../widget/admin_registration_deskop.dart';
-import '../widget/admin_registration_mobile.dart';
-import 'admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../widget/admin_registration_deskop.dart';
+import '../../widget/admin_registration_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class AddOrRemoveAdmin extends StatefulWidget {
   final String schoolId;
@@ -367,7 +367,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                     const SizedBox(height: 20),
                     const Divider(),
                   ],

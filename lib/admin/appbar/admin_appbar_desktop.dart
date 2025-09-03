@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../teacher/color/teacher_custom_color.dart' as AdminCustomColor;
+import '../../teacher/color/teacher_custom_color.dart' as admin_custom_color;
 
 class AdminAppbarDesktop extends StatelessWidget {
   const AdminAppbarDesktop({super.key, required this.title});
@@ -35,7 +35,7 @@ class AdminAppbarDesktop extends StatelessWidget {
       centerTitle: false, // Set to false to allow manual centering
       elevation: 4,
       shadowColor: Colors.black26,
-      backgroundColor: AdminCustomColor.appbar,
+      backgroundColor: admin_custom_color.appbar,
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),

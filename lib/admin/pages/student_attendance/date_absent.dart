@@ -4,10 +4,10 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../services/api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../../../components/date_button.dart';
-import '../../admin_dashboard.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../components/date_button.dart';
+import '../dashboard/admin_dashboard.dart';
 import 'date_wise_absentees.dart';
 
 class DateAbsent extends StatefulWidget {
@@ -115,7 +115,7 @@ class _DateAbsentState extends State<DateAbsent> {
       // print("Email: ${student['email']}");
       // print("Mobile: ${student['mobile']}");
     } else {
-      print("Student not found or error occurred.");
+      //print("Student not found or error occurred.");
     }
   }
 
@@ -125,8 +125,8 @@ class _DateAbsentState extends State<DateAbsent> {
   }
 
   void _openWhatsApp(String phoneNumber) async {
-    String url = "https://wa.me/$phoneNumber";
-    if (await canLaunch(url)) await launch(url);
+    Uri url = Uri.parse("https://wa.me/$phoneNumber");
+    if (await canLaunchUrl(url)) await launchUrl(url);
   }
 
   Future<bool> onWillPop() async {

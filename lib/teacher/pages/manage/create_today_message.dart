@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
-import '../../admin/services/admin_api_service.dart';
-import '../appbar/mobile_appbar.dart';
+import '../../../admin/services/admin_api_service.dart';
+import '../../appbar/mobile_appbar.dart';
 
 class CreateTodayMessage extends StatefulWidget {
   final String schoolId;
@@ -154,7 +154,7 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
           border: Border.all(color: Colors.grey.shade400),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

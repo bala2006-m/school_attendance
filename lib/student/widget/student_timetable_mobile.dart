@@ -48,9 +48,7 @@ class StudentTimetableMobile extends StatelessWidget {
                       ),
                     ),
                     _buildHeaderRow('Afternoon', periodsPerHalfDay),
-                    ...days
-                        .map((day) => _buildDayRow(day, periodsPerHalfDay))
-                        .toList(),
+                    ...days.map((day) => _buildDayRow(day, periodsPerHalfDay)),
                   ],
                 ),
               ),
@@ -107,7 +105,7 @@ class StudentTimetableMobile extends StatelessWidget {
       ),
       children: [
         _styledCell(day, bold: true, align: Alignment.centerLeft, padding: 8),
-        ...periodSlice.map((subj) => _buildSubjectCell(subj)).toList(),
+        ...periodSlice.map((subj) => _buildSubjectCell(subj)),
       ],
     );
   }

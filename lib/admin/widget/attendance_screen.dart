@@ -87,15 +87,39 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         return Colors.purple;
       case 'W':
         return Colors.grey;
+      case 'Present':
+        return Colors.green;
+      case 'Absent':
+        return Colors.red;
+      case 'Holiday':
+        return Colors.purple;
+      case 'Working':
+        return Colors.grey;
+      case 'Working Day':
+        return Colors.grey;
       default:
         return Colors.black;
     }
   }
 
   String _getStatus(String time, String formattedSelected) {
-    return _attendanceDataMap[formattedSelected]?[time] ??
-        _holidayDataMap[formattedSelected]?[time] ??
-        'N/A';
+    //print(_attendanceDataMap[formattedSelected]?[time]);
+    return _attendanceDataMap[formattedSelected]?[time] == 'P'
+        ? 'Present'
+        : _attendanceDataMap[formattedSelected]?[time] == 'A'
+        ? 'Absent'
+        : _attendanceDataMap[formattedSelected]?[time] == 'H'
+        ? 'Holiday'
+        : _attendanceDataMap[formattedSelected]?[time] == 'W'
+        ? 'Working Day'
+        : _holidayDataMap[formattedSelected]?[time] == 'W'
+        ? 'Working Day'
+        : _holidayDataMap[formattedSelected]?[time] == 'H'
+        ? 'Holiday'
+        : 'No Data';
+    //; //??
+    // _holidayDataMap[formattedSelected]?[time] ??
+    // 'N/A';
   }
 
   @override
@@ -152,19 +176,33 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'FN: ${_getStatus('fn', formattedSelected)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: _getColor(_getStatus('fn', formattedSelected)),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('FN : '),
+                      Text(
+                        _getStatus('fn', formattedSelected),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _getColor(_getStatus('fn', formattedSelected)),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'AN: ${_getStatus('an', formattedSelected)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: _getColor(_getStatus('an', formattedSelected)),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('AN : '),
+                      Text(
+                        ' ${_getStatus('an', formattedSelected)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _getColor(_getStatus('an', formattedSelected)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

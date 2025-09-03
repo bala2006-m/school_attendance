@@ -337,13 +337,13 @@ class _AdminRegistrationDesktopState extends State<AdminRegistrationDesktop> {
         username: username,
         password: password,
         role: 'admin',
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
       );
 
       final result2 = await ApiService.registerUserDesignation(
         username: username,
         designation: designation,
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
         mobile: fullMobile,
         table: 'admin',
       );

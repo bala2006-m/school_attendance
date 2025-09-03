@@ -6,11 +6,11 @@ class StatusDialog extends StatelessWidget {
   final String message1;
 
   const StatusDialog({
-    Key? key,
+    super.key,
     required this.isSuccess,
     required this.onPressed,
     required this.message1,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

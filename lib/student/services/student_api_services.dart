@@ -5,7 +5,31 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 class StudentApiServices {
-  static const String baseUrl = "http://51.20.189.225";
+  static const String baseUrl = "http://194.238.23.250:3000";
+  // static const String oldUrl = "http://51.20.189.225";
+  // static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+
+  static Future<List<dynamic>> fetchHomeworkByClassId({
+    required int schoolId,
+    required int classId,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/homework/fetch_homework_by_class_id/$schoolId/$classId',
+    );
+
+    final response = await http.get(url);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data != []) {
+        return data;
+      } else {
+        throw Exception('Invalid response structure');
+      }
+    } else {
+      throw Exception('Failed to fetch homework');
+    }
+  }
+
   Future<Map<String, dynamic>> updateStudent({
     required String username,
     required int schoolId,
@@ -38,7 +62,7 @@ class StudentApiServices {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
-      print(res.body);
+      //  print(res.body);
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       } else {
@@ -100,10 +124,10 @@ class StudentApiServices {
           }
         }
       } else {
-        print("Server responded with status: ${response.statusCode}");
+        //print("Server responded with status: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error fetching student data: $e");
+      //print("Error fetching student data: $e");
     }
 
     return null;
@@ -155,7 +179,7 @@ class StudentApiServices {
         }
       }
     } catch (e) {
-      print("Error fetching class data: $e");
+      // print("Error fetching class data: $e");
     }
     return null;
   }
@@ -227,7 +251,7 @@ class StudentApiServices {
         throw Exception('HTTP error ${response.statusCode}');
       }
     } catch (e) {
-      print('Exception occurred: $e');
+      //print('Exception occurred: $e');
       throw Exception('Failed to load holidays: $e');
     }
   }

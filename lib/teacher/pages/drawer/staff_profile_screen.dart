@@ -6,10 +6,10 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../student/services/student_api_services.dart';
-import '../appbar/desktop_appbar.dart';
-import '../appbar/mobile_appbar.dart';
-import '../services/teacher_api_service.dart';
+import '../../../student/services/student_api_services.dart';
+import '../../appbar/desktop_appbar.dart';
+import '../../appbar/mobile_appbar.dart';
+import '../../services/teacher_api_service.dart';
 
 class StaffProfileScreen extends StatefulWidget {
   final String username;

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../../services/api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../services/admin_api_service.dart';
-import 'dashboard/admin_dashboard.dart';
+import '../../../../services/api_service.dart';
+import '../../../appbar/admin_appbar_desktop.dart';
+import '../../../appbar/admin_appbar_mobile.dart';
+import '../../../services/admin_api_service.dart';
+import '../admin_dashboard.dart';
 
 class PostTickets extends StatefulWidget {
   const PostTickets({
@@ -156,7 +156,7 @@ class _PostTicketsState extends State<PostTickets> {
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Post Ticket',
+                    title: 'Submit Ticket',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {

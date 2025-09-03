@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/admin/pages/notification/staff_notification.dart';
+import 'package:school_attendance/admin/pages/notification/student_notification.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({
@@ -18,20 +21,32 @@ class Notifications extends StatefulWidget {
   final String username;
 
   @override
-  State<Notifications> createState() => _NotificationsState();
+  State<Notifications> createState() => NotificationsState();
 }
 
-class _NotificationsState extends State<Notifications> {
-  List<dynamic> leaveRequests = [];
-  List<dynamic> feedbacks = [];
-  Set<int> seenFeedbackIds = {};
-  Set<int> seenLeaveIds = {};
-  bool isLoading = true;
+class NotificationsState extends State<Notifications> {
+  // 🔴 Shared across all Notifications widgets
+  static List<dynamic> leaveRequests = [];
+  static List<dynamic> feedbacks = [];
+  static Set<int> seenFeedbackIds = {};
+  static Set<int> seenLeaveIds = {};
+  static bool isLoading = true;
   static int selectedIndex = 1;
+
+  // 🔴 Keep reference to current state (to call setState in static methods)
+  static NotificationsState? _instance;
+
   @override
   void initState() {
     super.initState();
+    _instance = this;
     init();
+  }
+
+  @override
+  void dispose() {
+    if (_instance == this) _instance = null;
+    super.dispose();
   }
 
   Future<void> init() async {
@@ -46,8 +61,7 @@ class _NotificationsState extends State<Notifications> {
     final leave = await AdminApiService.fetchLeaveRequest(widget.schoolId);
     final feed = await AdminApiService.fetchFeedback(widget.schoolId);
 
-    setState(() {
-      // Only show unseen ones
+    _instance?.setState(() {
       leaveRequests =
           leave.where((item) => !seenLeaveIds.contains(item['id'])).toList();
       feedbacks =
@@ -56,71 +70,95 @@ class _NotificationsState extends State<Notifications> {
     });
   }
 
-  Future<void> markFeedbackSeen(int id) async {
+  static Future<void> markFeedbackSeen(int id) async {
     final prefs = await SharedPreferences.getInstance();
     seenFeedbackIds.add(id);
     await prefs.setStringList(
       "seenFeedbackIds",
       seenFeedbackIds.map((e) => e.toString()).toList(),
     );
-    setState(() {
+
+    _instance?.setState(() {
       feedbacks.removeWhere((item) => item['id'] == id);
     });
   }
 
-  Future<void> markLeaveSeen(int id) async {
+  static Future<void> markLeaveSeen(int id) async {
     final prefs = await SharedPreferences.getInstance();
     seenLeaveIds.add(id);
     await prefs.setStringList(
       "seenLeaveIds",
       seenLeaveIds.map((e) => e.toString()).toList(),
     );
-    setState(() {
+
+    _instance?.setState(() {
       leaveRequests.removeWhere((item) => item['id'] == id);
     });
   }
 
-  Future<void> _updateLeaveStatus(String newStatus, int leaveId) async {
+  static Future<void> updateLeaveStatus(
+    String newStatus,
+    int leaveId,
+    BuildContext context,
+  ) async {
     // Optimistic UI update
-    setState(() {
-      final index = leaveRequests.indexWhere((r) => r['id'] == leaveId);
-      if (index != -1) leaveRequests[index]['status'] = newStatus;
-    });
+    final index = leaveRequests.indexWhere((r) => r['id'] == leaveId);
+    if (index != -1) {
+      _instance?.setState(() {
+        leaveRequests[index]['status'] = newStatus;
+      });
+    }
 
     try {
       await TeacherApiServices.updateLeaveStatus(leaveId, newStatus);
+
       // ✅ once updated, mark as seen
       await markLeaveSeen(leaveId);
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Leave status updated to $newStatus')),
-      );
+      if (_instance?.mounted ?? false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Leave status updated to $newStatus')),
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
-      init(); // rollback
+      if (_instance?.mounted ?? false) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+      }
+      await _instance?.init(); // rollback
     }
   }
 
   Future<bool> onWillPop() async {
-    // Mark all remaining feedbacks as seen before leaving
-    for (int i = 0; i < feedbacks.length; i++) {
-      await markFeedbackSeen(feedbacks[i]['id']);
+    _goBack();
+    for (final fb in feedbacks) {
+      await markFeedbackSeen(fb['id']);
     }
-    // Mark all non-pending leave requests as seen
-    for (int i = 0; i < leaveRequests.length; i++) {
-      if (leaveRequests[i]['status'] != 'pending') {
-        await markLeaveSeen(leaveRequests[i]['id']);
+    for (final leave in leaveRequests) {
+      if (leave['status'] != 'pending') {
+        await markLeaveSeen(leave['id']);
       }
     }
-    Navigator.pop(context);
-    return false;
+
+    return true;
   }
 
-  String formatDate(dynamic date, {String format = 'MMM d, yyyy'}) {
+  void _goBack() {
+    AdminDashboardState.selectedIndex = 1;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => AdminDashboard(
+              schoolId: widget.schoolId,
+              username: widget.username,
+            ),
+      ),
+    );
+  }
+
+  static String formatDate(dynamic date, {String format = 'MMM d, yyyy'}) {
     if (date == null) return '';
     try {
       final parsed = DateTime.tryParse(date.toString());
@@ -148,9 +186,7 @@ class _NotificationsState extends State<Notifications> {
                     title: 'Notifications',
                     enableDrawer: false,
                     enableBack: true,
-                    onBack: () async {
-                      await onWillPop();
-                    },
+                    onBack: _goBack,
                   )
                   : const AdminAppbarDesktop(title: 'Notifications'),
         ),
@@ -164,116 +200,13 @@ class _NotificationsState extends State<Notifications> {
                 )
                 : (leaveRequests.isEmpty && feedbacks.isEmpty)
                 ? const Center(child: Text("No new notifications 🎉"))
-                : ListView(
+                : IndexedStack(
+                  index: selectedIndex,
                   children: [
-                    if (leaveRequests.isNotEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "Leave Requests",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ...leaveRequests.map(
-                      (leave) => Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            "${leave['username']} (${leave['role']})",
-                          ),
-                          subtitle: Text(
-                            "Reason: ${leave['reason']}\nFrom: ${formatDate(
-                              leave['from_date'],
-                              format: 'MMM d, yyyy', //• hh:mm a',
-                            )} To: ${formatDate(
-                              leave['to_date'],
-                              format: 'MMM d, yyyy', //• hh:mm a',
-                            )}",
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if ((leave['status'] ?? 'pending')
-                                      .toString()
-                                      .toLowerCase() ==
-                                  'pending') ...[
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.check_circle,
-                                    color: Colors.green,
-                                  ),
-                                  onPressed:
-                                      () => _updateLeaveStatus(
-                                        'approved',
-                                        leave['id'],
-                                      ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.cancel,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed:
-                                      () => _updateLeaveStatus(
-                                        'rejected',
-                                        leave['id'],
-                                      ),
-                                ),
-                              ] else
-                                GestureDetector(
-                                  onTap:
-                                      () => markLeaveSeen(
-                                        leave['id'],
-                                      ), // ✅ tap marks seen
-                                  child: Text(
-                                    leave['status'].toString().toUpperCase(),
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          leave['status'] == "approved"
-                                              ? Colors.green
-                                              : Colors.red,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (feedbacks.isNotEmpty) const Divider(),
-                    if (feedbacks.isNotEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          "Feedbacks",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ...feedbacks.map(
-                      (fb) => Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: ListTile(
-                          title: Text(fb['name'] ?? "Unknown"),
-                          subtitle: Text(fb['feedback']),
-                          trailing: Text(
-                            fb['created_at'].toString().split("T")[0],
-                          ),
-                          onTap: () => markFeedbackSeen(fb['id']),
-                        ),
-                      ),
+                    StaffNotification(leaveRequests: leaveRequests),
+                    StudentNotification(
+                      leaveRequests: leaveRequests,
+                      feedbacks: feedbacks,
                     ),
                   ],
                 ),
@@ -281,7 +214,7 @@ class _NotificationsState extends State<Notifications> {
           currentIndex: selectedIndex,
           selectedItemColor: Colors.pink,
           unselectedItemColor: Colors.grey,
-          onTap: (index) => setState(() => selectedIndex = index),
+          onTap: (index) => _instance?.setState(() => selectedIndex = index),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.person, size: 30),

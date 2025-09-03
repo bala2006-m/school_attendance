@@ -38,7 +38,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
       feedbacks = await AdminApiService.fetchFeedback(widget.schoolId);
     } catch (e) {
       // Optional: Handle fetch error
-      print("Error fetching feedbacks: $e");
+      // print("Error fetching feedbacks: $e");
     } finally {
       setState(() {
         isLoading = false;
@@ -127,22 +127,24 @@ class _ViewFeedbackState extends State<ViewFeedback> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
-    return WillPopScope(
-      onWillPop: () async {
-        FirstPageState.selectedIndex = 1;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => FirstPage(
-                  username: widget.username,
-                  schoolName: widget.schoolName,
-                  schoolAddress: widget.schoolAddress,
-                  schoolId: widget.schoolId,
-                ),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          FirstPageState.selectedIndex = 1;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => FirstPage(
+                    username: widget.username,
+                    schoolName: widget.schoolName,
+                    schoolAddress: widget.schoolAddress,
+                    schoolId: widget.schoolId,
+                  ),
+            ),
+          );
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,

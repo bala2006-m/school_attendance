@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/administrator/services/administrator_api_service.dart';
 
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import 'admin_dashboard.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class EditPassword extends StatefulWidget {
   const EditPassword({
@@ -109,7 +109,6 @@ class _EditPasswordState extends State<EditPassword> {
     required bool obscure,
     required Function() toggle,
     String? Function(String?)? validator,
-    int limit = 1,
   }) {
     return TextFormField(
       controller: controller,
@@ -136,20 +135,23 @@ class _EditPasswordState extends State<EditPassword> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => AdminDashboard(
-                  username: widget.username,
-                  schoolId: '${widget.schoolId}',
-                ),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => AdminDashboard(
+                    username: widget.username,
+                    schoolId: '${widget.schoolId}',
+                  ),
+            ),
+          );
+        }
       },
+
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(

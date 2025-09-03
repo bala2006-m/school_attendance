@@ -3,8 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
 import '../color/teacher_custom_color.dart';
-import '../pages/edit_profile_screen.dart';
-import '../pages/staff_profile_screen.dart';
+import '../pages/drawer/edit_profile_screen.dart';
+import '../pages/drawer/staff_profile_screen.dart';
 
 class DesktopDrawer extends StatelessWidget {
   const DesktopDrawer({
@@ -34,7 +34,7 @@ class DesktopDrawer extends StatelessWidget {
           color: appbarDark,
           boxShadow: [
             BoxShadow(
-              color: appbarDark.withOpacity(0.5),
+              color: appbarDark.withValues(alpha: 0.5),
               spreadRadius: 5,
               blurRadius: 7,
               offset: const Offset(0, 3),
@@ -116,7 +116,7 @@ class DesktopDrawer extends StatelessWidget {
               },
             ),
             const Spacer(),
-            Divider(color: Colors.white.withOpacity(0.4)),
+            Divider(color: Colors.white.withValues(alpha: 0.4)),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(

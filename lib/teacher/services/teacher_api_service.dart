@@ -5,8 +5,58 @@ import 'package:http/http.dart' as http;
 import '../models/staff_models.dart';
 
 class TeacherApiServices {
-  static const String baseUrl = "http://51.20.189.225";
-  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static const String baseUrl = "http://194.238.23.250:3000";
+  // static const String oldUrl = "http://51.20.189.225";
+  // static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static Future<bool> createHomework(Map<String, dynamic> data) async {
+    final url = Uri.parse("$baseUrl/homework/create");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return true;
+    } else {
+      // print("Error: ${response.statusCode} - ${response.body}");
+      return false;
+    }
+  }
+
+  static Future<void> deleteHomeworkById(int id) async {
+    final url = Uri.parse("$baseUrl/homework/delete_homework_by_id/$id");
+    final response = await http.delete(url);
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to delete homework");
+    }
+  }
+
+  static Future<List<dynamic>> fetchHomeworkByStaff({
+    required String staff,
+    required int schoolId,
+    required int classId,
+  }) async {
+    final String st = staff.toLowerCase();
+    final url = Uri.parse(
+      '$baseUrl/homework/fetch_homework_by_staff/$schoolId/$classId/$st',
+    );
+
+    final response = await http.get(url);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      if (data != []) {
+        return data;
+      } else {
+        throw Exception('Invalid response structure');
+      }
+    } else {
+      throw Exception('Failed to fetch homework');
+    }
+  }
+
   static Future<Map<String, dynamic>> createLeaveRequest({
     required String username,
     required String email,
@@ -145,11 +195,11 @@ class TeacherApiServices {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else {
-        print('Failed to save: ${response.body}');
+        //print('Failed to save: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('Error saving timetable: $e');
+      // print('Error saving timetable: $e');
       return false;
     }
   }
@@ -163,7 +213,6 @@ class TeacherApiServices {
       final uri = Uri.parse(
         '$baseUrl/staff/fetch-by-username?username=$username&school_id=$schoolId',
       );
-
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -174,13 +223,13 @@ class TeacherApiServices {
             return staff;
           }
         } else {
-          print("API responded with error: ${data['message']}");
+          //  print("API responded with error: ${data['message']}");
         }
       } else {
-        print("Server error: HTTP ${response.statusCode}");
+        // print("Server error: HTTP ${response.statusCode}");
       }
     } catch (e) {
-      print("Exception caught while fetching staff data: $e");
+      //print("Exception caught while fetching staff data: $e");
     }
 
     return null;
@@ -191,11 +240,8 @@ class TeacherApiServices {
     String? schoolId,
     String? classId,
   }) async {
-    final uri = Uri.parse('$baseUrl/students/fetch-student-data').replace(
-      queryParameters: {
-        if (schoolId != null && schoolId.isNotEmpty) 'school_id': schoolId,
-        if (classId != null && classId.isNotEmpty) 'class_id': classId,
-      },
+    final uri = Uri.parse(
+      '$baseUrl/students/fetch-student-data?school_id=$schoolId&class_id=$classId',
     );
 
     try {
@@ -240,7 +286,7 @@ class TeacherApiServices {
         }
       }
     } catch (e) {
-      print("Error fetching class data: $e");
+      // print("Error fetching class data: $e");
     }
     return [];
   }
@@ -273,11 +319,11 @@ class TeacherApiServices {
       if (response.statusCode == 200 || res['status'] == 'success') {
         return true;
       } else {
-        print('Attendance post failed: ${res['message'] ?? 'Unknown error'}');
+        //print('Attendance post failed: ${res['message'] ?? 'Unknown error'}');
         return false;
       }
     } catch (e) {
-      print('Error posting attendance: $e');
+      //print('Error posting attendance: $e');
       return false;
     }
   }

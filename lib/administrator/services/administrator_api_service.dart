@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class AdministratorApiService {
-  static const String baseUrl = "http://51.20.189.225";
+  static const String baseUrl = "http://194.238.23.250:3000";
+  //static const String oldUrl = "http://51.20.189.225";
   //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
 
   static Future<List<Map<String, dynamic>>> fetchTicket(String schoolId) async {
@@ -143,19 +144,19 @@ class AdministratorApiService {
     }
   }
 
-  static Future<String?> createSchool(
-    String name,
-    String address,
+  static Future<String?> createSchool({
+    required String name,
+    required String address,
+    required String schoolId,
     File? photo,
-  ) async {
+  }) async {
     var responseBody = '';
     try {
       var uri = Uri.parse("$baseUrl/school/create");
       var request = http.MultipartRequest("POST", uri);
-
-      request.fields['name'] = name;
-      request.fields['address'] = address;
-
+      request.fields['name'] = name.toString();
+      request.fields['address'] = address.toString();
+      request.fields['schoolId'] = schoolId.toString();
       if (photo != null) {
         request.files.add(
           await http.MultipartFile.fromPath('photo', photo.path),
@@ -171,7 +172,7 @@ class AdministratorApiService {
         throw Exception("❌ Failed with ${response.statusCode}: $responseBody");
       }
     } catch (e) {
-      print("❌ Error: $e");
+      // print("❌ Error: $e");
       return responseBody;
     }
   }

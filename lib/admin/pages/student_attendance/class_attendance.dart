@@ -3,11 +3,11 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../../../../services/api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../../../components/date_button.dart';
-import '../../admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../components/date_button.dart';
+import '../dashboard/admin_dashboard.dart';
 import 'class_wise_attendance.dart';
 
 class ClassAttendance extends StatefulWidget {

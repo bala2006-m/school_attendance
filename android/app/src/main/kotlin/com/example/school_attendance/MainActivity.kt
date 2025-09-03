@@ -1,4 +1,4 @@
-package com.example.school_attendance
+package com.ramchin_smart_school
 
 import io.flutter.embedding.android.FlutterActivity
 

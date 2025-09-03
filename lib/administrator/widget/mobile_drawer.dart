@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../login_page.dart';
 import '../pages/edit_password.dart';
 
-class MobileDrawer extends StatelessWidget {
+class MobileDrawer extends StatefulWidget {
   const MobileDrawer({
     super.key,
     required this.username,
@@ -13,6 +13,26 @@ class MobileDrawer extends StatelessWidget {
   final String username;
   final int schoolId;
 
+  @override
+  State<MobileDrawer> createState() => _MobileDrawerState();
+}
+
+class _MobileDrawerState extends State<MobileDrawer> {
+  void back() {
+    Navigator.pop(context); // Close drawer
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
+  }
+
+  Future<void> onClick() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    back();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Drawer(
       shape: const RoundedRectangleBorder(
@@ -51,8 +71,10 @@ class MobileDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder:
-                      (_) =>
-                          EditPassword(username: username, schoolId: schoolId),
+                      (_) => EditPassword(
+                        username: widget.username,
+                        schoolId: widget.schoolId,
+                      ),
                 ),
               );
             },
@@ -83,20 +105,12 @@ class MobileDrawer extends StatelessWidget {
               vertical: 8.0,
             ),
             child: InkWell(
-              onTap: () async {
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                Navigator.pop(context); // Close drawer
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                );
-              },
+              onTap: onClick,
               borderRadius: BorderRadius.circular(8.0),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: const Row(

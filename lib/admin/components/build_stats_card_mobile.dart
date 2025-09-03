@@ -19,7 +19,7 @@ class BuildStatsCardMobile {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Icon(icon, size: 40, color: Colors.black.withOpacity(0.7)),
+          Icon(icon, size: 40, color: Colors.black.withValues(alpha: 0.7)),
           const SizedBox(height: 5),
           Text(
             label,

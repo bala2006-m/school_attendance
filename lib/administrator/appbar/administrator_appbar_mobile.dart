@@ -45,7 +45,31 @@ class _AdministratorAppbarMobileState extends State<AdministratorAppbarMobile> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MMMM d, y').format(DateTime.now());
+    String formatCustomDate(DateTime date) {
+      final monthMap = {
+        "Jan": "Jan",
+        "Feb": "Feb",
+        "Mar": "Mar",
+        "Apr": "Apr",
+        "May": "May",
+        "Jun": "Jun",
+        "Jul": "Jul",
+        "Aug": "Aug",
+        "Sep": "Sept", // 👈 force "Sept"
+        "Oct": "Oct",
+        "Nov": "Nov",
+        "Dec": "Dec",
+      };
+
+      final month = DateFormat('MMM').format(date);
+      final day = DateFormat('d').format(date);
+      final year = DateFormat('y').format(date);
+
+      return "${monthMap[month]} $day $year";
+    }
+
+    // Usage
+    final formattedDate = formatCustomDate(DateTime.now());
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -80,7 +104,7 @@ class _AdministratorAppbarMobileState extends State<AdministratorAppbarMobile> {
                           child: Icon(
                             size: 40,
                             widget.enableDrawer ? Icons.menu : Icons.arrow_back,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
                   ),

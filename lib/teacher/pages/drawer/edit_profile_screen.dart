@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
-import '../appbar/desktop_appbar.dart';
-import '../appbar/mobile_appbar.dart';
-import '../services/teacher_api_service.dart'; // Backend service
+import '../../appbar/desktop_appbar.dart';
+import '../../appbar/mobile_appbar.dart';
+import '../../services/teacher_api_service.dart'; // Backend service
 
 class EditProfileScreen extends StatefulWidget {
   final String username;
@@ -397,7 +397,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                               );
                             } catch (e) {
-                              print(e);
+                              //print(e);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Update failed: $e')),
                               );

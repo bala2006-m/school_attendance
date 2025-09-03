@@ -5,8 +5,10 @@ import 'package:school_attendance/administrator/pages/dashboard.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
-import 'admin/pages/admin_dashboard.dart';
+import 'admin/pages/dashboard/admin_dashboard.dart';
 import 'login_page.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -20,9 +22,9 @@ Future<void> main() async {
   String username = prefs.getString('username') ?? '';
   String? schoolId = '';
   if (role == 'administrator') {
-    schoolId = prefs.getInt('schoolId').toString() ?? '';
+    schoolId = prefs.getInt('schoolId').toString();
   } else {
-    schoolId = prefs.getString('schoolId').toString() ?? '';
+    schoolId = prefs.getString('schoolId').toString();
   }
   int id = int.tryParse(schoolId.toString()) ?? 0;
   // String schoolName = prefs.getString('schoolName') ?? '';
@@ -63,7 +65,8 @@ Future<void> main() async {
     android: androidInit,
     iOS: iosInit,
   );
-
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
   // Initialize
   await flutterLocalNotificationsPlugin.initialize(initSettings);
   runApp(MyApp(startPage: startPage));
@@ -76,7 +79,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'School Attendance',
+      title: 'Ramchin Smart School',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.pink,

@@ -226,13 +226,13 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                   username: username,
                   password: password,
                   role: 'admin',
-                  school_id: widget.schoolId,
+                  schoolId: widget.schoolId,
                 );
 
                 final res = await ApiService.registerUserDesignation(
                   username: username,
                   designation: designation,
-                  school_id: widget.schoolId,
+                  schoolId: widget.schoolId,
                   mobile: fullMobileNumber,
                   table: 'admin',
                 );
@@ -301,7 +301,7 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                 focusNode.hasFocus
                     ? [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),

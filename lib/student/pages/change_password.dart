@@ -109,7 +109,6 @@ class _EditPasswordState extends State<EditPassword> {
     required bool obscure,
     required Function() toggle,
     String? Function(String?)? validator,
-    int limit = 1,
   }) {
     return TextFormField(
       controller: controller,

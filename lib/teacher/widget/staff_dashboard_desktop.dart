@@ -3,9 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../components/staff_components.dart';
-import '../pages/change_password_screen.dart';
-import '../pages/class_list.dart';
-import '../pages/timetable_screen.dart';
+import '../pages/drawer/change_password_screen.dart';
+import '../pages/manage/timetable_screen.dart';
+import '../pages/studentAttendance/markAttendance/class_list.dart';
 import 'desktop_drawer.dart';
 
 class StaffDashboardDesktop extends StatelessWidget {

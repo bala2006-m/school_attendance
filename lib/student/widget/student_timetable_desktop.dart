@@ -84,7 +84,7 @@ class StudentTimetableDesktop extends StatelessWidget {
       ),
       children: [
         _styledCell(day, bold: true, align: Alignment.centerLeft, padding: 8),
-        ...cells.map((subject) => _buildSubjectCell(subject)).toList(),
+        ...cells.map((subject) => _buildSubjectCell(subject)),
       ],
     );
   }

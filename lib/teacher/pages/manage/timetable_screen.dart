@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
-import '../../student/services/student_api_services.dart';
-import '../appbar/desktop_appbar.dart';
-import '../appbar/mobile_appbar.dart';
-import '../services/teacher_api_service.dart';
+import '../../../student/services/student_api_services.dart';
+import '../../appbar/desktop_appbar.dart';
+import '../../appbar/mobile_appbar.dart';
+import '../../services/teacher_api_service.dart';
 
 class CapitalizeFirstLetterFormatter extends TextInputFormatter {
   @override
@@ -52,6 +52,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
     'Wednesday',
     'Thursday',
     'Friday',
+    'Saturday',
   ];
   final Map<String, List<TextEditingController>> timetableControllers = {};
 
@@ -66,7 +67,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
       widget.schoolId,
     );
     setState(() {
-      classList = fetchedClassList ?? [];
+      classList = fetchedClassList;
       isLoading = false;
     });
     _initializeControllers();
@@ -364,7 +365,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (selectedClass != null)
-                        ...days.map(_buildTimetableInput).toList(),
+                        ...days.map(_buildTimetableInput),
                       const SizedBox(height: 25),
                     ],
                   ),

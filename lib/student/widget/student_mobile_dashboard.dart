@@ -82,7 +82,7 @@ class StudentMobileDashboard extends StatelessWidget {
     return InkWell(
       onTap: () => navigateTo(context, page),
       borderRadius: BorderRadius.circular(25),
-      splashColor: Colors.indigo.withOpacity(0.3),
+      splashColor: Colors.indigo.withValues(alpha: 0.3),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),

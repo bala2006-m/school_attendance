@@ -2,16 +2,15 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
-import '../../../../admin/services/admin_api_service.dart';
 import '../../../../services/api_service.dart';
 import '../../../components/build_profile_card_mobile.dart';
 import '../../../services/teacher_api_service.dart';
+import 'reports.dart';
 
 class StudentReportBetweenDays extends StatefulWidget {
   final String schoolId;
@@ -109,13 +108,42 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
     });
   }
 
+  int? parseClassValue(dynamic val) {
+    const romanMap = {
+      'I': 1,
+      'II': 2,
+      'III': 3,
+      'IV': 4,
+      'V': 5,
+      'VI': 6,
+      'VII': 7,
+      'VIII': 8,
+      'IX': 9,
+      'X': 10,
+      'XI': 11,
+      'XII': 12,
+    };
+
+    if (val is int) return val;
+    if (val is String) {
+      // Try to parse integer
+      final parsed = int.tryParse(val);
+      if (parsed != null) return parsed;
+
+      // Try Roman numeral
+      final upper = val.toUpperCase().trim();
+      if (romanMap.containsKey(upper)) return romanMap[upper];
+
+      return null; // KG, PRE-KG, etc.
+    }
+    return null;
+  }
+
   List<Map<String, dynamic>> filterKinderGarden() {
     return classes
         .where((item) {
-          final className = item['class']?.toString().toUpperCase() ?? '';
-          final classNum = int.tryParse(className);
-          // Pick only non-numeric classes like NURSERY, LKG, UKG
-          return classNum == null;
+          final value = parseClassValue(item['class']);
+          return value == null; // Nursery, LKG, UKG, PRE-KG etc.
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -124,9 +152,8 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
   List<Map<String, dynamic>> filterClasses(int min, int max) {
     return classes
         .where((item) {
-          final className = item['class']?.toString() ?? '';
-          final classNum = int.tryParse(className) ?? -1;
-          return classNum >= min && classNum <= max;
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min && value <= max;
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -135,9 +162,8 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
   List<Map<String, dynamic>> filterClassesFrom(int min) {
     return classes
         .where((item) {
-          final className = item['class']?.toString() ?? '';
-          final classNum = int.tryParse(className) ?? -1;
-          return classNum >= min;
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min;
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -267,7 +293,7 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildClassContainer(
-                              title: "Kinder Garden",
+                              title: "Nursery",
                               classes: filterKinderGarden(),
                               context: context,
                               isKinderGarden: true,

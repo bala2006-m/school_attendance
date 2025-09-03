@@ -84,15 +84,17 @@ class FirstPageState extends State<FirstPage> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AdministratorDashboard(userName: widget.username),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdministratorDashboard(userName: widget.username),
+            ),
+          );
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,

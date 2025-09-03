@@ -4,8 +4,8 @@ import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
-import '../../services/api_service.dart';
-import '../services/teacher_api_service.dart';
+import '../../../services/api_service.dart';
+import '../../services/teacher_api_service.dart';
 
 class PostTickets extends StatefulWidget {
   const PostTickets({
@@ -65,7 +65,7 @@ class _PostTicketsState extends State<PostTickets> {
         username: widget.username,
         schoolId: int.parse(widget.schoolId),
       );
-      print(data);
+      //print(data);
       if (!mounted) return;
 
       setState(() {
@@ -73,7 +73,7 @@ class _PostTicketsState extends State<PostTickets> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading staff data: $e");
+      //print("Error loading staff data: $e");
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

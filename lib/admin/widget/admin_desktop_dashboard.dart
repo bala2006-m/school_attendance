@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:school_attendance/admin/widget/admin_desktop_drawer_small.dart';
 
 import '../components/build_home_page.dart';
-import '../pages/admin_management.dart';
-import '../pages/admin_student.dart';
+import '../pages/dashboard/attendance/admin_student.dart';
+import '../pages/dashboard/manage/admin_management.dart';
 import 'admin_desktop_drawer.dart';
 
 class AdminDesktopDashboard extends StatelessWidget {
@@ -109,7 +109,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                 index: selectedIndex,
                 children: [
                   AdminStudent(
-                    school_id: schoolId,
+                    schoolId: schoolId,
                     adminUsername: username,
                     adminName: adminName,
                     adminDesignation: adminDesignation,

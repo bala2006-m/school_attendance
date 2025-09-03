@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../pages/attendance_screen.dart';
+import '../pages/studentAttendance/markAttendance/attendance_screen.dart';
 
 class DesktopClassList extends StatelessWidget {
   const DesktopClassList({
     super.key,
     required this.isLoading,
     required this.classList,
-    required this.schoolId, required this.username,
+    required this.schoolId,
+    required this.username,
   });
   final bool isLoading;
   final List<dynamic> classList;

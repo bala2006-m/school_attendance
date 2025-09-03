@@ -17,7 +17,7 @@ import '../../administrator/services/administrator_api_service.dart';
 import '../../login_page.dart';
 import '../../services/api_service.dart';
 import '../widget/staff_dashboard_desktop.dart';
-import './edit_profile_screen.dart';
+import 'drawer/edit_profile_screen.dart';
 
 class StaffDashboard extends StatefulWidget {
   final String username;
@@ -37,35 +37,124 @@ class StaffDashboardState extends State<StaffDashboard> {
   Map<String, dynamic> schoolData = {};
   Map<String, dynamic> classData = {};
   List<dynamic> classIds = [];
+
   String schoolName = '';
   String schoolAddress = '';
   Image? schoolPhoto;
+
   String message = '';
   int totalStudents = 0;
   int presentStudentFN = 0;
   int presentStudentAN = 0;
+
   bool _isLoading = true;
+
   static int selectedIndex = 1;
+
   final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  final String formattedCurrentDate = DateFormat(
+    'yyyy-MM-dd',
+  ).format(DateTime.now());
+
   bool isBlocked = false;
   String? reason;
+  final Map<String, bool> canTakeAttendanceFn = {};
+  final Map<String, bool> canTakeAttendanceAn = {};
+
+  List<Map<String, dynamic>> classes = [];
+
   @override
   void initState() {
     super.initState();
     _loadStaffData();
-    _checkBlocked(int.parse(widget.schoolId));
+
+    // Safer parsing of schoolId
+    final id = int.tryParse(widget.schoolId);
+    if (id != null) {
+      _checkBlocked(id);
+    } else {
+      debugPrint('Invalid schoolId: ${widget.schoolId}');
+    }
+  }
+
+  Future<void> fetchClasses() async {
+    try {
+      final fetched = await TeacherApiServices.fetchClassData(widget.schoolId);
+      fetched.sort((a, b) {
+        final classCompare = a['class'].compareTo(b['class']);
+        return classCompare != 0
+            ? classCompare
+            : a['section'].compareTo(b['section']);
+      });
+      if (!mounted) return;
+      setState(() => classes = fetched);
+    } catch (e) {
+      debugPrint('Error fetching classes: $e');
+    }
+  }
+
+  Future<void> fetchAttendanceStatusForAll() async {
+    try {
+      final String schoolId = widget.schoolId;
+      final String formattedDate = formattedCurrentDate;
+      final List<Future<void>> futures = [];
+
+      for (var cls in classes) {
+        final classId = cls['id'].toString();
+
+        futures.add(
+          ApiService.checkAttendanceStatusSession(
+                schoolId,
+                classId,
+                formattedDate,
+                'FN',
+              )
+              .then((result) {
+                // Original code treated result == false as "open"
+                canTakeAttendanceFn[classId] = (result == false);
+              })
+              .catchError((e) {
+                debugPrint("FN error class $classId: $e");
+                canTakeAttendanceFn[classId] = true; // default to open on error
+              }),
+        );
+
+        futures.add(
+          ApiService.checkAttendanceStatusSession(
+                schoolId,
+                classId,
+                formattedDate,
+                'AN',
+              )
+              .then((result) {
+                canTakeAttendanceAn[classId] = (result == false);
+              })
+              .catchError((e) {
+                debugPrint("AN error class $classId: $e");
+                canTakeAttendanceAn[classId] = true; // default to open on error
+              }),
+        );
+      }
+
+      await Future.wait(futures);
+      if (!mounted) return;
+      setState(() {});
+    } catch (e) {
+      debugPrint('Error fetching attendance status: $e');
+    }
   }
 
   Future<void> _checkBlocked(int schoolId) async {
     try {
       final result = await AdministratorApiService.isSchoolBlocked(schoolId);
 
+      if (!mounted) return;
       setState(() {
         isBlocked = result['isBlocked'] ?? false;
         reason = result['reason'];
       });
 
-      if (isBlocked) {
+      if (isBlocked && mounted) {
         showDialog(
           context: context,
           builder:
@@ -75,10 +164,9 @@ class StaffDashboardState extends State<StaffDashboard> {
                 actions: [
                   TextButton(
                     onPressed: () async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-
+                      final prefs = await SharedPreferences.getInstance();
                       await prefs.clear();
+                      if (!mounted) return;
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -94,61 +182,69 @@ class StaffDashboardState extends State<StaffDashboard> {
         );
       }
     } catch (e) {
-      debugPrint("Error: $e");
-      setState(() {
-        isBlocked = false;
-      });
-    } finally {}
+      debugPrint("Error in _checkBlocked: $e");
+      if (!mounted) return;
+      setState(() => isBlocked = false);
+    }
   }
-
 
   Future<void> _loadStaffData() async {
     try {
-      setState(() => _isLoading = true);
+      if (mounted) setState(() => _isLoading = true);
+
       final prefs = await SharedPreferences.getInstance();
 
       final data = await TeacherApiServices.fetchStaffDataUsername(
         username: widget.username,
-        schoolId: int.parse(widget.schoolId),
+        schoolId: int.tryParse(widget.schoolId) ?? 0,
       );
-      //print(data);
-      prefs.setString('schoolId', widget.schoolId);
-      prefs.setString('staffName', '${data?['name']}');
-      prefs.setString('staffUsername', widget.username);
-      if (data?['name'] == null ||
-          data?['name'] == '' ||
-          data?['name'] == 'null' ||
-          data!['name'].toString().isEmpty) {
+
+      if (data == null) {
+        throw Exception('Staff data is null for ${widget.username}');
+      }
+
+      // Persist essentials
+      await prefs.setString('schoolId', widget.schoolId);
+      await prefs.setString('staffName', '${data['name']}');
+      await prefs.setString('staffUsername', widget.username);
+
+      // Route to profile completion if name is missing/invalid
+      final nameStr = '${data['name']}';
+      if (nameStr.isEmpty || nameStr == 'null') {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder:
                 (_) => EditProfileScreen(
                   username: widget.username,
-                  submit: () {
-                    _loadStaffData();
-                  },
-                  schoolId: int.parse(widget.schoolId),
+                  submit: () => _loadStaffData(),
+                  schoolId: int.tryParse(widget.schoolId) ?? 0,
                 ),
           ),
         );
+        return; // Prevent continuing with null/invalid staff record
       }
-      if (data?['photo'] != null && data?['photo'] is Map) {
-        // Convert the Map<int,int> to Uint8List
-        final photoBytes = Uint8List.fromList(
-          List<int>.from(data?['photo'].values),
-        );
-        // Encode to Base64
-        final base64String = base64Encode(photoBytes);
-        prefs.setString('staffPhoto', base64String);
-      } else {
-        prefs.remove('staffPhoto'); // Or store a placeholder
-      }
-      // print(data);
-      fetchSchoolInfo(data);
-      if (!mounted) return;
-      final schoolId = '${data?['school_id']}';
 
+      // Save staff photo to prefs (base64) when available
+      if (data['photo'] != null && data['photo'] is Map) {
+        final photoBytes = Uint8List.fromList(
+          List<int>.from(data['photo'].values),
+        );
+        final base64String = base64Encode(photoBytes);
+        await prefs.setString('staffPhoto', base64String);
+      } else {
+        await prefs.remove('staffPhoto');
+      }
+
+      // Fetch school info
+      await fetchSchoolInfo(data);
+
+      if (!mounted) return;
+
+      final schoolId = '${data['school_id']}';
+
+      // Parallel fetches: latest message + attendance summaries
       final results = await Future.wait([
         AdminApiService.fetchLatestMessage(schoolId),
         ApiService.fetchTodayStudentAttendanceClass(
@@ -162,73 +258,48 @@ class StaffDashboardState extends State<StaffDashboard> {
           schoolId,
         ),
       ]);
-      final studentAttendanceFn = results[1] as Map;
-      int presentStuAn = 0;
-      final studentAttendanceAn = results[2] as Map;
-      int presentStuFn = 0;
-      final mes = results[0] as String;
-      int count = 0;
-      final rawClassIds = data?['class_ids'].toString();
-      List<dynamic> classId = [];
-      // if (rawClassIds != 'null') {
-      //   classId = jsonDecode(rawClassIds!);
-      //   for (int i = 0; i < classId.length; i++) {
-      //     final s = await TeacherApiServices.fetchStudentData(
-      //       schoolId: schoolId,
-      //       classId: '${classId[i]}',
-      //     );
-      //     count += s.length;
-      //   }
-      //
-      //   for (int i = 0; i < classId.length; i++) {
-      //     final intClassId = int.parse('${classId[i]}');
-      //
-      //     presentStuFn +=
-      //         studentAttendanceFn.values
-      //             .where(
-      //               (s) => s['status'] == 'P' && s['class_id'] == intClassId,
-      //             )
-      //             .length;
-      //   }
-      //
-      //   for (int i = 0; i < classId.length; i++) {
-      //     final intClassId = int.parse('${classId[i]}');
-      //     presentStuAn +=
-      //         studentAttendanceAn.values
-      //             .where(
-      //               (s) => s['status'] == 'P' && s['class_id'] == intClassId,
-      //             )
-      //             .length;
-      //   }
-      // }
-      final c = await AdminApiService.countStudentUsernames(
-        '${data?['school_id']}',
-      );
+
+      final String mes = results[0] as String;
+      // final Map studentAttendanceFn = results[1] as Map;
+      // final Map studentAttendanceAn = results[2] as Map;
+
+      // If you re-enable per-class counts later, you can use studentAttendanceFn/An maps above.
+
+      // Student counts for the whole school today
+      final c = await AdminApiService.countStudentUsernames(schoolId);
       final studentFn = await ApiService.fetchTodayStudentAttendance(
         currentDate,
         'fn',
-        '${data?['school_id']}',
+        schoolId,
       );
       final studentAn = await ApiService.fetchTodayStudentAttendance(
         currentDate,
         'an',
-        '${data?['school_id']}',
+        schoolId,
       );
-      int presentStFn = studentFn.values.where((s) => s == 'P').length;
-      int presentSAn = studentAn.values.where((s) => s == 'P').length;
 
-      count = int.parse(c.toString());
+      final presentStFn = studentFn.values.where((s) => s == 'P').length;
+      final presentSAn = studentAn.values.where((s) => s == 'P').length;
+
+      // Optional: parse classIds if needed later (kept to preserve behavior)
+      //final rawClassIds = data['class_ids']?.toString();
+      final List<dynamic> parsedClassIds = [];
+      // if (rawClassIds != 'null') { parsedClassIds = jsonDecode(rawClassIds); ... }
+
+      if (!mounted) return;
       setState(() {
-        staff = data!;
-        classIds = classId;
+        staff = data;
+        classIds = parsedClassIds;
         message = mes;
-        totalStudents = count;
+        totalStudents = int.tryParse(c.toString()) ?? 0;
         presentStudentFN = presentStFn;
         presentStudentAN = presentSAn;
-        _isLoading = false;
       });
+
+      await fetchClasses();
+      await fetchAttendanceStatusForAll();
     } catch (e) {
-      print("Error loading staff data: $e");
+      debugPrint("Error loading staff data: $e");
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -236,45 +307,66 @@ class StaffDashboardState extends State<StaffDashboard> {
     }
   }
 
-  Future<void> fetchSchoolInfo(staff1) async {
+  Future<void> fetchSchoolInfo(dynamic staffData) async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
-      final schoolData = await ApiService.fetchSchoolData(
-        '${staff1['school_id']}',
+      if (mounted) setState(() => _isLoading = true);
+
+      final fetchedSchoolData = await ApiService.fetchSchoolData(
+        '${staffData['school_id']}',
       );
+      if (fetchedSchoolData.isEmpty) {
+        throw Exception('fetchSchoolData returned empty list');
+      }
 
       final prefs = await SharedPreferences.getInstance();
-      prefs.setString('schoolName', '${schoolData[0]['name']}');
-      prefs.setString('schoolAddress', '${schoolData[0]['address']}');
-      await prefs.setString('schoolPhoto', '${schoolData[0]['photo']}');
-      schoolName = schoolData[0]['name'];
-      schoolAddress = schoolData[0]['address'];
+      await prefs.setString('schoolName', '${fetchedSchoolData[0]['name']}');
+      await prefs.setString(
+        'schoolAddress',
+        '${fetchedSchoolData[0]['address']}',
+      );
+      await prefs.setString('schoolPhoto', '${fetchedSchoolData[0]['photo']}');
 
-      if (schoolData[0]['photo'] != null) {
-        try {
-          Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-          schoolPhoto = Image.memory(imageBytes, gaplessPlayback: true);
-        } catch (_) {
-          schoolPhoto = null;
+      final fetchedName = fetchedSchoolData[0]['name'] ?? '';
+      final fetchedAddress = fetchedSchoolData[0]['address'] ?? '';
+
+      Image? photo;
+      try {
+        final encoded = fetchedSchoolData[0]['photo'];
+        if (encoded != null && encoded is String && encoded.isNotEmpty) {
+          Uint8List imageBytes = base64Decode(encoded);
+          photo = Image.memory(imageBytes, gaplessPlayback: true);
         }
+      } catch (_) {
+        photo = null;
       }
+
+      if (!mounted) return;
       setState(() {
-        _isLoading = false;
+        schoolName = fetchedName;
+        schoolAddress = fetchedAddress;
+        schoolPhoto = photo;
       });
     } catch (e) {
       debugPrint('Error fetching school info: $e');
-      setState(() {
-        _isLoading = false;
-      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Uint8List _extractPhotoOrEmpty(dynamic photoData) {
+    if (photoData != null && photoData is Map) {
+      return Uint8List.fromList(List<int>.from(photoData.values));
+    }
+    return Uint8List(
+      0,
+    ); // Keeps downstream widgets happy if they expect non-null
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    final isMobile = screenWidth < 500;
+
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Colors.white,
@@ -289,14 +381,9 @@ class StaffDashboardState extends State<StaffDashboard> {
     final email = staff['email'] ?? 'Staff';
     final classId = staff['class_id'] ?? 'Staff';
     final gender = staff['gender'] ?? 'Staff';
-    final photoData = staff['photo'] ?? 'Staff';
     final mobile = staff['mobile'] ?? 'Staff';
-    // final schoolId = '${studentData?['school_id'] ?? ''}';
-    // final name = studentData?['name'] ?? '';
-    final Uint8List photoBytes =
-        (photoData != null && photoData is Map)
-            ? Uint8List.fromList(List<int>.from(photoData.values.toList()))
-            : Uint8List(0);
+
+    final Uint8List photoBytes = _extractPhotoOrEmpty(staff['photo']);
 
     return Scaffold(
       backgroundColor: Colors.blue.shade50,
@@ -308,9 +395,7 @@ class StaffDashboardState extends State<StaffDashboard> {
                   title: 'Staff Dashboard',
                   enableDrawer: true,
                   enableBack: false,
-                  onBack: () {
-                    exit(0);
-                  },
+                  onBack: () => exit(0),
                 )
                 : const DesktopAppbar(title: 'Staff Dashboard'),
       ),
@@ -361,6 +446,8 @@ class StaffDashboardState extends State<StaffDashboard> {
                 presentStudentFN: '$presentStudentFN',
                 presentStudentAN: '$presentStudentAN',
                 classIds: classIds,
+                attendanceStatusMapFn: canTakeAttendanceFn,
+                attendanceStatusMapAn: canTakeAttendanceAn,
               ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,

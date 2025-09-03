@@ -80,7 +80,7 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
                 isFocused
                     ? [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -392,17 +392,17 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
         username: username,
         password: password,
         role: 'staff',
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
       );
-      print(result1);
+      //print(result1);
       final result2 = await ApiService.registerUserDesignation(
         username: username,
         designation: 'staff',
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
         mobile: fullMobile,
         table: 'staff',
       );
-      print(result2);
+      //print(result2);
       if (result1['success'] && result2['success']) {
         showSnackBar(result1['message']);
         widget.passwordController.clear();

@@ -54,6 +54,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   flutter_image_compress: ^2.4.0
   image: ^4.3.0
+  timezone: ^0.9.0
+  http_parser: ^4.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -78,7 +80,7 @@ flutter:
     - assets/Student.xlsx
     - assets/Staff.xlsx
     - assets/Admin.xlsx
-    - assets/logo.jpg
+    - assets/logo.png
     - assets/logo2.jpg
   # To add assets to your application, add an assets section, like this:
   # assets:

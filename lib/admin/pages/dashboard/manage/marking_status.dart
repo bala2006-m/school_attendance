@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../colors/colors.dart';
-import 'dashboard/admin_dashboard.dart';
+import '../../../../colors/colors.dart';
+import '../admin_dashboard.dart';
 
 class MarkingStatus extends StatefulWidget {
   final String schoolId;

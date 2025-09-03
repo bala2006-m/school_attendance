@@ -4,8 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../color/admin_custom_color.dart';
-
 class BuildProfileCard extends StatefulWidget {
   const BuildProfileCard({
     super.key,
@@ -46,7 +44,7 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
           adminPhoto = MemoryImage(bytes);
         });
       } catch (e) {
-        print('Failed to decode base64 image: $e');
+        //print('Failed to decode base64 image: $e');
         setState(() {
           adminPhoto = null;
         });
@@ -70,7 +68,7 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AdminCustomColor.profileCard,
+        color: Colors.blue.shade900,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
       ),

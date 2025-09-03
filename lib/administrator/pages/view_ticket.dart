@@ -57,9 +57,9 @@ class _ViewTicketState extends State<ViewTicket> {
         return bDate.compareTo(aDate);
       });
 
-      print("Filtered + sorted tickets: $feedbacks");
+      // print("Filtered + sorted tickets: $feedbacks");
     } catch (e) {
-      print("Error fetching tickets: $e");
+      // print("Error fetching tickets: $e");
     } finally {
       setState(() {
         isLoading = false;
@@ -196,22 +196,24 @@ class _ViewTicketState extends State<ViewTicket> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
-    return WillPopScope(
-      onWillPop: () async {
-        FirstPageState.selectedIndex = 1;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => FirstPage(
-                  username: widget.username,
-                  schoolName: widget.schoolName,
-                  schoolAddress: widget.schoolAddress,
-                  schoolId: widget.schoolId,
-                ),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          FirstPageState.selectedIndex = 1;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => FirstPage(
+                    username: widget.username,
+                    schoolName: widget.schoolName,
+                    schoolAddress: widget.schoolAddress,
+                    schoolId: widget.schoolId,
+                  ),
+            ),
+          );
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,

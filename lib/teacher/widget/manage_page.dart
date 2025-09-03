@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../components/build_profile_card_mobile.dart';
-import '../pages/post_tickets.dart';
-import '../pages/timetable_screen.dart';
-import '../pages/view_leave_request.dart';
+import '../pages/homework/homework_class_list.dart';
+import '../pages/manage/post_tickets.dart';
+import '../pages/manage/timetable_screen.dart';
+import '../pages/manage/view_leave_request.dart';
 
 class ManagePage extends StatelessWidget {
   final String schoolId;
@@ -30,149 +31,181 @@ class ManagePage extends StatelessWidget {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Container(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              BuildProfileCard(
-                schoolName: schoolName,
-                schoolAddress: schoolAddress,
-                schoolPhoto: schoolPhoto,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            BuildProfileCard(
+              schoolName: schoolName,
+              schoolAddress: schoolAddress,
+              schoolPhoto: schoolPhoto,
+            ),
+            SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.black26, width: 2),
+                boxShadow: [BoxShadow(color: Colors.transparent)],
               ),
-              SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.black26, width: 2),
-                  boxShadow: [
-                    BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Manage',
-                              style: TextStyle(
-                                color: Colors.blue.shade900,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 25,
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.blue.shade900,
-                              size: 50,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          buildButtons(
-                            context,
-                            screenWidth,
-                            buttonHeight,
-                            'Time\nTable',
-                            Icons.calendar_month_outlined,
-                            TimetableScreen(
-                              schoolId: schoolId,
-                              username: username,
+                          Text(
+                            'Manage',
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25,
                             ),
-                            Colors.white,
-                            Colors.black,
-                            Colors.blue,
-                            Colors.blue,
                           ),
-                          buildButtons(
-                            context,
-                            screenWidth,
-                            buttonHeight,
-                            'Leave\nRequest',
-                            Icons.remove_from_queue,
-                            ViewLeaveRequest(
-                              schoolId: schoolId,
-                              username: username,
-                            ),
-                            Colors.white,
-                            Colors.black,
-                            Colors.blue,
-                            Colors.blue,
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.blue.shade900,
+                            size: 50,
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.black26, width: 2),
-                  boxShadow: [
-                    BoxShadow(color: Colors.transparent.withOpacity(0.02)),
+                    ),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        buildButtons(
+                          context,
+                          screenWidth,
+                          buttonHeight,
+                          'Time\nTable',
+                          Icons.calendar_month_outlined,
+                          TimetableScreen(
+                            schoolId: schoolId,
+                            username: username,
+                          ),
+                          Colors.cyan,
+                          Colors.black,
+                          Colors.blue,
+                          Colors.white,
+                        ),
+                        buildButtons(
+                          context,
+                          screenWidth,
+                          buttonHeight,
+                          'Leave\nRequest',
+                          Icons.remove_from_queue,
+                          ViewLeaveRequest(
+                            schoolId: schoolId,
+                            username: username,
+                          ),
+                          Colors.cyan,
+                          Colors.black,
+                          Colors.blue,
+                          Colors.white,
+                        ),
+                        buildButtons(
+                          context,
+                          screenWidth,
+                          buttonHeight,
+                          'Assign\nHomework',
+                          Icons.maps_home_work_outlined,
+                          HomeworkClassList(
+                            schoolId: schoolId,
+                            username: username,
+                          ),
+                          Colors.cyan,
+                          Colors.black,
+                          Colors.blue,
+                          Colors.white,
+                        ),
+                      ],
+                    ),
+                    // Row(
+                    //   crossAxisAlignment: CrossAxisAlignment.center,
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     buildButtons(
+                    //       context,
+                    //       screenWidth,
+                    //       buttonHeight,
+                    //       'Post\nMessage',
+                    //       Icons.message,
+                    //       MessageClassList(
+                    //         schoolId: schoolId,
+                    //         username: username,
+                    //       ),
+                    //       Colors.cyan,
+                    //       Colors.black,
+                    //       Colors.blue,
+                    //       Colors.white,
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Services',
-                              style: TextStyle(
-                                color: Colors.blue.shade900,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 25,
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.blue.shade900,
-                              size: 50,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
+              ),
+            ),
+            SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.black26, width: 2),
+                boxShadow: [BoxShadow(color: Colors.transparent)],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          buildButtons(
-                            context,
-                            screenWidth,
-                            buttonHeight,
-                            'Submit\nTicket',
-                            Icons.feed,
-                            PostTickets(schoolId: schoolId, username: username),
-                            Colors.white,
-                            Colors.black,
-                            Colors.blue,
-                            Colors.blue,
+                          Text(
+                            'Services',
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.blue.shade900,
+                            size: 50,
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        buildButtons(
+                          context,
+                          screenWidth,
+                          buttonHeight,
+                          'Submit\nTicket',
+                          Icons.feed,
+                          PostTickets(schoolId: schoolId, username: username),
+                          Colors.cyan,
+                          Colors.black,
+                          Colors.blue,
+                          Colors.white,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

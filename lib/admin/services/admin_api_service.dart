@@ -5,8 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class AdminApiService {
-  static const String baseUrl = "http://51.20.189.225";
-  //static String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static const String baseUrl = "http://194.238.23.250:3000";
+  //static const String oldUrl = "http://51.20.189.225";
+  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
   static Future<Map<String, dynamic>?> uploadStudentExcelFile(
     File file,
     String schoolId,
@@ -26,17 +27,16 @@ class AdminApiService {
         );
 
       final response = await request.send();
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final respStr = await response.stream.bytesToString();
-        print(jsonDecode(respStr));
+        //print(jsonDecode(respStr));
         return jsonDecode(respStr);
       } else {
-        print('Upload failed with code: ${response.statusCode}');
+        //print('Upload failed with code: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Upload error: $e');
+      //print('Upload error: $e');
       return null;
     }
   }
@@ -65,11 +65,11 @@ class AdminApiService {
 
         return jsonDecode(respStr);
       } else {
-        print('Upload failed with code: ${response.statusCode}');
+        //print('Upload failed with code: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Upload error: $e');
+      //print('Upload error: $e');
       return null;
     }
   }
@@ -97,15 +97,15 @@ class AdminApiService {
       // ✅ Read stream only once
       final responseBody = await response.stream.bytesToString();
       final decoded = jsonDecode(responseBody);
-      print(decoded);
+      //print(decoded);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return decoded;
       } else {
-        print('Upload failed with code: ${response.statusCode}');
+        //print('Upload failed with code: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Upload error: $e');
+      // print('Upload error: $e');
       return null;
     }
   }
@@ -133,7 +133,7 @@ class AdminApiService {
         }
       }
     } catch (e) {
-      print("API error: $e");
+      //print("API error: $e");
     }
     return null;
   }
@@ -180,6 +180,7 @@ class AdminApiService {
 
     try {
       final response = await http.get(url);
+      // print(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List<dynamic> data = jsonDecode(response.body);
 
@@ -291,11 +292,11 @@ class AdminApiService {
         final Map<String, dynamic> data = jsonDecode(response.body);
         return data['messages']?.toString() ?? '';
       } else {
-        print('Failed to load message. Status code: ${response.statusCode}');
+        //print('Failed to load message. Status code: ${response.statusCode}');
         return '';
       }
     } catch (e) {
-      print('Error fetching message: $e');
+      //print('Error fetching message: $e');
       return '';
     }
   }
@@ -305,7 +306,6 @@ class AdminApiService {
   ) async {
     final url = Uri.parse('$baseUrl/class/all/${int.parse(schoolId)}');
     final response = await http.get(url);
-
     if (response.statusCode != 200) {
       final error = jsonDecode(response.body);
       throw Exception(
@@ -406,11 +406,11 @@ class AdminApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        print('❌ Failed to update profile: ${response.body}');
+        //print('❌ Failed to update profile: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('❌ Exception: $e');
+      // print('❌ Exception: $e');
       return false;
     }
   }
@@ -460,10 +460,10 @@ class AdminApiService {
           return List<Map<String, dynamic>>.from(data['staff']);
         }
       } else {
-        print("Server responded with status: ${response.statusCode}");
+        //print("Server responded with status: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error fetching staff data: $e");
+      //print("Error fetching staff data: $e");
     }
 
     return [];
@@ -489,7 +489,7 @@ class AdminApiService {
         }
       }
     } catch (e) {
-      print("Error fetching admin data: $e");
+      //print("Error fetching admin data: $e");
     }
     return null;
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:school_attendance/administrator/pages/view_feedback.dart';
 
-import '../../student/widget/student_manage_page.dart';
 import '../pages/admin_registration.dart';
 import '../pages/block_school.dart';
 import '../pages/view_ticket.dart';
@@ -28,11 +27,10 @@ class ManagePage extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Container(
               decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.black26, width: 2),
-                boxShadow: [
-                  BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-                ],
+                boxShadow: [BoxShadow(color: Colors.transparent)],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -89,11 +87,10 @@ class ManagePage extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Container(
               decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.black26, width: 2),
-                boxShadow: [
-                  BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-                ],
+                boxShadow: [BoxShadow(color: Colors.transparent)],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -160,11 +157,10 @@ class ManagePage extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Container(
               decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.black26, width: 2),
-                boxShadow: [
-                  BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-                ],
+                boxShadow: [BoxShadow(color: Colors.transparent)],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -232,6 +228,67 @@ class ManagePage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget buildElevatedButton(
+    BuildContext context,
+    String text,
+    Widget page,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 12),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.22,
+          minWidth: MediaQuery.of(context).size.width / 4.5,
+          maxWidth: MediaQuery.of(context).size.width / 4.5,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyan,
+                  minimumSize: Size(
+                    MediaQuery.of(context).size.width / 4.5,
+                    MediaQuery.of(context).size.height * 0.09,
+                  ),
+                  maximumSize: Size(
+                    MediaQuery.of(context).size.width / 4.5,
+                    MediaQuery.of(context).size.height * 0.09,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(color: Colors.transparent, width: 2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                  shadowColor: Colors.grey,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => page),
+                  );
+                },
+                child: Icon(icon, size: 40, color: Colors.white),
+              ),
+              SizedBox(height: 10),
+              Text(
+                textAlign: TextAlign.center,
+                text,
+                style: TextStyle(color: Colors.black, fontSize: 15),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

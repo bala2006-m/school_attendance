@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/admin/color/admin_custom_color.dart';
 
 class BuildProfileCard extends StatefulWidget {
   const BuildProfileCard({
@@ -37,7 +36,7 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AdminCustomColor.profileCard,
+        color: Colors.blue.shade900,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
       ),

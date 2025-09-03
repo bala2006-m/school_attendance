@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = "http://51.20.189.225";
-  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static const String baseUrl = "http://194.238.23.250:3000";
+  // static const String oldUrl = "http://51.20.189.225";
+  // static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
 
   Future<Map<String, dynamic>> storeTickets({
     required String username,
@@ -77,7 +78,7 @@ class ApiService {
       }),
     );
     final data = jsonDecode(response.body);
-    print(data);
+    //print(data);
     if (response.statusCode == 200 ||
         data['message'] == "Password updated successfully") {
       return data;
@@ -140,6 +141,24 @@ class ApiService {
   }) async {
     final url = Uri.parse(
       '$baseUrl/attendance-users?role=$role&school_id=$schoolId',
+    );
+
+    try {
+      final response = await http.get(url);
+      //print(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load users: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Connection error: $e');
+    }
+  }
+
+  static Future<List<dynamic>> getUsersByRoleAll({required String role}) async {
+    final url = Uri.parse(
+      '$baseUrl/attendance-users/attendance-users-all?role=$role',
     );
 
     try {
@@ -337,13 +356,13 @@ class ApiService {
         if (data['status'] == 'success') {
           return data['attendance_exists'] as bool? ?? false;
         } else {
-          print('Server responded with error: ${data['message']}');
+          //print('Server responded with error: ${data['message']}');
         }
       } else {
-        print('HTTP error: ${response.statusCode} - ${response.reasonPhrase}');
+        //print('HTTP error: ${response.statusCode} - ${response.reasonPhrase}');
       }
     } catch (e) {
-      print('Exception while checking attendance: $e');
+      //print('Exception while checking attendance: $e');
     }
 
     return null;
@@ -368,13 +387,13 @@ class ApiService {
         if (data['status'] == 'success') {
           return data['attendance_exists'] as bool? ?? false;
         } else {
-          print('Server responded with error: ${data['message']}');
+          //print('Server responded with error: ${data['message']}');
         }
       } else {
-        print('HTTP error: ${response.statusCode} - ${response.reasonPhrase}');
+        //print('HTTP error: ${response.statusCode} - ${response.reasonPhrase}');
       }
     } catch (e) {
-      print('Exception while checking attendance: $e');
+      //print('Exception while checking attendance: $e');
     }
 
     return null;
@@ -398,13 +417,13 @@ class ApiService {
         if (data['status'] == 'success' && data['attendance'] is List) {
           return List<Map<String, dynamic>>.from(data['attendance']);
         } else {
-          print("Unexpected data format or status: ${data['status']}");
+          //print("Unexpected data format or status: ${data['status']}");
         }
       } else {
-        print("Error response: ${response.statusCode}");
+        // print("Error response: ${response.statusCode}");
       }
     } catch (e) {
-      print("Fetch attendance error: $e");
+      //print("Fetch attendance error: $e");
     }
 
     return [];
@@ -428,10 +447,10 @@ class ApiService {
           }
         }
       } else {
-        print('Failed: ${response.statusCode}');
+        // print('Failed: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching school_id: $e');
+      //print('Error fetching school_id: $e');
     }
     return null;
   }
@@ -506,7 +525,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error fetching attendance: $e');
+      // print('Error fetching attendance: $e');
     }
 
     return [];
@@ -518,7 +537,7 @@ class ApiService {
     required String date,
     required String session,
     required String status,
-    required String school_id,
+    required String schoolId,
   }) async {
     try {
       final response = await http.post(
@@ -529,7 +548,7 @@ class ApiService {
           'date': date,
           'session': session,
           'status': status,
-          'school_id': school_id,
+          'school_id': schoolId,
         }),
       );
 
@@ -538,11 +557,11 @@ class ApiService {
       if (response.statusCode == 200 || res['status'] == 'success') {
         return true;
       } else {
-        print('Attendance post failed: ${res['message'] ?? 'Unknown error'}');
+        //print('Attendance post failed: ${res['message'] ?? 'Unknown error'}');
         return false;
       }
     } catch (e) {
-      print('Error posting attendance: $e');
+      // print('Error posting attendance: $e');
       return false;
     }
   }
@@ -606,7 +625,7 @@ class ApiService {
           .timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
-      print(data);
+      //print(data);
       if (response.statusCode == 200 || response.statusCode == 201) {
         return "✅ ${data['message']}";
       } else if (response.statusCode == 409 ||
@@ -712,7 +731,7 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
-      print(data);
+      //print(data);
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           data['status'] == 'success') {
@@ -742,10 +761,10 @@ class ApiService {
     required String username,
     required String password,
     required String role,
-    required String school_id,
+    required String schoolId,
   }) async {
     final url = Uri.parse('$baseUrl/auth/register');
-    int sId = int.parse(school_id);
+    int sId = int.parse(schoolId);
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -774,7 +793,7 @@ class ApiService {
   static Future<Map<String, dynamic>> registerUserDesignation({
     required String username,
     required String designation,
-    required String school_id,
+    required String schoolId,
     required String mobile,
     required String table,
   }) async {
@@ -787,14 +806,14 @@ class ApiService {
         body: jsonEncode({
           'username': username.trim(),
           'designation': designation.trim(),
-          'school_id': school_id.trim(),
+          'school_id': schoolId.trim(),
           'table': table.trim(),
           'mobile': mobile.trim(),
         }),
       );
 
       final data = jsonDecode(response.body);
-      print(data);
+      //print(data);
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           data['status'] == 'success') {

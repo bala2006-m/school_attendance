@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../../../teacher/services/teacher_api_service.dart';
-import '../../appbar/admin_appbar_desktop.dart';
-import '../../appbar/admin_appbar_mobile.dart';
-import '../../services/admin_api_service.dart';
+import '../../../../teacher/services/teacher_api_service.dart';
+import '../../../appbar/admin_appbar_desktop.dart';
+import '../../../appbar/admin_appbar_mobile.dart';
+import '../../../services/admin_api_service.dart';
 import 'monthly_attendance.dart';
 
 class StudentList extends StatefulWidget {

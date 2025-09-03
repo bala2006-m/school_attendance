@@ -3,8 +3,8 @@ import 'package:school_attendance/teacher/color/teacher_custom_color.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../appbar/desktop_appbar.dart';
-import '../appbar/mobile_appbar.dart';
+import '../../appbar/desktop_appbar.dart';
+import '../../appbar/mobile_appbar.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({
@@ -74,7 +74,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.sizeOf(context).width > 600;
+    // final isDesktop = MediaQuery.sizeOf(context).width > 600;
     final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(

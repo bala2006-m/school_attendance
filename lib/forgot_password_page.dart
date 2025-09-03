@@ -84,7 +84,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       await sendOtp();
     } catch (e) {
-      print('Error during init: $e');
+      //print('Error during init: $e');
       showSnackBar('Something went wrong.');
     } finally {
       setState(() => isLoading = false);

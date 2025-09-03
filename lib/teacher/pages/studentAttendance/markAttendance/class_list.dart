@@ -3,10 +3,10 @@ import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../../services/api_service.dart';
-import '../../appbar/mobile_appbar.dart';
-import '../../widget/desktop_class_list.dart';
-import '../../widget/mobile_class_list.dart';
+import '../../../../services/api_service.dart';
+import '../../../appbar/mobile_appbar.dart';
+import '../../../widget/desktop_class_list.dart';
+import '../../../widget/mobile_class_list.dart';
 
 class ClassList extends StatefulWidget {
   final String schoolId;

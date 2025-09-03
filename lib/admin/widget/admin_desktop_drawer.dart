@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
-import '../../teacher/color/teacher_custom_color.dart' as AdminCustomColor;
-import '../pages/admin_dashboard.dart';
-import '../pages/edit_profile.dart';
-import '../pages/profile.dart';
+import '../../teacher/color/teacher_custom_color.dart' as admin_custom_color;
+import '../pages/dashboard/admin_dashboard.dart';
+import '../pages/drawer/edit_profile.dart';
+import '../pages/drawer/profile.dart';
 
 class AdminDesktopDrawer extends StatelessWidget {
   const AdminDesktopDrawer({
@@ -33,14 +33,14 @@ class AdminDesktopDrawer extends StatelessWidget {
   final String schoolId;
   @override
   Widget build(BuildContext context) {
-    final screen = MediaQuery.sizeOf(context);
-    final width1 = screen.width;
-    final height1 = screen.height;
+    //final screen = MediaQuery.sizeOf(context);
+    // final width1 = screen.width;
+    // final height1 = screen.height;
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AdminCustomColor.appbar,
+        color: admin_custom_color.appbar,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -49,7 +49,7 @@ class AdminDesktopDrawer extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AdminCustomColor.appbar, AdminCustomColor.appbar],
+                colors: [admin_custom_color.appbar, admin_custom_color.appbar],
               ),
             ),
             child: Column(
@@ -62,7 +62,7 @@ class AdminDesktopDrawer extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [AdminCustomColor.appbar, Colors.blue.shade800],
+                      colors: [admin_custom_color.appbar, Colors.blue.shade800],
                     ),
                   ),
                   child: Center(
@@ -82,7 +82,7 @@ class AdminDesktopDrawer extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              foregroundColor: AdminCustomColor.appbar,
+              foregroundColor: admin_custom_color.appbar,
               padding: EdgeInsets.symmetric(horizontal: 37, vertical: 10),
             ),
             onPressed: () {
@@ -108,7 +108,7 @@ class AdminDesktopDrawer extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              foregroundColor: AdminCustomColor.appbar,
+              foregroundColor: admin_custom_color.appbar,
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             onPressed: () {
@@ -146,7 +146,7 @@ class AdminDesktopDrawer extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              foregroundColor: AdminCustomColor.appbar,
+              foregroundColor: admin_custom_color.appbar,
               padding: EdgeInsets.symmetric(horizontal: 33, vertical: 10),
             ),
             onPressed: () async {

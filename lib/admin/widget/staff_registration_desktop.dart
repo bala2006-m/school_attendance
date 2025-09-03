@@ -272,13 +272,13 @@ class _StaffRegistrationDesktopState extends State<StaffRegistrationDesktop> {
         username: username,
         password: password,
         role: 'staff',
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
       );
 
       final result2 = await ApiService.registerUserDesignation(
         username: username,
         designation: designation,
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
         mobile: fullMobile,
         table: 'staff',
       );

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 Future<void> exportAttendanceToExcel(
@@ -15,7 +16,6 @@ Future<void> exportAttendanceToExcel(
       if (!status.isGranted) {
         status = await Permission.storage.request();
       }
-
       if (!status.isGranted) {
         var manageStatus = await Permission.manageExternalStorage.request();
         if (!manageStatus.isGranted) {
@@ -26,28 +26,30 @@ Future<void> exportAttendanceToExcel(
         }
       }
     }
-    final excel = Excel.createExcel();
-    final sheet = excel['${staffUsername}_Attendance'];
-    sheet.appendRow(['Date', 'FN Status', 'AN Status']);
 
+    final excel = Excel.createExcel();
+    final sheet = excel['Sheet1'];
+    sheet.appendRow(['Date', 'FN Status', 'AN Status']);
     for (var entry in attendanceData) {
       final date = entry['date']?.toString().substring(0, 10) ?? '';
       final fn = entry['fn_status'] ?? '';
       final an = entry['an_status'] ?? '';
       sheet.appendRow([date, fn, an]);
     }
-
-    final path = '/storage/emulated/0/Download';
-    final file = File('$path/${staffUsername}_attendance.xlsx');
-
-    final excelBytes = excel.encode();
-    await file.writeAsBytes(excelBytes!);
-
+    String path;
+    if (Platform.isAndroid) {
+      path = '/storage/emulated/0/Download';
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      path = directory.path;
+    }
+    final file = File('$path/${staffUsername}_Attendance.xlsx');
+    await file.writeAsBytes(excel.encode()!);
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Excel saved to: ${file.path}')));
+    ).showSnackBar(SnackBar(content: Text('✅ Excel saved to: ${file.path}')));
   } catch (e) {
-    print('Failed to export Excel: $e');
+    debugPrint('❌ Failed to export Excel: $e');
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Failed to export Excel')));

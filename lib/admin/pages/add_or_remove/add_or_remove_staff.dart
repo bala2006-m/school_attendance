@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../services/api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../widget/staff_registration_desktop.dart';
-import '../widget/staff_registration_mobile.dart';
-import 'admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../widget/staff_registration_desktop.dart';
+import '../../widget/staff_registration_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class AddOrRemoveStaff extends StatefulWidget {
   final String schoolId;
@@ -35,7 +35,6 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
   final TextEditingController _searchController = TextEditingController();
 
   late FocusNode _usernameFocus;
-  late FocusNode _designationFocus;
   late FocusNode _passwordFocus;
   late FocusNode _mobileFocus;
   late FocusNode _countryCodeFocus;
@@ -52,7 +51,6 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     init();
     _searchController.addListener(_filterStaff);
     _usernameFocus = FocusNode();
-    _designationFocus = FocusNode();
     _passwordFocus = FocusNode();
     _mobileFocus = FocusNode();
     _countryCodeFocus = FocusNode();
@@ -125,7 +123,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     super.dispose();
   }
 
-  Future<bool> onWillPop() async {
+  Future<void> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
     Navigator.pushReplacement(
       context,
@@ -137,14 +135,19 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
             ),
       ),
     );
-    return false;
   }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
+
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
@@ -277,6 +280,9 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                             children: [
                               Text('Username: $username'),
                               Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
+                              Text(
+                                'Designation: ${data['designation'] ?? 'N/A'}',
+                              ),
                             ],
                           ),
                           trailing: IconButton(
@@ -344,7 +350,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                     const SizedBox(height: 20),
                     const Divider(),
                   ],
@@ -391,7 +397,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
             isFocused
                 ? [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),

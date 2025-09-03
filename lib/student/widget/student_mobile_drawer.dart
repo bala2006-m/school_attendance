@@ -78,7 +78,7 @@ class StudentMobileDrawer extends StatelessWidget {
                   email,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                   textAlign: TextAlign.center,
                 ),

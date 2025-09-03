@@ -224,7 +224,7 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 4,
-                        shadowColor: Colors.blueAccent.withOpacity(0.3),
+                        shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
                         child: Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(

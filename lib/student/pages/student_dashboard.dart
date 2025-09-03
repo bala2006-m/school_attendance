@@ -122,7 +122,7 @@ class StudentDashboardState extends State<StudentDashboard> {
       });
       _loadSchoolAndClassData();
     } catch (e) {
-      print("Error loading student data: $e");
+      //print("Error loading student data: $e");
       setState(() => _isLoading = false);
     }
   }
@@ -181,7 +181,7 @@ class StudentDashboardState extends State<StudentDashboard> {
         _isLoading = false;
       });
     } catch (e) {
-      print("Error loading school/class data: $e");
+      //print("Error loading school/class data: $e");
     }
   }
 
@@ -296,9 +296,9 @@ class StudentDashboardState extends State<StudentDashboard> {
                 mobile: mobile,
                 schoolName: schoolName,
                 className: className,
-                Message: message,
-                SchoolAddress: schoolAddress,
-                SchoolPhoto: schoolPhoto1,
+                message: message,
+                schoolAddress: schoolAddress,
+                schoolPhoto: schoolPhoto1,
               )
               : StudentMobileDashboard(
                 schoolPhoto: schoolPhoto1,
@@ -328,6 +328,10 @@ class StudentDashboardState extends State<StudentDashboard> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home, size: 30),
             label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_work_outlined, size: 30),
+            label: 'Homework',
           ),
           // BottomNavigationBarItem(
           //   icon: Icon(Icons.analytics, size: 30),

@@ -52,14 +52,6 @@ class BuildHomePage {
                 ),
             MessageBox(message: message),
             const SizedBox(height: 10),
-
-            BuildMarkingCard(
-              screenWidth: screenWidth,
-              screenHeight: screenHeight,
-              attendanceStatusMapFn: attendanceStatusMapFn,
-              attendanceStatusMapAn: attendanceStatusMapAn,
-            ),
-            SizedBox(height: 10),
             DesktopStats(
               screenWidth: screenWidth,
               screenHeight: screenHeight,
@@ -82,6 +74,13 @@ class BuildHomePage {
               isClassShown: false,
               classIds: [],
               schoolId: '',
+            ),
+            SizedBox(height: 10),
+            BuildMarkingCard(
+              screenWidth: screenWidth,
+              screenHeight: screenHeight,
+              attendanceStatusMapFn: attendanceStatusMapFn,
+              attendanceStatusMapAn: attendanceStatusMapAn,
             ),
 
             const SizedBox(height: 40),

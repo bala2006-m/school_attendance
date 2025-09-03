@@ -61,7 +61,7 @@ class BuildProfileCardDesktop {
                     Text(
                       adminDesignation,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 18,
                       ), // Slightly more opaque
                     ),

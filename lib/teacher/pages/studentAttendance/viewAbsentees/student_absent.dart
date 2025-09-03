@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../../../services/api_service.dart';
 import '../../../appbar/desktop_appbar.dart';
 import '../../../appbar/mobile_appbar.dart';
 import 'student_absentees.dart';
+
 class StudentAbsentees extends StatefulWidget {
   final String schoolId;
   final String username;
@@ -39,9 +41,9 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
       MaterialPageRoute(
         builder:
             (context) => StudentAbsent(
-          schoolId: widget.schoolId,
-          username: widget.username,
-        ),
+              schoolId: widget.schoolId,
+              username: widget.username,
+            ),
       ),
     );
     return false;
@@ -76,8 +78,8 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
 
   List<DataRow> buildAbsentRows(String type) {
     return attendance.where((student) => student['${type}_status'] == 'A').map((
-        student,
-        ) {
+      student,
+    ) {
       return DataRow(
         cells: [
           DataCell(Text(student['username'])),
@@ -131,25 +133,25 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
           child:
-          isMobile
-              ? MobileAppbar(
-            title: 'Student Absentees',
-            enableDrawer: false,
-            enableBack: true,
-            onBack: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => StudentAbsent(
-                    schoolId: widget.schoolId,
-                    username: widget.username,
-                  ),
-                ),
-              );
-            },
-          )
-              : const DesktopAppbar(title: 'Student Absentees'),
+              isMobile
+                  ? MobileAppbar(
+                    title: 'Student Absentees',
+                    enableDrawer: false,
+                    enableBack: true,
+                    onBack: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => StudentAbsent(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  )
+                  : const DesktopAppbar(title: 'Student Absentees'),
         ),
         body: SingleChildScrollView(
           child: Padding(
@@ -237,33 +239,33 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
                     const SizedBox(height: 15),
                     attendance.any((e) => e['fn_status'] == 'A')
                         ? DataTable(
-                      headingRowColor: WidgetStateProperty.all(
-                        Colors.grey[200],
-                      ),
-                      columns: const [
-                        DataColumn(label: Text('Username')),
-                        DataColumn(label: Text('Name')),
-                      ],
-                      rows: buildAbsentRows('fn'),
-                    )
+                          headingRowColor: WidgetStateProperty.all(
+                            Colors.grey[200],
+                          ),
+                          columns: const [
+                            DataColumn(label: Text('Username')),
+                            DataColumn(label: Text('Name')),
+                          ],
+                          rows: buildAbsentRows('fn'),
+                        )
                         : Center(
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            "No absentees in the forenoon.",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[700],
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                "No absentees in the forenoon.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
                     const SizedBox(height: 30),
                     Center(
                       child: Text(
@@ -280,33 +282,33 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
                     const SizedBox(height: 15),
                     attendance.any((e) => e['an_status'] == 'A')
                         ? DataTable(
-                      headingRowColor: WidgetStateProperty.all(
-                        Colors.grey[200],
-                      ),
-                      columns: const [
-                        DataColumn(label: Text('Username')),
-                        DataColumn(label: Text('Name')),
-                      ],
-                      rows: buildAbsentRows('an'),
-                    )
+                          headingRowColor: WidgetStateProperty.all(
+                            Colors.grey[200],
+                          ),
+                          columns: const [
+                            DataColumn(label: Text('Username')),
+                            DataColumn(label: Text('Name')),
+                          ],
+                          rows: buildAbsentRows('an'),
+                        )
                         : Center(
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            "No absentees in the afternoon.",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[700],
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                "No absentees in the afternoon.",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
                   ],
                 ),
               ),

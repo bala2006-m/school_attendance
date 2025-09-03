@@ -24,6 +24,7 @@ class AdministratorDashboard extends StatefulWidget {
 class AdministratorDashboardState extends State<AdministratorDashboard> {
   List<Map<String, dynamic>> schools = [];
   int admins = 0;
+  int administrators = 0;
   int staffs = 0;
   int students = 0;
   bool isLoading = true;
@@ -36,15 +37,18 @@ class AdministratorDashboardState extends State<AdministratorDashboard> {
 
   Future<void> init() async {
     final res = await AdministratorApiService.fetchAllSchools();
-
-    final ad = await ApiService.getUsersByRole(role: 'admin', schoolId: 1);
-    final sd = await ApiService.getUsersByRole(role: 'student', schoolId: 1);
-    final st = await ApiService.getUsersByRole(role: 'staff', schoolId: 1);
+    final ad = await ApiService.getUsersByRoleAll(role: 'admin');
+    final administrator = await ApiService.getUsersByRoleAll(
+      role: 'administrator',
+    );
+    final sd = await ApiService.getUsersByRoleAll(role: 'student');
+    final st = await ApiService.getUsersByRoleAll(role: 'staff');
     setState(() {
       schools = res;
       isLoading = false;
       staffs = st.length;
       admins = ad.length;
+      administrators = administrator.length;
       students = sd.length;
     });
   }
@@ -52,14 +56,14 @@ class AdministratorDashboardState extends State<AdministratorDashboard> {
   ImageProvider _getSchoolImage(dynamic photo) {
     if (photo == null) {
       return const NetworkImage(
-        'https://tse2.mm.bing.net/th/id/OIP.H0vvv2GE_5ndioWqHJExGQHaHa',
+        'https://i.pinimg.com/originals/71/ca/c8/71cac8ecb9cec3704f6dc163f3b5fc6f.png',
       );
     }
     try {
       return MemoryImage(base64Decode(photo));
     } catch (_) {
       return const NetworkImage(
-        'https://tse2.mm.bing.net/th/id/OIP.H0vvv2GE_5ndioWqHJExGQHaHa',
+        'https://i.pinimg.com/originals/71/ca/c8/71cac8ecb9cec3704f6dc163f3b5fc6f.png',
       );
     }
   }
@@ -67,9 +71,9 @@ class AdministratorDashboardState extends State<AdministratorDashboard> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
-
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {},
       child: RefreshIndicator(
         onRefresh: init,
         child: Scaffold(
@@ -107,7 +111,8 @@ class AdministratorDashboardState extends State<AdministratorDashboard> {
                             showRegister
                                 ? SizedBox(
                                   width: double.infinity,
-                                  height: MediaQuery.sizeOf(context).height / 2,
+                                  height:
+                                      MediaQuery.sizeOf(context).height * 0.56,
                                   child: Padding(
                                     padding: const EdgeInsets.all(12.0),
                                     child: Container(
@@ -213,28 +218,44 @@ class AdministratorDashboardState extends State<AdministratorDashboard> {
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          child: Column(
                             children: [
-                              _StatCard(
-                                title: "Schools",
-                                count: schools.length,
-                                color: Colors.blue,
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _StatCard(
+                                    title: "Schools",
+                                    count: schools.length,
+                                    color: Colors.blue,
+                                  ),
+                                  _StatCard(
+                                    title: "Administrators",
+                                    count: administrators, // Example value
+                                    color: Colors.blue,
+                                  ),
+                                  _StatCard(
+                                    title: "Admins",
+                                    count: admins, // Example value
+                                    color: Colors.blue,
+                                  ),
+                                ],
                               ),
-                              _StatCard(
-                                title: "Admins",
-                                count: admins, // Example value
-                                color: Colors.orange,
-                              ),
-                              _StatCard(
-                                title: "Staffs",
-                                count: staffs, // Example value
-                                color: Colors.green,
-                              ),
-                              _StatCard(
-                                title: "Students",
-                                count: students, // Example value
-                                color: Colors.yellow,
+                              const SizedBox(height: 16),
+
+                              Row(
+                                children: [
+                                  _StatCard(
+                                    title: "Staffs",
+                                    count: staffs, // Example value
+                                    color: Colors.blue,
+                                  ),
+                                  _StatCard(
+                                    title: "Students",
+                                    count: students, // Example value
+                                    color: Colors.blue,
+                                  ),
+                                ],
                               ),
                             ],
                           ),

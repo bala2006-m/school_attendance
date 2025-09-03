@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/administrator/services/administrator_api_service.dart';
 
-import '../../teacher/appbar/desktop_appbar.dart';
-import '../../teacher/appbar/mobile_appbar.dart';
-import '../../teacher/pages/staff_dashboard.dart';
+import '../../appbar/desktop_appbar.dart';
+import '../../appbar/mobile_appbar.dart';
+import '../staff_dashboard.dart';
 
 class EditPassword extends StatefulWidget {
   const EditPassword({
@@ -109,7 +109,6 @@ class _EditPasswordState extends State<EditPassword> {
     required bool obscure,
     required Function() toggle,
     String? Function(String?)? validator,
-    int limit = 1,
   }) {
     return TextFormField(
       controller: controller,

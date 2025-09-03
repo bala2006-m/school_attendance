@@ -188,22 +188,24 @@ class _BlockSchoolState extends State<BlockSchool> {
             )['reason']
             : null;
 
-    return WillPopScope(
-      onWillPop: () async {
-        FirstPageState.selectedIndex = 1;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => FirstPage(
-                  username: widget.username,
-                  schoolName: widget.schoolName,
-                  schoolAddress: widget.schoolAddress,
-                  schoolId: widget.schoolId,
-                ),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          FirstPageState.selectedIndex = 1;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => FirstPage(
+                    username: widget.username,
+                    schoolName: widget.schoolName,
+                    schoolAddress: widget.schoolAddress,
+                    schoolId: widget.schoolId,
+                  ),
+            ),
+          );
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,

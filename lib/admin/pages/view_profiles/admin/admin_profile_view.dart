@@ -6,14 +6,16 @@ import 'package:school_attendance/admin/services/admin_api_service.dart';
 
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
-import 'view_admin_profile.dart';
+import 'view_admin_profiles.dart';
 
 class AdminProfile extends StatefulWidget {
   const AdminProfile({
     super.key,
     required this.username,
     required this.schoolId,
+    required this.adminName,
   });
+  final String adminName;
   final String username;
   final String schoolId;
 
@@ -33,7 +35,7 @@ class _AdminProfileState extends State<AdminProfile> {
 
   Future<void> init() async {
     final data = await AdminApiService.fetchAdminData(
-      username: widget.username,
+      username: widget.adminName,
       schoolId: widget.schoolId,
     );
     if (mounted) {

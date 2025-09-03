@@ -7,7 +7,7 @@ import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../admin/services/admin_api_service.dart';
+import '../../../admin/services/admin_api_service.dart';
 
 class ViewLeaveRequest extends StatefulWidget {
   final String schoolId;
@@ -39,7 +39,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
       );
 
       // Keep only student requests
-      leaveRequest =
+      final filteredRequests =
           allRequests
               .where(
                 (req) =>
@@ -47,24 +47,40 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
               )
               .toList();
 
+      // Fetch student + class data in parallel
       await Future.wait(
-        leaveRequest.map((request) async {
+        filteredRequests.map((req) async {
           try {
+            final studentData =
+                await StudentApiServices.fetchStudentDataUsername(
+                  username: req['username'],
+                  schoolId: req['school_id'],
+                );
+            if (studentData != null) {
+              req['name'] = studentData['name'];
+            }
+
             final classInfo = await StudentApiServices.fetchClassDatas(
               widget.schoolId,
-              '${request['class_id']}',
+              '${req['class_id']}',
             );
-            request['class_name'] = classInfo?['class'] ?? '';
-            request['section'] = classInfo?['section'] ?? '';
+            req['class_name'] = classInfo?['class'] ?? '';
+            req['section'] = classInfo?['section'] ?? '';
           } catch (e) {
-            request['class_name'] = '';
-            request['section'] = '';
+            req['class_name'] = '';
+            req['section'] = '';
           }
         }),
       );
+
+      if (mounted) {
+        setState(() {
+          leaveRequest = filteredRequests;
+          isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint("Error fetching leave requests: $e");
-    } finally {
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -99,6 +115,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
 
   Widget buildLeaveCard(Map<String, dynamic> request) {
     final username = request['username'] ?? 'Unknown';
+    final name = request['name'] ?? 'Unknown';
     final int id = int.tryParse(request['id']?.toString() ?? '') ?? 0;
     final role = (request['role'] ?? '').toString();
     final fromDate = formatDate(request['from_date']);
@@ -107,7 +124,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
     final status = (request['status'] ?? 'pending').toString();
     final createdAt = formatDate(
       request['created_at'],
-      format: 'MMM d, yyyy • hh:mm a',
+      format: 'MMM d, yyyy ', //• hh:mm a',
     );
     final className = request['class_name'] ?? '';
     final section = request['section'] ?? '';
@@ -133,20 +150,26 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Spacer(),
+                Text(
+                  createdAt,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+
             /// Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "$username (${role.toUpperCase()})",
+                  "Name : $name\nUsername : $username",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                Text(
-                  createdAt,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
@@ -241,10 +264,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
 
   void _updateLeaveStatus(String newStatus, int leaveId) async {
     try {
-      final res = await TeacherApiServices.updateLeaveStatus(
-        leaveId,
-        newStatus,
-      );
+      TeacherApiServices.updateLeaveStatus(leaveId, newStatus);
 
       if (!mounted) return; // Widget no longer exists
 

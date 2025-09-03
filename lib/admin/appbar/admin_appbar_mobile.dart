@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../pages/notifications.dart';
+import '../pages/notification/notifications.dart';
 import '../services/admin_api_service.dart';
 
 class AdminAppbarMobile extends StatefulWidget {
@@ -31,7 +31,7 @@ class AdminAppbarMobile extends StatefulWidget {
 
 class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
   String username = 'Admin';
-  ImageProvider? adminPhoto;
+  // ImageProvider? adminPhoto;
   Uint8List? photoBytes;
   final ImageProvider defaultImage = const NetworkImage(
     'https://th.bing.com/th?q=Admin+Icon.png&w=120&h=120&c=1&rs=1&qlt=70&r=0&o=7&cb=1&pid=InlineBlock&rm=3&mkt=en-IN&cc=IN&setlang=en&adlt=moderate&t=1&mw=247',
@@ -70,13 +70,14 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final storedUsername = prefs.getString('adminName');
-    final photoBase64 = prefs.getString('adminPhoto');
     final base64Photo = prefs.getString('adminPhoto');
 
     if (base64Photo != null && base64Photo.isNotEmpty) {
       try {
         photoBytes = base64Decode(base64Photo);
+        photoBytes!.length < 5 ? photoBytes = null : null;
       } catch (e) {
+        photoBytes = null;
         debugPrint('Error decoding admin photo: $e');
       }
     }
@@ -86,22 +87,45 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
           (storedUsername!.length < 15
               ? storedUsername
               : '${storedUsername.substring(0, 15)}...');
-      if (photoBase64 != null && photoBase64.isNotEmpty) {
-        try {
-          Uint8List bytes = base64Decode(photoBase64);
-          adminPhoto = MemoryImage(bytes);
-        } catch (e) {
-          debugPrint('Failed to decode base64 image: $e');
-          adminPhoto = null;
-        }
-      }
+      // if (photoBase64 != null && photoBase64.isNotEmpty) {
+      //   try {
+      //     Uint8List bytes = base64Decode(photoBase64);
+      //     adminPhoto = MemoryImage(bytes);
+      //   } catch (e) {
+      //     debugPrint('Failed to decode base64 image: $e');
+      //     adminPhoto = null;
+      //   }
+      // }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MMMM d, y').format(DateTime.now());
+    String formatCustomDate(DateTime date) {
+      final monthMap = {
+        "Jan": "Jan",
+        "Feb": "Feb",
+        "Mar": "Mar",
+        "Apr": "Apr",
+        "May": "May",
+        "Jun": "Jun",
+        "Jul": "Jul",
+        "Aug": "Aug",
+        "Sep": "Sept", // 👈 force "Sept"
+        "Oct": "Oct",
+        "Nov": "Nov",
+        "Dec": "Dec",
+      };
 
+      final month = DateFormat('MMM').format(date);
+      final day = DateFormat('d').format(date);
+      final year = DateFormat('y').format(date);
+
+      return "${monthMap[month]} $day $year";
+    }
+
+    // Usage
+    final formattedDate = formatCustomDate(DateTime.now());
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -135,7 +159,7 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
                           child: Icon(
                             size: 40,
                             widget.enableDrawer ? Icons.menu : Icons.arrow_back,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
                   ),
@@ -189,6 +213,8 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
                   radius: 30,
                   backgroundImage:
                       photoBytes.toString() != 'null'
+                          // photoBytes != [] ||
+                          // photoBytes != null
                           ? MemoryImage(photoBytes!)
                           : NetworkImage(
                             'https://tse1.explicit.bing.net/th/id/OIP.KW8WUwEuVpHgCw5jZ2rTJgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3',

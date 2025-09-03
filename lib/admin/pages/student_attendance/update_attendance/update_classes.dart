@@ -74,7 +74,7 @@ class _ClassesState extends State<Classes> {
   Future<void> fetchClasses() async {
     final cls = await TeacherApiServices.fetchClassData(widget.schoolId);
     classes = List.from(cls);
-
+    print(classes);
     classes.sort((a, b) {
       int getClassValue(dynamic val) {
         // Convert roman numerals if needed
@@ -113,6 +113,67 @@ class _ClassesState extends State<Classes> {
 
       return a['section'].toString().compareTo(b['section'].toString());
     });
+  }
+
+  int? parseClassValue(dynamic val) {
+    const romanMap = {
+      'I': 1,
+      'II': 2,
+      'III': 3,
+      'IV': 4,
+      'V': 5,
+      'VI': 6,
+      'VII': 7,
+      'VIII': 8,
+      'IX': 9,
+      'X': 10,
+      'XI': 11,
+      'XII': 12,
+    };
+
+    if (val is int) return val;
+    if (val is String) {
+      // Try to parse integer
+      final parsed = int.tryParse(val);
+      if (parsed != null) return parsed;
+
+      // Try Roman numeral
+      final upper = val.toUpperCase().trim();
+      if (romanMap.containsKey(upper)) return romanMap[upper];
+
+      return null; // KG, PRE-KG, etc.
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> filterKinderGarden() {
+    return classes
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value == null; // Nursery, LKG, UKG, PRE-KG etc.
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> filterClasses(int min, int max) {
+    return classes
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min && value <= max;
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> filterClassesFrom(int min) {
+    return classes
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min;
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   Future<void> fetchAttendanceStatusForAll() async {
@@ -182,7 +243,7 @@ class _ClassesState extends State<Classes> {
                   size: 60.0,
                 )
                 : SingleChildScrollView(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
+                  // padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -199,91 +260,154 @@ class _ClassesState extends State<Classes> {
                               style: TextStyle(fontSize: 16),
                             ),
                           )
-                          : GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: classes.length,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  mainAxisSpacing: 10,
-                                  crossAxisSpacing: 10,
-                                  childAspectRatio: 1.2,
+                          : SingleChildScrollView(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildClassContainer(
+                                  title: "Nursery",
+                                  classes: filterKinderGarden(),
+                                  context: context,
+                                  isKinderGarden: true,
                                 ),
-                            itemBuilder: (context, index) {
-                              final item = classes[index];
-                              final classId = item['id'].toString();
-                              final isMarked =
-                                  attendanceStatusMap[classId] ?? false;
+                                const SizedBox(height: 20),
 
-                              return GestureDetector(
-                                onTap:
-                                    isMarked
-                                        ? null
-                                        : () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (_) => StudentAttendance(
-                                                    classId: classId,
-                                                    className: item['class'],
-                                                    section: item['section'],
-                                                    schoolId: widget.schoolId,
-                                                    date: widget.date,
-                                                    username: widget.username,
-                                                  ),
-                                            ),
-                                          );
-                                        },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color:
-                                        isMarked ? Colors.white : Colors.teal,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          "${item['class']} Std",
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                isMarked
-                                                    ? Colors.black
-                                                    : Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          "${item['section']} Sec",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color:
-                                                isMarked
-                                                    ? Colors.black54
-                                                    : Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                _buildClassContainer(
+                                  title: "Classes 1 to 5",
+                                  classes: filterClasses(1, 5),
+                                  context: context,
+                                  isKinderGarden: false,
                                 ),
-                              );
-                            },
+                                const SizedBox(height: 20),
+                                _buildClassContainer(
+                                  title: "Classes 6 and above",
+                                  classes: filterClassesFrom(6),
+                                  context: context,
+                                  isKinderGarden: false,
+                                ),
+                              ],
+                            ),
                           ),
                     ],
                   ),
                 ),
+      ),
+    );
+  }
+
+  Widget _buildClassContainer({
+    required String title,
+    required List<Map<String, dynamic>> classes,
+    required BuildContext context,
+    required bool isKinderGarden,
+  }) {
+    if (classes.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          "",
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    return Container(
+      //height: MediaQuery.sizeOf(context).height / 5,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1,
+            children:
+                classes.map((classItem) {
+                  final classId = classItem['id'].toString();
+                  final className = classItem['class'] ?? 'Unnamed';
+                  final section = classItem['section'] ?? '';
+                  final isMarked = attendanceStatusMap[classId] ?? false;
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap:
+                        isMarked
+                            ? null
+                            : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => StudentAttendance(
+                                        schoolId: widget.schoolId,
+                                        classId: classId,
+                                        username: widget.username,
+                                        className: className,
+                                        section: section,
+                                        date: widget.date,
+                                      ),
+                                ),
+                              );
+                            },
+                    child: Card(
+                      color: isMarked ? Colors.white : Colors.teal,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Split into FN + AN halves
+                          Column(
+                            children: [
+                              Text(
+                                isKinderGarden ? className : 'Class $className',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: isMarked ? Colors.black : Colors.white,
+                                ),
+                              ),
+                              Text(
+                                'Sec $section',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: isMarked ? Colors.black : Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+        ],
       ),
     );
   }

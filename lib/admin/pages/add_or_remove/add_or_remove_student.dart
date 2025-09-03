@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
-import '../../services/api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../widget/student_registration_desktop.dart';
-import '../widget/student_registration_mobile.dart';
-import 'admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../widget/student_registration_desktop.dart';
+import '../../widget/student_registration_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class StudentRegistration extends StatefulWidget {
   final String schoolId;
@@ -25,13 +25,11 @@ class StudentRegistration extends StatefulWidget {
 
 class _StudentRegistrationState extends State<StudentRegistration> {
   final GlobalKey _formKey = GlobalKey();
-  final GlobalKey _formKey1 = GlobalKey();
 
   List<dynamic> student = [];
   Map<String, dynamic> studentData = {};
   bool isLoading = true;
   bool showForm = false;
-  int _selectedIndex = 0;
 
   String searchQuery = "";
 
@@ -299,7 +297,7 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                     const SizedBox(height: 20),
                   ],
                 ),

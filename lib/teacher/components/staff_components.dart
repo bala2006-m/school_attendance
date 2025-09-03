@@ -38,7 +38,7 @@ class StaffCompoents {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(
                       context,
-                    ).textTheme.bodyLarge?.color?.withOpacity(0.8),
+                    ).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -86,7 +86,7 @@ class StaffCompoents {
                     fontWeight: FontWeight.bold,
                     color: Theme.of(
                       context,
-                    ).textTheme.bodyLarge?.color?.withOpacity(0.8),
+                    ).textTheme.bodyLarge?.color?.withValues(alpha: 0.8),
                   ),
                 ),
               ],

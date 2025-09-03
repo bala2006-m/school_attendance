@@ -10,7 +10,7 @@ import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../components/build_profile_card_mobile.dart';
+import '../../../components/build_profile_card_mobile.dart';
 import 'monthly_student_list.dart';
 
 class MonthlyAttendance extends StatefulWidget {
@@ -115,6 +115,67 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
     });
   }
 
+  int? parseClassValue(dynamic val) {
+    const romanMap = {
+      'I': 1,
+      'II': 2,
+      'III': 3,
+      'IV': 4,
+      'V': 5,
+      'VI': 6,
+      'VII': 7,
+      'VIII': 8,
+      'IX': 9,
+      'X': 10,
+      'XI': 11,
+      'XII': 12,
+    };
+
+    if (val is int) return val;
+    if (val is String) {
+      // Try to parse integer
+      final parsed = int.tryParse(val);
+      if (parsed != null) return parsed;
+
+      // Try Roman numeral
+      final upper = val.toUpperCase().trim();
+      if (romanMap.containsKey(upper)) return romanMap[upper];
+
+      return null; // KG, PRE-KG, etc.
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> filterKinderGarden() {
+    return classes
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value == null; // Nursery, LKG, UKG, PRE-KG etc.
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> filterClasses(int min, int max) {
+    return classes
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min && value <= max;
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> filterClassesFrom(int min) {
+    return classes
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min;
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 0;
     Navigator.pushReplacement(
@@ -205,7 +266,7 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final String formattedMonth = DateFormat.yMMMM().format(
+    final String formattedMonth = DateFormat.MMM().format(
       DateTime(selectedYear, selectedMonth),
     );
 
@@ -264,7 +325,10 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
                         ),
                         child: ListTile(
                           leading: const Icon(Icons.calendar_month),
-                          title: Text("Selected Month: $formattedMonth"),
+                          title: Text(
+                            "Month: $formattedMonth",
+                            style: TextStyle(color: Colors.black, fontSize: 16),
+                          ),
                           trailing: OutlinedButton.icon(
                             icon: const Icon(Icons.edit_calendar),
                             label: const Text("Change"),
@@ -280,78 +344,151 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
                               style: TextStyle(fontSize: 16),
                             ),
                           )
-                          : GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: classes.length,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: isMobile ? 3 : 4,
-                                  mainAxisSpacing: 10,
-                                  crossAxisSpacing: 10,
-                                  childAspectRatio: 1.2,
+                          : SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildClassContainer(
+                                  title: "Nursery",
+                                  classes: filterKinderGarden(),
+                                  context: context,
+                                  isKinderGarden: true,
                                 ),
-                            itemBuilder: (context, index) {
-                              final item = classes[index];
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => StudentList(
-                                            className: item['class'],
-                                            section: item['section'],
-                                            schoolId: widget.schoolId,
-                                            classId: item['id'].toString(),
-                                            month: '$selectedMonth',
-                                            year: '$selectedYear',
-                                            username: widget.username,
-                                          ),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          "${item['class']} Std",
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          "${item['section']} Sec",
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                const SizedBox(height: 20),
+
+                                _buildClassContainer(
+                                  title: "Classes 1 to 5",
+                                  classes: filterClasses(1, 5),
+                                  context: context,
+                                  isKinderGarden: false,
                                 ),
-                              );
-                            },
+                                const SizedBox(height: 20),
+                                _buildClassContainer(
+                                  title: "Classes 6 and above",
+                                  classes: filterClassesFrom(6),
+                                  context: context,
+                                  isKinderGarden: false,
+                                ),
+                              ],
+                            ),
                           ),
                     ],
                   ),
                 ),
+      ),
+    );
+  }
+
+  Widget _buildClassContainer({
+    required String title,
+    required List<Map<String, dynamic>> classes,
+    required BuildContext context,
+    required bool isKinderGarden,
+  }) {
+    if (classes.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          "",
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    return Container(
+      //height: MediaQuery.sizeOf(context).height / 5,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1,
+            children:
+                classes.map((classItem) {
+                  final classId = classItem['id'].toString();
+                  final className = classItem['class'] ?? 'Unnamed';
+                  final section = classItem['section'] ?? '';
+
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => StudentList(
+                                schoolId: widget.schoolId,
+                                classId: classId,
+                                username: widget.username,
+                                className: className,
+                                section: section,
+                                month: '$selectedMonth',
+                                year: '$selectedYear',
+                              ),
+                        ),
+                      );
+                    },
+                    child: Card(
+                      color: Colors.teal,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Split into FN + AN halves
+                          Column(
+                            children: [
+                              Text(
+                                isKinderGarden ? className : 'Class $className',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                'Sec $section',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+        ],
       ),
     );
   }

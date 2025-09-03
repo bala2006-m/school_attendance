@@ -6,6 +6,7 @@ import '../../../appbar/desktop_appbar.dart';
 import '../../../appbar/mobile_appbar.dart';
 import '../../../services/teacher_api_service.dart';
 import 'student_report_between_days.dart';
+
 class Reports extends StatefulWidget {
   final String schoolId;
   final String classId;
@@ -49,16 +50,16 @@ class _ReportsState extends State<Reports> {
 
     // Fetch attendance for all students in parallel
     final futures =
-    students.map((student) async {
-      final username = student['username'];
-      final data = await AdminApiService.fetchStudentAttendanceBetweenDays(
-        username: username,
-        fromDate: widget.from,
-        toDate: widget.to,
-        schoolId: int.parse(widget.schoolId),
-      );
-      attendanceData[username] = data;
-    }).toList();
+        students.map((student) async {
+          final username = student['username'];
+          final data = await AdminApiService.fetchStudentAttendanceBetweenDays(
+            username: username,
+            fromDate: widget.from,
+            toDate: widget.to,
+            schoolId: int.parse(widget.schoolId),
+          );
+          attendanceData[username] = data;
+        }).toList();
 
     await Future.wait(futures);
 
@@ -71,9 +72,9 @@ class _ReportsState extends State<Reports> {
       MaterialPageRoute(
         builder:
             (_) => StudentReportBetweenDays(
-          schoolId: widget.schoolId,
-          username: widget.username,
-        ),
+              schoolId: widget.schoolId,
+              username: widget.username,
+            ),
       ),
     );
     return false;
@@ -100,214 +101,214 @@ class _ReportsState extends State<Reports> {
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),
           child:
-          isMobile
-              ? MobileAppbar(
-            title: 'Student Report ',
-            enableDrawer: false,
-            enableBack: true,
-            onBack: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => StudentReportBetweenDays(
-                    schoolId: widget.schoolId,
-                    username: widget.username,
-                  ),
-                ),
-              );
-            },
-          )
-              : const DesktopAppbar(title: 'Student Report '),
+              isMobile
+                  ? MobileAppbar(
+                    title: 'Student Report ',
+                    enableDrawer: false,
+                    enableBack: true,
+                    onBack: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => StudentReportBetweenDays(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  )
+                  : const DesktopAppbar(title: 'Student Report '),
         ),
         body:
-        isLoading
-            ? const Center(
-          child: SpinKitFadingCircle(
-            color: Colors.blueAccent,
-            size: 50.0,
-          ),
-        )
-            : students.isEmpty
-            ? const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.people_outline, size: 64, color: Colors.grey),
-              SizedBox(height: 8),
-              Text(
-                'No Students Found',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            ],
-          ),
-        )
-            : Column(
-          children: [
-            const SizedBox(height: 5),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8.0,
-                  horizontal: 12.0,
-                ),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 30,
-                  runSpacing: 8,
+            isLoading
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 50.0,
+                  ),
+                )
+                : students.isEmpty
+                ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text(
+                        'No Students Found',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+                : Column(
                   children: [
-                    _buildInfoChip(
-                      'Class',
-                      widget.className,
-                      Colors.teal,
+                    const SizedBox(height: 5),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8.0,
+                          horizontal: 12.0,
+                        ),
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 30,
+                          runSpacing: 8,
+                          children: [
+                            _buildInfoChip(
+                              'Class',
+                              widget.className,
+                              Colors.teal,
+                            ),
+                            _buildInfoChip(
+                              'Section',
+                              widget.section,
+                              Colors.teal,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    _buildInfoChip(
-                      'Section',
-                      widget.section,
-                      Colors.teal,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 80,
-              child: Column(
-                children: [
-                  Text(
-                    'Attendance Report Between Date',
-                    style: TextStyle(
-                      color: Colors.blue.shade800,
-                      fontSize: 20,
-                    ),
-                  ),
-                  Text(
-                    '${widget.from.day}-${widget.from.month}-${widget.from.year} and ${widget.to.day}-${widget.to.month}-${widget.to.year}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.blue.shade800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 1),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: students.length,
-                itemBuilder: (context, index) {
-                  final student = students[index];
-                  final username = student['username'];
-                  String name = student['name'] ?? 'Unnamed';
-                  name =
-                  name.length > 15
-                      ? '${name.substring(0, 15)}...'
-                      : name;
-                  final data = attendanceData[username];
-
-                  final totalMarking = data?['TotalMarking'] ?? 0;
-                  final presentSessions =
-                  ((data?['fnPresentDates']?.length ?? 0) +
-                      (data?['anPresentDates']?.length ?? 0));
-                  final totalSessions = totalMarking;
-                  final percentage =
-                      data?['totalPercentage']?.toString() ?? '-';
-
-                  return Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 8,
-                    ),
-                    color:
-                    student['gender'] == 'F'
-                        ? Colors.pink.shade50
-                        : Colors.blue.shade50,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 80,
+                      child: Column(
                         children: [
-                          CircleAvatar(
-                            backgroundColor:
-                            student['gender'] == 'F'
-                                ? Colors.pink.shade100
-                                : Colors.blue.shade100,
-                            child: Icon(
-                              student['gender'] == 'F'
-                                  ? Icons.female
-                                  : Icons.male,
-                              color:
-                              student['gender'] == 'F'
-                                  ? Colors.pink.shade700
-                                  : Colors.blue.shade700,
-                              size: 24,
+                          Text(
+                            'Attendance Report Between Date',
+                            style: TextStyle(
+                              color: Colors.blue.shade800,
+                              fontSize: 20,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade800,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "$username",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                "${presentSessions / 2} / $totalSessions",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Text(
-                                "$percentage%",
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
+                          Text(
+                            '${widget.from.day}-${widget.from.month}-${widget.from.year} and ${widget.to.day}-${widget.to.month}-${widget.to.year}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.blue.shade800,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 50),
-            if (isAttendanceLoading)
-              Container(
-                color: Colors.black.withValues(alpha: 0.5),
-                child: const Center(
-                  child: SpinKitFadingCircle(
-                    color: Colors.white,
-                    size: 50.0,
-                  ),
+                    const SizedBox(height: 1),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: students.length,
+                        itemBuilder: (context, index) {
+                          final student = students[index];
+                          final username = student['username'];
+                          String name = student['name'] ?? 'Unnamed';
+                          name =
+                              name.length > 15
+                                  ? '${name.substring(0, 15)}...'
+                                  : name;
+                          final data = attendanceData[username];
+
+                          final totalMarking = data?['TotalMarking'] ?? 0;
+                          final presentSessions =
+                              ((data?['fnPresentDates']?.length ?? 0) +
+                                  (data?['anPresentDates']?.length ?? 0));
+                          final totalSessions = totalMarking;
+                          final percentage =
+                              data?['totalPercentage']?.toString() ?? '-';
+
+                          return Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 6,
+                              horizontal: 8,
+                            ),
+                            color:
+                                student['gender'] == 'F'
+                                    ? Colors.pink.shade50
+                                    : Colors.blue.shade50,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor:
+                                        student['gender'] == 'F'
+                                            ? Colors.pink.shade100
+                                            : Colors.blue.shade100,
+                                    child: Icon(
+                                      student['gender'] == 'F'
+                                          ? Icons.female
+                                          : Icons.male,
+                                      color:
+                                          student['gender'] == 'F'
+                                              ? Colors.pink.shade700
+                                              : Colors.blue.shade700,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "$username",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        "${presentSessions / 2} / $totalSessions",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        "$percentage%",
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                    if (isAttendanceLoading)
+                      Container(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        child: const Center(
+                          child: SpinKitFadingCircle(
+                            color: Colors.white,
+                            size: 50.0,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-          ],
-        ),
       ),
     );
   }

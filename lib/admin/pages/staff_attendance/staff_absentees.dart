@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../../../../services/api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class StaffAbsentees extends StatefulWidget {
   final String schoolId;
@@ -151,7 +151,7 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

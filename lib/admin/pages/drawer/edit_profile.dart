@@ -7,10 +7,10 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../services/admin_api_service.dart';
-import 'admin_dashboard.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../services/admin_api_service.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class EditProfile extends StatefulWidget {
   final String username;
@@ -96,7 +96,7 @@ class _EditProfileState extends State<EditProfile> {
         username: widget.username,
         schoolId: widget.schoolId,
       );
-      print(adminData?['gender']);
+      //print(adminData?['gender']);
       adminName = adminData?['name'] ?? '';
       adminMobileNumber = adminData?['mobile'] ?? '';
       adminDesignation = adminData?['designation'] ?? '';

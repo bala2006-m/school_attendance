@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../components/build_profile_card_mobile.dart';
 import '../pages/attendance_page.dart';
 import '../pages/post_leave_request.dart';
+import '../pages/student_leave_application.dart';
 
 class StudentAttendancePage extends StatelessWidget {
   final String username;
@@ -31,9 +32,9 @@ class StudentAttendancePage extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
             Padding(
@@ -43,11 +44,10 @@ class StudentAttendancePage extends StatelessWidget {
             SizedBox(height: 20),
             Container(
               decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.black26, width: 2),
-                boxShadow: [
-                  BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-                ],
+                boxShadow: [BoxShadow(color: Colors.transparent)],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -99,7 +99,7 @@ class StudentAttendancePage extends StatelessWidget {
                         ),
                         buildElevatedButton(
                           context,
-                          "Apply Leave\nRequest",
+                          "Request\nLeave",
                           PostLeaveRequest(
                             username: username,
                             schoolId: schoolId,
@@ -107,9 +107,35 @@ class StudentAttendancePage extends StatelessWidget {
                           ),
                           Icons.post_add,
                         ),
+                        buildElevatedButton(
+                          context,
+                          "Leave\nStatus",
+                          LeaveApplications(
+                            username: username,
+                            schoolId: schoolId,
+                          ),
+                          Icons.settings_applications_sharp,
+                        ),
                         const SizedBox(height: 30),
                       ],
                     ),
+                    SizedBox(height: 10),
+                    // Row(
+                    //   crossAxisAlignment: CrossAxisAlignment.center,
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     buildElevatedButton(
+                    //       context,
+                    //       "View\nHomework",
+                    //       StudentHomeworkPage(
+                    //         username: username,
+                    //         schoolId: schoolId,
+                    //         classId: classId,
+                    //       ),
+                    //       Icons.home_work_outlined,
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),
@@ -144,7 +170,7 @@ class StudentAttendancePage extends StatelessWidget {
             children: [
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
+                  backgroundColor: Colors.cyan,
                   minimumSize: Size(
                     MediaQuery.of(context).size.width / 4.5,
                     MediaQuery.of(context).size.height * 0.09,
@@ -166,7 +192,7 @@ class StudentAttendancePage extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => page),
                   );
                 },
-                child: Icon(icon, size: 40, color: Colors.blue),
+                child: Icon(icon, size: 40, color: Colors.white),
               ),
               SizedBox(height: 10),
               Text(

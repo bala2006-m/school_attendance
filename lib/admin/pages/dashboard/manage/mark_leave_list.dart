@@ -7,8 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../services/api_service.dart';
-import 'dashboard/admin_dashboard.dart';
+import '../../../../services/api_service.dart';
+import '../admin_dashboard.dart';
 
 class MarkLeaveList extends StatefulWidget {
   final String schoolId;
@@ -473,7 +473,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
                                       selected.length == classList.length;
                                 }),
                           );
-                        }).toList(),
+                        }),
                       ],
                     ),
                   ),
@@ -548,8 +548,8 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete'),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Delete'),
               ),
             ],
           ),
@@ -616,8 +616,31 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
   @override
   Widget build(BuildContext ctx) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final formattedDate = DateFormat('MMMM d, y').format(DateTime.now());
+    String formatCustomDate(DateTime date) {
+      final monthMap = {
+        "Jan": "Jan",
+        "Feb": "Feb",
+        "Mar": "Mar",
+        "Apr": "Apr",
+        "May": "May",
+        "Jun": "Jun",
+        "Jul": "Jul",
+        "Aug": "Aug",
+        "Sep": "Sept",
+        "Oct": "Oct",
+        "Nov": "Nov",
+        "Dec": "Dec",
+      };
 
+      final month = DateFormat('MMM').format(date);
+      final day = DateFormat('d').format(date);
+      final year = DateFormat('y').format(date);
+
+      return "${monthMap[month]} $day $year";
+    }
+
+    // Usage
+    final formattedDate = formatCustomDate(DateTime.now());
     if (isLoading) {
       return Scaffold(
         backgroundColor: Colors.white,
@@ -716,7 +739,9 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          username,
+                          (username.length < 10
+                              ? username
+                              : '${username.substring(0, 10)}...'),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,

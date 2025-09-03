@@ -5,10 +5,10 @@ class AttendanceAlreadyMarkedDialog extends StatelessWidget {
   final VoidCallback onNoPressed;
 
   const AttendanceAlreadyMarkedDialog({
-    Key? key,
+    super.key,
     required this.onYesPressed,
     required this.onNoPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

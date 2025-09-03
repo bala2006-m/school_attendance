@@ -24,9 +24,9 @@ class StudentDesktopDashboard extends StatelessWidget {
     required this.mobile,
     required this.schoolName,
     required this.className,
-    required this.Message,
-    required this.SchoolAddress,
-    required this.SchoolPhoto,
+    required this.message,
+    required this.schoolAddress,
+    required this.schoolPhoto,
   });
 
   final String username;
@@ -39,9 +39,9 @@ class StudentDesktopDashboard extends StatelessWidget {
   final String mobile;
   final String schoolName;
   final String className;
-  final String Message;
-  final String SchoolAddress;
-  final Image? SchoolPhoto;
+  final String message;
+  final String schoolAddress;
+  final Image? schoolPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +98,7 @@ class StudentDesktopDashboard extends StatelessWidget {
                         email,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -213,10 +213,10 @@ class StudentDesktopDashboard extends StatelessWidget {
                     classId: classId,
                     email: email,
                     gender: gender,
-                    schoolPhoto: SchoolPhoto,
+                    schoolPhoto: schoolPhoto,
                     schoolName: schoolName,
-                    schoolAddress: SchoolAddress,
-                    message: Message,
+                    schoolAddress: schoolAddress,
+                    message: message,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -273,7 +273,7 @@ class StudentDesktopDashboard extends StatelessWidget {
     return InkWell(
       onTap: () => navigateTo(context, page),
       borderRadius: BorderRadius.circular(25),
-      splashColor: Colors.indigo.withOpacity(0.3),
+      splashColor: Colors.indigo.withValues(alpha: 0.3),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),

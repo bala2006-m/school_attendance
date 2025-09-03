@@ -40,12 +40,13 @@ class _HomeworkClassListState extends State<HomeworkClassList> {
     });
   }
 
-  List<Map<String, dynamic>> filterClassesFrom(int min) {
+  List<Map<String, dynamic>> filterKinderGarden() {
     return classList
         .where((item) {
-          final className = item['class']?.toString() ?? '';
-          final classNum = int.tryParse(className) ?? -1;
-          return classNum >= min;
+          final className = item['class']?.toString().toUpperCase() ?? '';
+          final classNum = int.tryParse(className);
+          // Pick only non-numeric classes like NURSERY, LKG, UKG
+          return classNum == null;
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -57,6 +58,17 @@ class _HomeworkClassListState extends State<HomeworkClassList> {
           final className = item['class']?.toString() ?? '';
           final classNum = int.tryParse(className) ?? -1;
           return classNum >= min && classNum <= max;
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> filterClassesFrom(int min) {
+    return classList
+        .where((item) {
+          final className = item['class']?.toString() ?? '';
+          final classNum = int.tryParse(className) ?? -1;
+          return classNum >= min;
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -111,15 +123,25 @@ class _HomeworkClassListState extends State<HomeworkClassList> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildClassContainer(
+                      title: "Nursery",
+                      classes: filterKinderGarden(),
+                      context: context,
+                      isKinderGarden: true,
+                    ),
+                    const SizedBox(height: 20),
+
+                    _buildClassContainer(
                       title: "Classes 1 to 5",
                       classes: filterClasses(1, 5),
                       context: context,
+                      isKinderGarden: false,
                     ),
                     const SizedBox(height: 20),
                     _buildClassContainer(
                       title: "Classes 6 and above",
                       classes: filterClassesFrom(6),
                       context: context,
+                      isKinderGarden: false,
                     ),
                   ],
                 ),
@@ -131,6 +153,7 @@ class _HomeworkClassListState extends State<HomeworkClassList> {
     required String title,
     required List<Map<String, dynamic>> classes,
     required BuildContext context,
+    required bool isKinderGarden,
   }) {
     if (classes.isEmpty) {
       return Container(
@@ -210,7 +233,7 @@ class _HomeworkClassListState extends State<HomeworkClassList> {
                           Column(
                             children: [
                               Text(
-                                'Class $className',
+                                isKinderGarden ? className : 'Class $className',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 18,

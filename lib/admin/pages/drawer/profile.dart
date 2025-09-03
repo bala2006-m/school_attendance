@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../services/admin_api_service.dart';
-import 'admin_dashboard.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../services/admin_api_service.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class Profile extends StatefulWidget {
   final String username;
@@ -61,7 +61,7 @@ class _ProfileState extends State<Profile> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Initial load failed: $e');
+      //print('Initial load failed: $e');
       setState(() => _isLoading = false);
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../components/build_profile_card_mobile.dart';
-import '../pages/holiday_page.dart';
+import '../pages/homework/student_homework_page.dart';
 
 class StudentManagePage extends StatelessWidget {
   const StudentManagePage({
@@ -24,49 +24,90 @@ class StudentManagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: BuildProfileCard(),
-          ),
-          SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.black26, width: 2),
-              boxShadow: [
-                BoxShadow(color: Colors.transparent.withOpacity(0.02)),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      children: [
+        Padding(padding: const EdgeInsets.all(10.0), child: BuildProfileCard()),
+        SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              // Row(
+              //   crossAxisAlignment: CrossAxisAlignment.center,
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     buildElevatedButton(
+              //       context,
+              //       "Holidays",
+              //       HolidayPage(
+              //         schoolId: schoolId,
+              //         classId: classId,
+              //         username: username,
+              //       ),
+              //       Icons.view_day,
+              //     ),
+              //     const SizedBox(height: 30),
+              //   ],
+              // ),
+              SizedBox(height: 20),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.black26, width: 2),
+                  boxShadow: [BoxShadow(color: Colors.transparent)],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
                     children: [
-                      buildElevatedButton(
-                        context,
-                        "Holidays",
-                        HolidayPage(
-                          schoolId: schoolId,
-                          classId: classId,
-                          username: username,
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+
+                          children: [
+                            Text(
+                              'Home Work',
+                              style: TextStyle(
+                                color: Colors.blue.shade900,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 25,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.blue.shade900,
+                              size: 50,
+                            ),
+                          ],
                         ),
-                        Icons.view_day,
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          buildElevatedButton(
+                            context,
+                            "View\nHomework",
+                            StudentHomeworkPage(
+                              username: username,
+                              schoolId: schoolId,
+                              classId: classId,
+                            ),
+                            Icons.home_work_outlined,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -95,7 +136,7 @@ Widget buildElevatedButton(
           children: [
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.cyan,
                 minimumSize: Size(
                   MediaQuery.of(context).size.width / 4.5,
                   MediaQuery.of(context).size.height * 0.09,
@@ -117,7 +158,7 @@ Widget buildElevatedButton(
                   MaterialPageRoute(builder: (context) => page),
                 );
               },
-              child: Icon(icon, size: 40, color: Colors.blue),
+              child: Icon(icon, size: 40, color: Colors.white),
             ),
             SizedBox(height: 10),
             Text(

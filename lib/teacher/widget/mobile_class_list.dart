@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../pages/attendance_screen.dart';
+import '../pages/studentAttendance/markAttendance/attendance_screen.dart';
 
 class MobileClassList extends StatefulWidget {
   const MobileClassList({
@@ -26,12 +26,52 @@ class MobileClassList extends StatefulWidget {
 }
 
 class _MobileClassListState extends State<MobileClassList> {
+  int? parseClassValue(dynamic val) {
+    const romanMap = {
+      'I': 1,
+      'II': 2,
+      'III': 3,
+      'IV': 4,
+      'V': 5,
+      'VI': 6,
+      'VII': 7,
+      'VIII': 8,
+      'IX': 9,
+      'X': 10,
+      'XI': 11,
+      'XII': 12,
+    };
+
+    if (val is int) return val;
+    if (val is String) {
+      // Try to parse integer
+      final parsed = int.tryParse(val);
+      if (parsed != null) return parsed;
+
+      // Try Roman numeral
+      final upper = val.toUpperCase().trim();
+      if (romanMap.containsKey(upper)) return romanMap[upper];
+
+      return null; // KG, PRE-KG, etc.
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> filterKinderGarden() {
+    return widget.classList
+        .where((item) {
+          final value = parseClassValue(item['class']);
+          return value == null; // Nursery, LKG, UKG, PRE-KG etc.
+        })
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
   List<Map<String, dynamic>> filterClasses(int min, int max) {
     return widget.classList
         .where((item) {
-          final className = item['class']?.toString() ?? '';
-          final classNum = int.tryParse(className) ?? -1;
-          return classNum >= min && classNum <= max;
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min && value <= max;
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -40,9 +80,8 @@ class _MobileClassListState extends State<MobileClassList> {
   List<Map<String, dynamic>> filterClassesFrom(int min) {
     return widget.classList
         .where((item) {
-          final className = item['class']?.toString() ?? '';
-          final classNum = int.tryParse(className) ?? -1;
-          return classNum >= min;
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min;
         })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
@@ -67,15 +106,25 @@ class _MobileClassListState extends State<MobileClassList> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildClassContainer(
+                title: "Nursery",
+                classes: filterKinderGarden(),
+                context: context,
+                isKinderGarden: true,
+              ),
+              const SizedBox(height: 20),
+
+              _buildClassContainer(
                 title: "Classes 1 to 5",
                 classes: filterClasses(1, 5),
                 context: context,
+                isKinderGarden: false,
               ),
               const SizedBox(height: 20),
               _buildClassContainer(
                 title: "Classes 6 and above",
                 classes: filterClassesFrom(6),
                 context: context,
+                isKinderGarden: false,
               ),
             ],
           ),
@@ -86,6 +135,7 @@ class _MobileClassListState extends State<MobileClassList> {
     required String title,
     required List<Map<String, dynamic>> classes,
     required BuildContext context,
+    required bool isKinderGarden,
   }) {
     if (classes.isEmpty) {
       return Container(
@@ -228,7 +278,8 @@ class _MobileClassListState extends State<MobileClassList> {
                           Column(
                             children: [
                               Text(
-                                'Class $className',
+                                isKinderGarden ? className : 'Class $className',
+
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14,

@@ -4,8 +4,8 @@ import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 
-import '../../services/teacher_api_service.dart';
-import 'monthlyAttendance/monthly_attendance.dart';
+import '../../../services/teacher_api_service.dart';
+import 'monthly_attendance.dart';
 
 class StudentList extends StatefulWidget {
   final String username;

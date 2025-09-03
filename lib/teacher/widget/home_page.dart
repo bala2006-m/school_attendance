@@ -2,6 +2,7 @@ import 'dart:core';
 
 import 'package:flutter/material.dart';
 
+import '../../admin/components/build_marking_card.dart';
 import '../../admin/components/desktop_stats.dart';
 import '../../admin/components/message_box.dart';
 import '../components/build_profile_card_mobile.dart';
@@ -19,6 +20,8 @@ class HomePage extends StatefulWidget {
     required this.schoolName,
     required this.schoolAddress,
     this.schoolPhoto,
+    required this.attendanceStatusMapFn,
+    required this.attendanceStatusMapAn,
   });
   final String message;
   final String totalStudents;
@@ -30,6 +33,8 @@ class HomePage extends StatefulWidget {
   final String schoolName;
   final String schoolAddress;
   final Image? schoolPhoto;
+  final Map<String, bool> attendanceStatusMapFn;
+  final Map<String, bool> attendanceStatusMapAn;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -40,36 +45,41 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final buttonHeight = screenHeight * 0.15;
+    // final buttonHeight = screenHeight * 0.15;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Container(
-          child: Column(
-            children: [
-              BuildProfileCard(
-                schoolName: widget.schoolName,
-                schoolAddress: widget.schoolAddress,
-                schoolPhoto: widget.schoolPhoto,
-              ),
-              SizedBox(height: 10),
-              MessageBox(message: widget.message),
-              const SizedBox(height: 10),
+        child: Column(
+          children: [
+            BuildProfileCard(
+              schoolName: widget.schoolName,
+              schoolAddress: widget.schoolAddress,
+              schoolPhoto: widget.schoolPhoto,
+            ),
+            SizedBox(height: 10),
+            MessageBox(message: widget.message),
+            const SizedBox(height: 10),
 
-              SizedBox(height: 10),
-              DesktopStats(
-                screenWidth: screenWidth,
-                screenHeight: screenHeight,
-                total: widget.totalStudents,
-                name: 'Students',
-                presentFN: widget.presentStudentFN,
-                presentAN: widget.presentStudentAN,
-                isClassShown: false,
-                classIds: [],
-                schoolId: widget.schoolId,
-              ),
-            ],
-          ),
+            SizedBox(height: 10),
+            DesktopStats(
+              screenWidth: screenWidth,
+              screenHeight: screenHeight,
+              total: widget.totalStudents,
+              name: 'Students',
+              presentFN: widget.presentStudentFN,
+              presentAN: widget.presentStudentAN,
+              isClassShown: false,
+              classIds: [],
+              schoolId: widget.schoolId,
+            ),
+            SizedBox(height: 10),
+            BuildMarkingCard(
+              screenWidth: screenWidth,
+              screenHeight: screenHeight,
+              attendanceStatusMapFn: widget.attendanceStatusMapFn,
+              attendanceStatusMapAn: widget.attendanceStatusMapAn,
+            ),
+          ],
         ),
       ),
     );

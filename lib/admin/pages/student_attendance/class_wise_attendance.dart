@@ -7,10 +7,10 @@ import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
 import '../../../../../services/api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../admin_dashboard.dart';
-import './class_attendance.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../dashboard/admin_dashboard.dart';
+import 'class_attendance.dart';
 
 class ClassWiseAttendance extends StatefulWidget {
   final String schoolId;

@@ -255,7 +255,7 @@ class _StudentRegistrationDesktopState
         username: username,
         password: password,
         role: 'student',
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
       );
 
       if (!(userRes['success'] ?? false)) {

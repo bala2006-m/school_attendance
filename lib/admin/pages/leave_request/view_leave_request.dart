@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/admin/pages/leave_request/staff_leave_request.dart';
+import 'package:school_attendance/admin/pages/leave_request/student_leave_request.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
 import '../../../teacher/services/teacher_api_service.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../../services/admin_api_service.dart';
-import '../admin_dashboard.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class ViewLeaveRequest extends StatefulWidget {
   final String schoolId;
@@ -19,21 +21,34 @@ class ViewLeaveRequest extends StatefulWidget {
   });
 
   @override
-  State<ViewLeaveRequest> createState() => _ViewLeaveRequestState();
+  State<ViewLeaveRequest> createState() => ViewLeaveRequestState();
 }
 
-class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
-  List<Map<String, dynamic>> leaveRequest = [];
-  bool isLoading = true;
+class ViewLeaveRequestState extends State<ViewLeaveRequest> {
+  /// 🔑 Static state variables
+  static List<Map<String, dynamic>> leaveRequest = [];
+  static bool isLoading = true;
+  static int selectedIndex = 1;
+
+  /// 🔑 Reference to the current mounted instance
+  static ViewLeaveRequestState? _instance;
 
   @override
   void initState() {
     super.initState();
+    _instance = this;
     init();
   }
 
+  @override
+  void dispose() {
+    if (_instance == this) _instance = null;
+    super.dispose();
+  }
+
+  /// 🔄 Fetch leave requests
   Future<void> init() async {
-    setState(() => isLoading = true);
+    _instance?.setState(() => isLoading = true);
     try {
       leaveRequest = await AdminApiService.fetchLeaveRequest(widget.schoolId);
 
@@ -61,14 +76,15 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
     } catch (e) {
       debugPrint("Error fetching leave requests: $e");
     } finally {
-      if (mounted) {
-        setState(() {
+      if (_instance?.mounted ?? false) {
+        _instance?.setState(() {
           isLoading = false;
         });
       }
     }
   }
 
+  /// ⬅️ Back button handler
   Future<bool> onWillPop() async {
     _goBack();
     return false;
@@ -88,7 +104,8 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
     );
   }
 
-  String formatDate(dynamic date, {String format = 'MMM d, yyyy'}) {
+  /// 📅 Date formatting
+  static String formatDate(dynamic date, {String format = 'MMM d, yyyy'}) {
     if (date == null) return '';
     try {
       final parsed = DateTime.tryParse(date.toString());
@@ -99,20 +116,18 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
     return date.toString();
   }
 
-  Widget buildLeaveCard(Map<String, dynamic> request) {
+  /// 📝 Leave card widget
+  static Widget buildLeaveCard(Map<String, dynamic> request) {
     final username = request['username'] ?? 'Unknown';
     final int id = int.tryParse(request['id']?.toString() ?? '') ?? 0;
     final role = (request['role'] ?? '').toString();
     final roleLower = role.toLowerCase();
-
+    final name = request['name'] ?? 'Unknown';
     final fromDate = formatDate(request['from_date'], format: 'yyyy-MM-dd');
     final toDate = formatDate(request['to_date'], format: 'yyyy-MM-dd');
     final reason = request['reason'] ?? 'No reason provided';
     final status = (request['status'] ?? 'pending').toString();
-    final createdAt = formatDate(
-      request['created_at'],
-      format: 'MMM d, yyyy', //• hh:mm a',
-    );
+    final createdAt = formatDate(request['created_at'], format: 'MMM d, yyyy');
     final className = request['class_name'] ?? '';
     final section = request['section'] ?? '';
 
@@ -144,39 +159,11 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Header: Username + Role + Date
+            /// Header: Role + Date
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            roleLower == 'student'
-                                ? Colors.blue.shade50
-                                : Colors.purple.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        role.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              roleLower == 'student'
-                                  ? Colors.blue
-                                  : Colors.purple,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                Spacer(),
                 Text(
                   createdAt,
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -184,7 +171,19 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Name : ${name.length > 16 ? name.substring(0, 16) + '...' : name}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            /// Username
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
                 'Username : ${username.length > 16 ? username.substring(0, 16) + '...' : username}',
                 style: const TextStyle(
@@ -193,6 +192,8 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
                 ),
               ),
             ),
+
+            /// Class + Section
             if (roleLower == 'student') ...[
               const SizedBox(height: 6),
               Text(
@@ -203,7 +204,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
 
             const SizedBox(height: 10),
 
-            /// Date range row
+            /// Date Range
             Row(
               children: [
                 Text("From: $fromDate", style: const TextStyle(fontSize: 14)),
@@ -215,16 +216,16 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
             ),
 
             const SizedBox(height: 10),
-            Text(
+
+            /// Reason
+            const Text(
               'Reason',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
                 fontStyle: FontStyle.italic,
               ),
             ),
-
-            /// Reason
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
@@ -232,16 +233,12 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    reason,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
+              child: Text(
+                reason,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
 
@@ -259,7 +256,7 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
                       color: statusColor,
                     ),
                   ),
-                  backgroundColor: statusColor.withOpacity(0.1),
+                  backgroundColor: statusColor.withValues(alpha: 0.1),
                   side: BorderSide(color: statusColor),
                 ),
                 if (status.toLowerCase() == 'pending')
@@ -271,12 +268,12 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
                           color: Colors.green,
                         ),
                         tooltip: "Approve",
-                        onPressed: () => _updateLeaveStatus('approved', id),
+                        onPressed: () => updateLeaveStatus('approved', id),
                       ),
                       IconButton(
                         icon: const Icon(Icons.cancel, color: Colors.red),
                         tooltip: "Reject",
-                        onPressed: () => _updateLeaveStatus('rejected', id),
+                        onPressed: () => updateLeaveStatus('rejected', id),
                       ),
                     ],
                   ),
@@ -288,25 +285,28 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
     );
   }
 
-  void _updateLeaveStatus(String newStatus, int leaveId) async {
-    // Optimistic UI update
-    setState(() {
+  /// ✅ Update leave status (static, but works with _instance)
+  static void updateLeaveStatus(String newStatus, int leaveId) async {
+    _instance?.setState(() {
       final index = leaveRequest.indexWhere((r) => r['id'] == leaveId);
       if (index != -1) leaveRequest[index]['status'] = newStatus;
     });
 
     try {
       await TeacherApiServices.updateLeaveStatus(leaveId, newStatus);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Leave status updated to $newStatus')),
-      );
+
+      if (_instance?.mounted ?? false) {
+        ScaffoldMessenger.of(_instance!.context).showSnackBar(
+          SnackBar(content: Text('Leave status updated to $newStatus')),
+        );
+      }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
-      init(); // rollback
+      if (_instance?.mounted ?? false) {
+        ScaffoldMessenger.of(
+          _instance!.context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+      }
+      await _instance?.init(); // rollback
     }
   }
 
@@ -341,13 +341,46 @@ class _ViewLeaveRequestState extends State<ViewLeaveRequest> {
                 )
                 : leaveRequest.isEmpty
                 ? const Center(child: Text('No leave requests found.'))
-                : ListView.builder(
-                  itemCount: leaveRequest.length,
-                  padding: const EdgeInsets.only(bottom: 24),
-                  itemBuilder: (context, index) {
-                    return buildLeaveCard(leaveRequest[index]);
-                  },
+                // : ListView.builder(
+                //   itemCount: leaveRequest.length,
+                //   padding: const EdgeInsets.only(bottom: 24),
+                //   itemBuilder: (context, index) {
+                //     return buildLeaveCard(leaveRequest[index]);
+                //   },
+                // ),
+                : IndexedStack(
+                  index: selectedIndex,
+                  children: [
+                    StaffLeaveRequest(
+                      leaveRequests:
+                          leaveRequest
+                              .where((r) => r['role'] == 'staff')
+                              .toList(),
+                    ),
+                    StudentLeaveRequest(
+                      leaveRequests:
+                          leaveRequest
+                              .where((r) => r['role'] == 'student')
+                              .toList(),
+                    ),
+                  ],
                 ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          selectedItemColor: Colors.pink,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) => setState(() => selectedIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 30),
+              label: 'Staff',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people, size: 30),
+              label: 'Student',
+            ),
+          ],
+        ),
       ),
     );
   }

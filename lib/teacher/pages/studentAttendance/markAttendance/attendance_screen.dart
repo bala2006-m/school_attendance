@@ -8,9 +8,9 @@ import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../student/services/student_api_services.dart';
-import '../../appbar/desktop_appbar.dart';
-import '../../appbar/mobile_appbar.dart';
+import '../../../../student/services/student_api_services.dart';
+import '../../../appbar/desktop_appbar.dart';
+import '../../../appbar/mobile_appbar.dart';
 import 'class_list.dart';
 
 enum AttendanceSession { fN, aN }
@@ -761,7 +761,7 @@ class StudentCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  student['mobile'] ?? '',
+                  student['username'] ?? '',
                   style: const TextStyle(fontSize: 16),
                 ),
               ],

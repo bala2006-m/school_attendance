@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../pages/admin_dashboard.dart';
-import '../pages/change_password.dart';
-import '../pages/edit_profile.dart';
-import '../pages/profile.dart';
+import '../pages/dashboard/admin_dashboard.dart';
+import '../pages/drawer/change_password.dart';
+import '../pages/drawer/edit_profile.dart';
+import '../pages/drawer/profile.dart';
 
 class AdminMobileDrawer extends StatelessWidget {
   const AdminMobileDrawer({
@@ -146,7 +146,7 @@ class AdminMobileDrawer extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: const Row(

@@ -6,14 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../services/api_service.dart';
-import '../../student/services/student_api_services.dart';
-import '../../teacher/services/teacher_api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../components/uploads/uploads.dart';
-import '../services/admin_api_service.dart';
-import 'admin_dashboard.dart';
+import '../../../../services/api_service.dart';
+import '../../../../student/services/student_api_services.dart';
+import '../../../../teacher/services/teacher_api_service.dart';
+import '../../../appbar/admin_appbar_desktop.dart';
+import '../../../appbar/admin_appbar_mobile.dart';
+import '../../../components/uploads/uploads.dart';
+import '../../../services/admin_api_service.dart';
+import '../../dashboard/admin_dashboard.dart';
 
 class BulkUploadRegister extends StatefulWidget {
   final String schoolId;
@@ -44,7 +44,7 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
   File? _selectedAdminExcelFile;
   File? _selectedStaffExcelFile;
 
-  Future<bool> onWillPop() async {
+  Future<void> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
     Navigator.pushReplacement(
       context,
@@ -56,7 +56,6 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
             ),
       ),
     );
-    return false;
   }
 
   @override
@@ -152,7 +151,7 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
       if (!status.isGranted) {
         var manageStatus = await Permission.manageExternalStorage.request();
         if (!manageStatus.isGranted) {
-          _showPermissionDenied();
+          _showPermissionDenied('Storage permission denied');
           return;
         }
         status = manageStatus;
@@ -165,23 +164,19 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
         final file = File('${directory.path}/$fileName');
         await file.writeAsBytes(byteData.buffer.asUint8List());
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Template saved to: ${file.path}')),
-        );
+        _showPermissionDenied('Template saved to: ${file.path}');
       } else {
-        _showPermissionDenied();
+        _showPermissionDenied('Storage permission denied');
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+      _showPermissionDenied('Download failed:');
     }
   }
 
-  void _showPermissionDenied() {
+  void _showPermissionDenied(String message) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Storage permission denied')));
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> downloadTemplateStudent() => downloadTemplate('Student.xlsx');
@@ -197,9 +192,7 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
       final file = File(result.files.single.path!);
       final fileName = file.path.split('/').last;
       if (fileName != expectedFileName) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please upload only $expectedFileName')),
-        );
+        _showPermissionDenied('Please upload only $expectedFileName');
         return null;
       }
       return file;
@@ -390,8 +383,14 @@ class _BulkUploadRegisterState extends State<BulkUploadRegister> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (pop, val) {
+        if (!pop) {
+          onWillPop();
+        }
+      },
+
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 60),

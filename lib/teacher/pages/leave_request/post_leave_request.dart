@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../appbar/desktop_appbar.dart';
-import '../appbar/mobile_appbar.dart';
+import '../../appbar/desktop_appbar.dart';
+import '../../appbar/mobile_appbar.dart';
 
 class PostLeaveRequest extends StatefulWidget {
   const PostLeaveRequest({
@@ -224,7 +224,7 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 4,
-                        shadowColor: Colors.blueAccent.withOpacity(0.3),
+                        shadowColor: Colors.blueAccent.withValues(alpha: 0.3),
                         child: Padding(
                           padding: const EdgeInsets.all(20),
                           child: Column(

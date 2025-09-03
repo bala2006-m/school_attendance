@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 
-import '../../../../../services/api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../../../components/export_attendance_to_excel.dart';
-import '../../../../widget/attendance_screen.dart';
-import '../../admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../components/export_attendance_to_excel.dart';
+import '../../widget/attendance_screen.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class ViewStaffAttendance extends StatefulWidget {
-  final String school_id;
+  final String schoolId;
   final String username;
 
   const ViewStaffAttendance({
     super.key,
-    required this.school_id,
+    required this.schoolId,
     required this.username,
   });
 
@@ -45,7 +45,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
   }
 
   Future<void> init() async {
-    staff = await AdminApiService.fetchStaffData(widget.school_id);
+    staff = await AdminApiService.fetchStaffData(widget.schoolId);
 
     staff.sort(
       (a, b) => (a['name'] ?? '').toString().toLowerCase().compareTo(
@@ -85,9 +85,9 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
     try {
       final fetchedAttendance = await ApiService.fetchStaffAttendanceByUsername(
         username,
-        widget.school_id,
+        widget.schoolId,
       );
-      final fetchedHolidays = await ApiService.fetchHolidays(widget.school_id);
+      final fetchedHolidays = await ApiService.fetchHolidays(widget.schoolId);
 
       setState(() {
         userName = username;
@@ -121,7 +121,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
       MaterialPageRoute(
         builder:
             (context) => AdminDashboard(
-              schoolId: widget.school_id,
+              schoolId: widget.schoolId,
               username: widget.username,
             ),
       ),
@@ -141,7 +141,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
           child:
               isMobile
                   ? AdminAppbarMobile(
-                    schoolId: widget.school_id,
+                    schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'View  Attendance',
                     enableDrawer: false,
@@ -153,7 +153,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                         MaterialPageRoute(
                           builder:
                               (context) => AdminDashboard(
-                                schoolId: widget.school_id,
+                                schoolId: widget.schoolId,
                                 username: widget.username,
                               ),
                         ),
@@ -209,7 +209,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                       final member = filteredStaff[index];
                       final name = member['name'] ?? 'Unknown';
                       final username = member['username'] ?? 'Unknown';
-                      final mobile = member['mobile'] ?? '';
+                      // final mobile = member['mobile'] ?? '';
                       final gender = (member['gender'] ?? '').toString();
                       final designation =
                           member['designation'] ?? 'Designation';
@@ -332,7 +332,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         AttendanceScreen(
-                          schoolId: widget.school_id,
+                          schoolId: widget.schoolId,
                           holidayList: holidayList,
                           data: attendance,
                           title: 'Staff Attendance',

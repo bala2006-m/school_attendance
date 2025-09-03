@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:school_attendance/admin/color/admin_custom_color.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BuildProfileCard extends StatefulWidget {
@@ -41,7 +40,7 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
           schoolName = name!;
         });
       } catch (e) {
-        print('Failed to decode base64 image: $e');
+        //print('Failed to decode base64 image: $e');
         setState(() {
           schoolPhoto = null;
         });
@@ -65,7 +64,7 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AdminCustomColor.profileCard,
+        color: Colors.blue.shade900,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
       ),

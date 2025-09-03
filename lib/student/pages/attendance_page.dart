@@ -34,7 +34,7 @@ class AttendancePage extends StatefulWidget {
   });
 
   @override
-  _AttendancePageState createState() => _AttendancePageState();
+  State<AttendancePage> createState() => _AttendancePageState();
 }
 
 class _AttendancePageState extends State<AttendancePage> {

@@ -10,9 +10,9 @@ import 'package:school_attendance/admin/appbar/admin_appbar_mobile.dart';
 import '../../../../../../services/api_service.dart';
 import '../../../../../../teacher/services/teacher_api_service.dart';
 import '../../../components/build_profile_card_mobile.dart';
-import '../../../services/admin_api_service.dart';
 import '../../dashboard/admin_dashboard.dart';
 import 'periodical_report.dart';
+
 class StudentReportBetweenDays extends StatefulWidget {
   final String schoolId;
   final String username;
@@ -109,14 +109,44 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
       return a['section'].toString().compareTo(b['section'].toString());
     });
   }
+
+  int? parseClassValue(dynamic val) {
+    const romanMap = {
+      'I': 1,
+      'II': 2,
+      'III': 3,
+      'IV': 4,
+      'V': 5,
+      'VI': 6,
+      'VII': 7,
+      'VIII': 8,
+      'IX': 9,
+      'X': 10,
+      'XI': 11,
+      'XII': 12,
+    };
+
+    if (val is int) return val;
+    if (val is String) {
+      // Try to parse integer
+      final parsed = int.tryParse(val);
+      if (parsed != null) return parsed;
+
+      // Try Roman numeral
+      final upper = val.toUpperCase().trim();
+      if (romanMap.containsKey(upper)) return romanMap[upper];
+
+      return null; // KG, PRE-KG, etc.
+    }
+    return null;
+  }
+
   List<Map<String, dynamic>> filterKinderGarden() {
     return classes
         .where((item) {
-      final className = item['class']?.toString().toUpperCase() ?? '';
-      final classNum = int.tryParse(className);
-      // Pick only non-numeric classes like NURSERY, LKG, UKG
-      return classNum == null;
-    })
+          final value = parseClassValue(item['class']);
+          return value == null; // Nursery, LKG, UKG, PRE-KG etc.
+        })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
   }
@@ -124,10 +154,9 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
   List<Map<String, dynamic>> filterClasses(int min, int max) {
     return classes
         .where((item) {
-      final className = item['class']?.toString() ?? '';
-      final classNum = int.tryParse(className) ?? -1;
-      return classNum >= min && classNum <= max;
-    })
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min && value <= max;
+        })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
   }
@@ -135,13 +164,13 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
   List<Map<String, dynamic>> filterClassesFrom(int min) {
     return classes
         .where((item) {
-      final className = item['class']?.toString() ?? '';
-      final classNum = int.tryParse(className) ?? -1;
-      return classNum >= min;
-    })
+          final value = parseClassValue(item['class']);
+          return value != null && value >= min;
+        })
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
   }
+
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
     Navigator.pushReplacement(
@@ -267,34 +296,34 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
                               style: TextStyle(fontSize: 16),
                             )
                             : SingleChildScrollView(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildClassContainer(
-                                title: "Kinder Garden",
-                                classes: filterKinderGarden(),
-                                context: context,
-                                isKinderGarden: true,
-                              ),
-                              const SizedBox(height: 20),
+                              // padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildClassContainer(
+                                    title: "Nursery",
+                                    classes: filterKinderGarden(),
+                                    context: context,
+                                    isKinderGarden: true,
+                                  ),
+                                  const SizedBox(height: 20),
 
-                              _buildClassContainer(
-                                title: "Classes 1 to 5",
-                                classes: filterClasses(1, 5),
-                                context: context,
-                                isKinderGarden: false,
+                                  _buildClassContainer(
+                                    title: "Classes 1 to 5",
+                                    classes: filterClasses(1, 5),
+                                    context: context,
+                                    isKinderGarden: false,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _buildClassContainer(
+                                    title: "Classes 6 and above",
+                                    classes: filterClassesFrom(6),
+                                    context: context,
+                                    isKinderGarden: false,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 20),
-                              _buildClassContainer(
-                                title: "Classes 6 and above",
-                                classes: filterClassesFrom(6),
-                                context: context,
-                                isKinderGarden: false,
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
                     ],
                   ),
                 ),
@@ -352,63 +381,64 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
             mainAxisSpacing: 8,
             childAspectRatio: 1,
             children:
-            classes.map((classItem) {
-              final classId = classItem['id'].toString();
-              final className = classItem['class'] ?? 'Unnamed';
-              final section = classItem['section'] ?? '';
+                classes.map((classItem) {
+                  final classId = classItem['id'].toString();
+                  final className = classItem['class'] ?? 'Unnamed';
+                  final section = classItem['section'] ?? '';
 
-              return InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => Reports(
-                        schoolId: widget.schoolId,
-                        classId: classId,
-                        username: widget.username,
-                        className: className,
-                        section: section,from: _fromDate,
-                            to: _toDate,
-                      ),
-                    ),
-                  );
-                },
-                child: Card(
-                  color: Colors.teal,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
+                  return InkWell(
                     borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Split into FN + AN halves
-                      Column(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => Reports(
+                                schoolId: widget.schoolId,
+                                classId: classId,
+                                username: widget.username,
+                                className: className,
+                                section: section,
+                                from: _fromDate,
+                                to: _toDate,
+                              ),
+                        ),
+                      );
+                    },
+                    child: Card(
+                      color: Colors.teal,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            isKinderGarden ? className : 'Class $className',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            'Sec $section',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                            ),
+                          // Split into FN + AN halves
+                          Column(
+                            children: [
+                              Text(
+                                isKinderGarden ? className : 'Class $className',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                'Sec $section',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+                    ),
+                  );
+                }).toList(),
           ),
         ],
       ),

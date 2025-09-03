@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/services/api_service.dart';
 
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../services/admin_api_service.dart';
-import './admin_dashboard.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../services/admin_api_service.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class ClassRegistration extends StatefulWidget {
   final String schoolId;
@@ -26,17 +26,16 @@ class ClassRegistration extends StatefulWidget {
 class _ClassRegistrationState extends State<ClassRegistration> {
   final TextEditingController _classController = TextEditingController();
   final TextEditingController _sectionController = TextEditingController();
+  final FocusNode _classFocus = FocusNode();
 
   bool _isFormValid = false;
-  bool _isLoading = false;
+  bool _isFetchingClasses = false;
+  bool _isSubmitting = false;
   bool showForm = false;
-
-  String? _responseMessage;
-  final _classFocus = FocusNode();
 
   List<Map<String, dynamic>> classes = [];
 
-  // 🔴 Field errors map
+  // Field errors map
   Map<String, String?> fieldErrors = {'class': null, 'section': null};
 
   @override
@@ -55,23 +54,26 @@ class _ClassRegistrationState extends State<ClassRegistration> {
     String? classError;
     String? sectionError;
 
+    // Class validation
     if (classValue.isEmpty) {
       classError = 'Enter class';
-    } else if (int.tryParse(classValue) == null) {
-      classError = 'Class must be a number';
-    } else if (int.parse(classValue) < 1 || int.parse(classValue) > 12) {
-      classError = 'Class must be between 1 and 12';
+    } else if (!RegExp(
+      r'^(PRE-KG|LKG|UKG|[1-9]|1[0-2]|I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)$',
+      caseSensitive: false,
+    ).hasMatch(classValue)) {
+      classError = 'Allowed: PRE-KG, LKG, UKG, or 1–12 or I to XII';
     }
 
+    // Section validation
     if (sectionValue.isEmpty) {
       sectionError = 'Enter section';
     } else if (!RegExp(r'^[A-Z]$').hasMatch(sectionValue)) {
       sectionError = 'Only one capital letter allowed';
     } else {
-      // 🔴 Duplicate Check
+      // Duplicate check
       final duplicate = classes.any(
         (cls) =>
-            cls['class'].toString() == classValue &&
+            cls['class'].toString().toUpperCase() == classValue.toUpperCase() &&
             cls['section'].toString().toUpperCase() ==
                 sectionValue.toUpperCase(),
       );
@@ -88,15 +90,25 @@ class _ClassRegistrationState extends State<ClassRegistration> {
   }
 
   Future<void> init() async {
-    setState(() => _isLoading = true);
+    setState(() => _isFetchingClasses = true);
     classes = await AdminApiService.fetchAllClasses(widget.schoolId);
+
+    // Custom sorting: Nursery → LKG → UKG → 1–12
+    final classOrder = {'Nursery': 0, 'LKG': 1, 'UKG': 2};
+
     classes.sort((a, b) {
-      int classCompare = a['class'].compareTo(b['class']);
-      if (classCompare != 0) return classCompare;
+      String classA = a['class'].toString();
+      String classB = b['class'].toString();
+
+      int rankA = classOrder[classA] ?? int.tryParse(classA) ?? 99;
+      int rankB = classOrder[classB] ?? int.tryParse(classB) ?? 99;
+
+      if (rankA != rankB) return rankA.compareTo(rankB);
       return a['section'].compareTo(b['section']);
     });
+
     if (!mounted) return;
-    setState(() => _isLoading = false);
+    setState(() => _isFetchingClasses = false);
 
     _classController.addListener(_checkFormValidity);
     _sectionController.addListener(_checkFormValidity);
@@ -104,37 +116,43 @@ class _ClassRegistrationState extends State<ClassRegistration> {
 
   Future<void> _submitForm() async {
     setState(() {
-      _isLoading = true;
-      _responseMessage = null;
+      _isSubmitting = true;
     });
 
+    FocusScope.of(context).unfocus(); // Close keyboard
+
     final result = await ApiService.addClass(
-      _classController.text.trim(),
-      _sectionController.text.trim(),
+      _classController.text.trim().toUpperCase(),
+      _sectionController.text.trim().toUpperCase(),
       widget.schoolId,
     );
 
-    if (mounted) {
-      init();
+    if (!mounted) return;
+
+    if (result.startsWith("✅")) {
+      await init();
       _classController.clear();
       _sectionController.clear();
+      setState(() => showForm = false); // Auto-close form
     }
 
     setState(() {
-      _isLoading = false;
-      _responseMessage = result.isNotEmpty ? result : '❌ Unexpected error';
-      Future.delayed(const Duration(seconds: 5), () {
-        if (mounted) {
-          setState(() => _responseMessage = null);
-        }
-      });
+      _isSubmitting = false;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.isNotEmpty ? result : '❌ Unexpected error'),
+        backgroundColor: result.startsWith("✅") ? Colors.green : Colors.red,
+      ),
+    );
   }
 
   @override
   void dispose() {
     _classController.dispose();
     _sectionController.dispose();
+    _classFocus.dispose();
     super.dispose();
   }
 
@@ -157,10 +175,10 @@ class _ClassRegistrationState extends State<ClassRegistration> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    if (_isLoading) {
+    if (_isFetchingClasses) {
       return Scaffold(
         backgroundColor: Colors.white,
-        body: Center(
+        body: const Center(
           child: SpinKitFadingCircle(color: Colors.blueAccent, size: 60.0),
         ),
       );
@@ -228,17 +246,20 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                           TextField(
                             focusNode: _classFocus,
                             controller: _classController,
-                            keyboardType: TextInputType.number,
+                            keyboardType: TextInputType.text,
                             decoration: InputDecoration(
-                              labelText: 'Class',
-                              border: OutlineInputBorder(),
+                              labelText: 'Class (Nursery, LKG, UKG, 1–12)',
+                              border: const OutlineInputBorder(),
                               prefixIcon: const Icon(Icons.class_),
                               errorText: fieldErrors['class'],
                             ),
                             inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(2),
+                              LengthLimitingTextInputFormatter(10),
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[A-Za-z0-9 ]'),
+                              ),
                             ],
+                            textCapitalization: TextCapitalization.characters,
                             onChanged: (_) => _checkFormValidity(),
                           ),
                           const SizedBox(height: 16),
@@ -248,7 +269,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                             controller: _sectionController,
                             decoration: InputDecoration(
                               labelText: 'Section (A-Z)',
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(),
                               prefixIcon: const Icon(Icons.school),
                               errorText: fieldErrors['section'],
                             ),
@@ -269,11 +290,11 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               onPressed:
-                                  (_isLoading || !_isFormValid)
+                                  (_isSubmitting || !_isFormValid)
                                       ? null
                                       : _submitForm,
                               icon:
-                                  _isLoading
+                                  _isSubmitting
                                       ? const SizedBox(
                                         height: 20,
                                         width: 20,
@@ -284,7 +305,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                                       )
                                       : const Icon(Icons.add),
                               label: Text(
-                                _isLoading ? 'Please wait...' : 'Add Class',
+                                _isSubmitting ? 'Please wait...' : 'Add Class',
                                 style: const TextStyle(fontSize: 18),
                               ),
                               style: ElevatedButton.styleFrom(
@@ -299,32 +320,6 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-
-                          if (_responseMessage != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    _responseMessage!.contains('✅')
-                                        ? Colors.green.shade100
-                                        : Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _responseMessage!,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color:
-                                      _responseMessage!.contains('✅')
-                                          ? Colors.green.shade900
-                                          : Colors.red.shade900,
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -353,96 +348,119 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                 ),
                 const SizedBox(height: 10),
 
-                // Classes list
-                ...classes.map((classData) {
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 8,
+                if (classes.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      "No classes registered yet.\nTap + to add one.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: const Icon(Icons.class_, color: Colors.blue),
-                      title: Text(
-                        'Class: ${classData['class']}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('Section: ${classData['section']}'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder:
-                                (context) => AlertDialog(
-                                  title: const Text('Delete Class'),
-                                  content: Text(
-                                    'Are you sure you want to delete Class "${classData['class']}" Section "${classData['section']}"?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed:
-                                          () =>
-                                              Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: classes.length,
+                    itemBuilder: (context, index) {
+                      final classData = classes[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 8,
+                        ),
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          leading: const Icon(Icons.class_, color: Colors.blue),
+                          title: Text(
+                            'Class: ${classData['class']}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text('Section: ${classData['section']}'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (context) => AlertDialog(
+                                      title: const Text('Delete Class'),
+                                      content: Text(
+                                        'Are you sure you want to delete Class "${classData['class']}" Section "${classData['section']}"?',
                                       ),
-                                      onPressed:
-                                          () => Navigator.of(context).pop(true),
-                                      child: const Text('Delete'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.of(
+                                                context,
+                                              ).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                          onPressed:
+                                              () => Navigator.of(
+                                                context,
+                                              ).pop(true),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                          );
-
-                          if (confirm == true) {
-                            final result = await ApiService.deleteClass(
-                              classData['class'].toString(),
-                              classData['section'].toString(),
-                              widget.schoolId,
-                            );
-
-                            if (!mounted) return;
-                            if (result == '❌ Failed: Internal Server Error') {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Class ${classData['class']} Section ${classData['section']} is used in other services',
-                                  ),
-                                ),
                               );
-                              return;
-                            }
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text(result)));
 
-                            if (result.startsWith("✅")) {
-                              await init();
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                }),
+                              if (confirm == true) {
+                                final result = await ApiService.deleteClass(
+                                  classData['class'].toString(),
+                                  classData['section'].toString(),
+                                  widget.schoolId,
+                                );
+
+                                if (!mounted) return;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      result ==
+                                              '❌ Failed: Internal Server Error'
+                                          ? 'Class ${classData['class']} Section ${classData['section']} is used in other services'
+                                          : result,
+                                    ),
+                                    backgroundColor:
+                                        result.startsWith("✅")
+                                            ? Colors.green
+                                            : Colors.red,
+                                  ),
+                                );
+
+                                if (result.startsWith("✅")) {
+                                  await init();
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           ),
         ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.blue.shade50,
-          onPressed: () {
-            setState(() {
-              showForm = !showForm;
-            });
-          },
+          onPressed:
+              _isSubmitting
+                  ? null
+                  : () {
+                    setState(() {
+                      showForm = !showForm;
+                    });
+                  },
           child:
               showForm
                   ? Icon(Icons.close, size: 30, color: Colors.blue.shade900)

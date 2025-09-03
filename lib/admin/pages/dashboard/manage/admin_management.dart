@@ -3,20 +3,23 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/admin/pages/add_or_remove_admin.dart';
-import 'package:school_attendance/admin/pages/add_or_remove_staff.dart';
-import 'package:school_attendance/admin/pages/add_or_remove_student.dart';
-import 'package:school_attendance/admin/pages/bulk_upload_register_student.dart';
+import 'package:school_attendance/admin/pages/add_or_remove/add_or_remove_admin.dart';
+import 'package:school_attendance/admin/pages/add_or_remove/add_or_remove_staff.dart';
+import 'package:school_attendance/admin/pages/add_or_remove/add_or_remove_student.dart';
+import 'package:school_attendance/admin/pages/add_or_remove/bulk_upload/bulk_upload_register_student.dart';
 import 'package:school_attendance/admin/pages/leave_request/view_leave_request.dart';
-import 'package:school_attendance/admin/pages/post_tickets.dart';
-import 'package:school_attendance/admin/pages/view_feedback.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 
-import '../components/build_profile_card_desktop.dart';
-import '../components/build_profile_card_mobile.dart';
-import 'add_or_remove_class.dart';
-import 'bulk_upload_register_admin.dart';
-import 'bulk_upload_register_staff.dart';
+import '../../../components/build_profile_card_desktop.dart';
+import '../../../components/build_profile_card_mobile.dart';
+import '../../add_or_remove/add_or_remove_class.dart';
+import '../../add_or_remove/bulk_upload/bulk_upload_register_admin.dart';
+import '../../add_or_remove/bulk_upload/bulk_upload_register_staff.dart';
+import '../../view_profiles/admin/view_admin_profiles.dart';
+import '../../view_profiles/staff/view_staff_profile.dart';
+import '../../view_profiles/student/view_student_profile.dart';
+import './post_tickets.dart';
+import './view_feedback.dart';
 import 'create_today_message.dart';
 import 'mark_leave_list.dart';
 
@@ -271,7 +274,7 @@ class _AdminManagementState extends State<AdminManagement> {
                                 ),
                                 buildElevatedButton(
                                   context,
-                                  'submit\nTicket',
+                                  'Submit\nTicket',
                                   PostTickets(
                                     schoolId: widget.schoolId,
                                     username: widget.adminUsername,
@@ -349,6 +352,78 @@ class _AdminManagementState extends State<AdminManagement> {
                                     username: widget.adminUsername,
                                   ),
                                   Icons.remove_from_queue,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.black26, width: 2),
+                        boxShadow: [BoxShadow(color: Colors.transparent)],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+
+                                children: [
+                                  Text(
+                                    'View Profiles',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade900,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 25,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.blue.shade900,
+                                    size: 50,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                buildElevatedButton(
+                                  context,
+                                  'Admin',
+                                  ViewAdminProfile(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.admin_panel_settings_outlined,
+                                ),
+                                buildElevatedButton(
+                                  context,
+                                  'Staff',
+                                  ViewStaffProfile(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.person,
+                                ),
+                                buildElevatedButton(
+                                  context,
+                                  'Student',
+                                  ViewStudentProfile(
+                                    schoolId: widget.schoolId,
+                                    username: widget.adminUsername,
+                                  ),
+                                  Icons.people,
                                 ),
                               ],
                             ),
@@ -438,7 +513,7 @@ class _AdminManagementState extends State<AdminManagement> {
         adminPhoto = Image.memory(imageBytes);
       }
     } catch (e) {
-      print('Image decode error: $e');
+      //print('Image decode error: $e');
     }
     return Container(
       width: double.infinity,

@@ -10,6 +10,7 @@ import '../../services/api_service.dart';
 class SchoolRegistration extends StatefulWidget {
   const SchoolRegistration({super.key, required this.onRegister});
   final VoidCallback onRegister;
+
   @override
   State<SchoolRegistration> createState() => _SchoolRegistrationState();
 }
@@ -18,11 +19,14 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
+  final _idController = TextEditingController();
+
   File? _selectedImage;
   List<Map<String, dynamic>> schools = [];
 
-  bool _isButtonEnabled = false; // ✅ button control
-  String? _nameError; // ✅ inline error message
+  bool _isButtonEnabled = false;
+  bool _isLoading = false;
+  String? _nameError;
 
   @override
   void initState() {
@@ -32,6 +36,7 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
     // Listen to input changes
     _nameController.addListener(_checkFormValidity);
     _addressController.addListener(_checkFormValidity);
+    _idController.addListener(_checkFormValidity);
   }
 
   Future<void> init() async {
@@ -47,7 +52,8 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
 
     // Check if school already exists
     final alreadyExists = schools.any(
-      (school) => school['name'].toString().toLowerCase() == name.toLowerCase(),
+      (school) =>
+          school['name'].toString().trim().toLowerCase() == name.toLowerCase(),
     );
 
     setState(() {
@@ -68,42 +74,69 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
     }
   }
 
+  void sendMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _submitForm() async {
-    if (!_isButtonEnabled) return; // prevent accidental submit
+    if (!_isButtonEnabled) return;
 
     if (_formKey.currentState!.validate()) {
-      final name = _nameController.text.trim();
-      final address = _addressController.text.trim();
+      // // Optional: enforce school photo upload
+      if (_selectedImage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please upload a school photo")),
+        );
+        return;
+      }
 
-      final success = await AdministratorApiService.createSchool(
-        name,
-        address,
-        _selectedImage,
-      );
-      final res = jsonDecode(success!);
+      setState(() => _isLoading = true);
 
-      if (res['name'] == name) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("School registered successfully ✅")),
+      try {
+        final name = _nameController.text.trim();
+        final address = _addressController.text.trim();
+        final schoolId = _idController.text.trim();
+
+        final success = await AdministratorApiService.createSchool(
+          name: name,
+          address: address,
+          photo: _selectedImage,
+          schoolId: schoolId,
         );
-        _nameController.clear();
-        _addressController.clear();
-        setState(() {
-          _selectedImage = null;
-          _isButtonEnabled = false; // reset
-          _nameError = null;
-        });
-        widget.onRegister();
-      } else if (res['message'] == 'School is already registered') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("School is already registered")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to register school")),
-        );
+
+        final res = jsonDecode(success!);
+
+        if (res['name'] == name) {
+          sendMessage("School registered successfully ✅");
+          _nameController.clear();
+          _addressController.clear();
+          _idController.clear();
+          setState(() {
+            _selectedImage = null;
+            _isButtonEnabled = false;
+            _nameError = null;
+          });
+          await init(); // refresh list after successful registration
+          widget.onRegister();
+        } else if (res['message'] == 'School is already registered') {
+          sendMessage("School is already registered");
+        } else {
+          sendMessage("Failed to register school");
+        }
+      } finally {
+        setState(() => _isLoading = false);
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _idController.dispose();
+    super.dispose();
   }
 
   @override
@@ -117,6 +150,8 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 16),
+
+              // School Photo Picker
               GestureDetector(
                 onTap: _pickImage,
                 child: CircleAvatar(
@@ -138,13 +173,28 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
               ),
               const SizedBox(height: 24),
 
+              // School ID
+              TextFormField(
+                controller: _idController,
+                decoration: const InputDecoration(
+                  labelText: "School Id",
+                  border: OutlineInputBorder(),
+                ),
+                validator:
+                    (value) =>
+                        value == null || value.trim().isEmpty
+                            ? "Please enter school id"
+                            : null,
+              ),
+              const SizedBox(height: 16),
+
               // School Name
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: "School Name",
                   border: const OutlineInputBorder(),
-                  errorText: _nameError, // ✅ show inline error
+                  errorText: _nameError,
                 ),
                 validator:
                     (value) =>
@@ -154,7 +204,7 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
               ),
               const SizedBox(height: 16),
 
-              // Address
+              // School Address
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(
@@ -176,17 +226,28 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor:
-                        _isButtonEnabled ? Colors.teal : Colors.grey, // ✅
+                        _isButtonEnabled ? Colors.teal : Colors.grey,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _isButtonEnabled ? _submitForm : null, // ✅
+                  onPressed:
+                      _isButtonEnabled && !_isLoading ? _submitForm : null,
                   icon: const Icon(Icons.check_circle, color: Colors.white),
-                  label: const Text(
-                    "Register School",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  label:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text(
+                            "Register School",
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
                 ),
               ),
             ],

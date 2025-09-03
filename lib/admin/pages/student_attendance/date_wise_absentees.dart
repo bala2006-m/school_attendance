@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../../../components/class_grid_view.dart';
-import '../../../../services/sttendance_helper.dart';
-import '../../admin_dashboard.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../components/class_grid_view.dart';
+import '../../services/sttendance_helper.dart';
+import '../dashboard/admin_dashboard.dart';
 import 'date_absent.dart';
 
 class DateWiseAbsentees extends StatefulWidget {
@@ -144,7 +144,7 @@ class _DateWiseAbsenteesState extends State<DateWiseAbsentees> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (schoolPhoto != null)
-                Container(height: 100, width: 100, child: schoolPhoto),
+                SizedBox(height: 100, width: 100, child: schoolPhoto),
               const SizedBox(height: 10),
               Text(
                 schoolName ?? '',

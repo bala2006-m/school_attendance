@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
-import '../pages/change_password.dart';
-import '../pages/edit_profile_screen.dart';
-import '../pages/staff_profile_screen.dart';
+import '../pages/drawer/change_password.dart';
+import '../pages/drawer/edit_profile_screen.dart';
+import '../pages/drawer/staff_profile_screen.dart';
 
 class MobileDrawer extends StatelessWidget {
   const MobileDrawer({
@@ -143,7 +143,7 @@ class MobileDrawer extends StatelessWidget {
               vertical: 8.0,
             ),
             child: ListTile(
-              tileColor: Colors.red.withOpacity(0.05),
+              tileColor: Colors.red.withValues(alpha: 0.05),
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

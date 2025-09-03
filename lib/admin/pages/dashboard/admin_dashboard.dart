@@ -8,14 +8,14 @@ import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../administrator/services/administrator_api_service.dart';
-import '../../services/api_service.dart';
-import '../../teacher/services/teacher_api_service.dart';
-import '../appbar/admin_appbar_desktop.dart';
-import '../appbar/admin_appbar_mobile.dart';
-import '../widget/admin_desktop_dashboard.dart';
-import '../widget/admin_mobile_dashboard.dart';
-import './edit_profile.dart';
+import '../../../administrator/services/administrator_api_service.dart';
+import '../../../services/api_service.dart';
+import '../../../teacher/services/teacher_api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../widget/admin_desktop_dashboard.dart';
+import '../../widget/admin_mobile_dashboard.dart';
+import '../drawer/edit_profile.dart';
 
 class AdminDashboard extends StatefulWidget {
   final String schoolId;
@@ -58,7 +58,6 @@ class AdminDashboardState extends State<AdminDashboard> {
   int presentStudentAN = 0;
   String message = '';
   bool _isLoading = true;
-  bool _isAttendanceLoading = true;
   bool _hasLoadedOnce = false;
   bool isBlocked = false;
   String? reason;
@@ -197,7 +196,7 @@ class AdminDashboardState extends State<AdminDashboard> {
 
       _hasLoadedOnce = true;
     } catch (e) {
-      print('Initial load failed: $e');
+      //print('Initial load failed: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -218,7 +217,7 @@ class AdminDashboardState extends State<AdminDashboard> {
       await fetchAttendanceStatusForAll();
       fetchAttendanceData();
     } catch (e) {
-      print('Secondary data fetch failed: $e');
+      //print('Secondary data fetch failed: $e');
     }
   }
 
@@ -251,8 +250,9 @@ class AdminDashboardState extends State<AdminDashboard> {
             )
             .then((result) => attendanceStatusMapFn[classId] = result == false)
             .catchError((e) {
-              debugPrint("FN error class $classId: $e");
+              // debugPrint("FN error class $classId: $e");
               attendanceStatusMapFn[classId] = true;
+              return false;
             }),
         ApiService.checkAttendanceStatusSession(
               schoolId,
@@ -262,8 +262,9 @@ class AdminDashboardState extends State<AdminDashboard> {
             )
             .then((result) => attendanceStatusMapAn[classId] = result == false)
             .catchError((e) {
-              debugPrint("AN error class $classId: $e");
+              // debugPrint("AN error class $classId: $e");
               attendanceStatusMapAn[classId] = true;
+              return false;
             }),
       ]);
     }
@@ -274,50 +275,42 @@ class AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> fetchAttendanceData() async {
-    try {
-      final currentDate = formattedCurrentDate;
+    final currentDate = formattedCurrentDate;
 
-      final attendanceFutures = await Future.wait([
-        AdminApiService.fetchStaffData(widget.schoolId),
-        AdminApiService.fetchAllStudentData(widget.schoolId),
-        ApiService.fetchTodayAttendance(currentDate, 'fn', widget.schoolId),
-        ApiService.fetchTodayAttendance(currentDate, 'an', widget.schoolId),
-        ApiService.fetchTodayStudentAttendance(
-          currentDate,
-          'fn',
-          widget.schoolId,
-        ),
-        ApiService.fetchTodayStudentAttendance(
-          currentDate,
-          'an',
-          widget.schoolId,
-        ),
-      ]);
+    final attendanceFutures = await Future.wait([
+      AdminApiService.fetchStaffData(widget.schoolId),
+      AdminApiService.fetchAllStudentData(widget.schoolId),
+      ApiService.fetchTodayAttendance(currentDate, 'fn', widget.schoolId),
+      ApiService.fetchTodayAttendance(currentDate, 'an', widget.schoolId),
+      ApiService.fetchTodayStudentAttendance(
+        currentDate,
+        'fn',
+        widget.schoolId,
+      ),
+      ApiService.fetchTodayStudentAttendance(
+        currentDate,
+        'an',
+        widget.schoolId,
+      ),
+    ]);
 
-      final staffAttendanceFn = attendanceFutures[2] as Map<String, dynamic>;
-      // print(staffAttendanceFn);
-      final staffAttendanceAn = attendanceFutures[3] as Map<String, dynamic>;
-      final studentAttendanceFn = attendanceFutures[4] as Map<String, dynamic>;
-      final studentAttendanceAn = attendanceFutures[5] as Map<String, dynamic>;
+    final staffAttendanceFn = attendanceFutures[2] as Map<String, dynamic>;
+    // print(staffAttendanceFn);
+    final staffAttendanceAn = attendanceFutures[3] as Map<String, dynamic>;
+    final studentAttendanceFn = attendanceFutures[4] as Map<String, dynamic>;
+    final studentAttendanceAn = attendanceFutures[5] as Map<String, dynamic>;
 
-      int presentFn = staffAttendanceFn.values.where((s) => s == 'P').length;
-      int presentAn = staffAttendanceAn.values.where((s) => s == 'P').length;
-      int presentStuFn =
-          studentAttendanceFn.values.where((s) => s == 'P').length;
-      int presentStuAn =
-          studentAttendanceAn.values.where((s) => s == 'P').length;
+    int presentFn = staffAttendanceFn.values.where((s) => s == 'P').length;
+    int presentAn = staffAttendanceAn.values.where((s) => s == 'P').length;
+    int presentStuFn = studentAttendanceFn.values.where((s) => s == 'P').length;
+    int presentStuAn = studentAttendanceAn.values.where((s) => s == 'P').length;
 
-      setState(() {
-        presentStaffFN = presentFn;
-        presentStaffAN = presentAn;
-        presentStudentFN = presentStuFn;
-        presentStudentAN = presentStuAn;
-        _isAttendanceLoading = false;
-      });
-    } catch (e) {
-      print('Attendance load failed: $e');
-      setState(() => _isAttendanceLoading = false);
-    }
+    setState(() {
+      presentStaffFN = presentFn;
+      presentStaffAN = presentAn;
+      presentStudentFN = presentStuFn;
+      presentStudentAN = presentStuAn;
+    });
   }
 
   @override
@@ -348,8 +341,9 @@ class AdminDashboardState extends State<AdminDashboard> {
       );
     }
 
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
+
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
@@ -429,7 +423,7 @@ class AdminDashboardState extends State<AdminDashboard> {
         floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
         floatingActionButton:
             !isMobile
-                ? Container(
+                ? SizedBox(
                   width: MediaQuery.sizeOf(context).width * 0.922,
                   height: 120,
                   child: Align(

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
-import '../../teacher/color/teacher_custom_color.dart' as AdminCustomColor;
-import '../pages/admin_dashboard.dart';
-import '../pages/edit_profile.dart';
-import '../pages/profile.dart';
+import '../../teacher/color/teacher_custom_color.dart' as admin_custom_color;
+import '../pages/dashboard/admin_dashboard.dart';
+import '../pages/drawer/edit_profile.dart';
+import '../pages/drawer/profile.dart';
 
 class AdminDesktopDrawerSmall extends StatelessWidget {
   const AdminDesktopDrawerSmall({
@@ -39,7 +39,7 @@ class AdminDesktopDrawerSmall extends StatelessWidget {
         width: width,
         height: MediaQuery.sizeOf(context).height / 1.6,
         decoration: BoxDecoration(
-          color: AdminCustomColor.appbar,
+          color: admin_custom_color.appbar,
           borderRadius: BorderRadius.circular(12),
         ),
         child: SingleChildScrollView(

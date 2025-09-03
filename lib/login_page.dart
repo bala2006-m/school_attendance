@@ -2,7 +2,7 @@ import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/admin/pages/admin_dashboard.dart';
+import 'package:school_attendance/admin/pages/dashboard/admin_dashboard.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
 import 'package:school_attendance/administrator/services/administrator_api_service.dart';
 import 'package:school_attendance/services/api_service.dart';
@@ -216,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/logo.jpg', height: 100, width: 100),
+                Image.asset('assets/logo.png', height: 120, width: 120),
                 const SizedBox(height: 50),
 
                 // School ID
@@ -286,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                     color:
                         _isFormValid
                             ? Colors.white
-                            : Colors.white.withOpacity(0.5),
+                            : Colors.white.withValues(alpha: 0.5),
                   ),
                   child: TextButton(
                     onPressed: (_isFormValid && !isLoading) ? login : null,

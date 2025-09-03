@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/admin/pages/staff_absentees.dart';
-import 'package:school_attendance/admin/pages/staff_attendance.dart';
-import 'package:school_attendance/admin/pages/student_absentees.dart';
-import 'package:school_attendance/admin/pages/student_report_between_days.dart';
-import 'package:school_attendance/admin/pages/view_staff_attendance.dart';
-import 'package:school_attendance/admin/pages/view_student_attendance.dart';
+import 'package:school_attendance/admin/pages/staff_attendance/staff_absentees.dart';
+import 'package:school_attendance/admin/pages/staff_attendance/staff_attendance.dart';
+import 'package:school_attendance/admin/pages/staff_attendance/view_staff_attendance.dart';
+import 'package:school_attendance/admin/pages/student_attendance/periodicalReport/student_report_between_days.dart';
+import 'package:school_attendance/admin/pages/student_attendance/viewAbsentees/student_absentees.dart';
+import 'package:school_attendance/admin/pages/student_attendance/viewAttendance/view_student_attendance.dart';
 
-import '../components/build_profile_card_desktop.dart';
-import '../components/build_profile_card_mobile.dart';
-import 'modify_student_attendance.dart';
-import 'monthly_attendance.dart';
+import '../../../components/build_profile_card_desktop.dart';
+import '../../../components/build_profile_card_mobile.dart';
+import '../../student_attendance/monthelyAttendance/monthly_attendance.dart';
+import '../../student_attendance/update_attendance/modify_student_attendance.dart';
 
 class AdminStudent extends StatefulWidget {
-  final String school_id;
+  final String schoolId;
   final String adminUsername;
   final String adminName;
   final String adminDesignation;
@@ -23,7 +23,7 @@ class AdminStudent extends StatefulWidget {
 
   const AdminStudent({
     super.key,
-    required this.school_id,
+    required this.schoolId,
     required this.adminUsername,
     required this.adminName,
     required this.adminDesignation,
@@ -128,7 +128,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'Mark Attendance',
                     Icons.people,
                     StaffAttendance(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -143,7 +143,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'View Absentees',
                     Icons.people_outline,
                     StaffAbsentees(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -158,7 +158,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'View Attendance',
                     Icons.people_outline_outlined,
                     ViewStaffAttendance(
-                      school_id: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -218,7 +218,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'Update Attendance',
                     Icons.mode,
                     ModifyStudentAttendance(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -234,7 +234,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'View Absentees',
                     Icons.person_remove,
                     StudentAbsent(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -249,7 +249,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'View Attendance',
                     Icons.person_search,
                     ClassList(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -270,7 +270,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'Monthly Attendance',
                     Icons.calendar_month,
                     MonthlyAttendance(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,
@@ -285,7 +285,7 @@ class _AdminStudentState extends State<AdminStudent> {
                     'Periodical Report',
                     Icons.report,
                     StudentReportBetweenDays(
-                      schoolId: widget.school_id,
+                      schoolId: widget.schoolId,
                       username: widget.adminUsername,
                     ),
                     Colors.cyan,

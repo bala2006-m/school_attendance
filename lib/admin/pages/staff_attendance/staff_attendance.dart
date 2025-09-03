@@ -8,15 +8,15 @@ import 'package:intl/intl.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../../services/api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../../../components/attendance_already_marked_dialog.dart';
-import '../../../../components/build_profile_card_mobile.dart';
-import '../../../../widget/notification_dialog.dart';
-import '../../admin_dashboard.dart';
+import '../../../services/api_service.dart';
+import '../../appbar/admin_appbar_desktop.dart';
+import '../../appbar/admin_appbar_mobile.dart';
+import '../../components/attendance_already_marked_dialog.dart';
+import '../../components/build_profile_card_mobile.dart';
+import '../../widget/notification_dialog.dart';
+import '../dashboard/admin_dashboard.dart';
 
-enum AttendanceSession { FN, AN }
+enum AttendanceSession { fN, aN }
 
 const String presentStatus = 'P';
 const String absentStatus = 'A';
@@ -40,7 +40,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   String? schoolAddress;
   Image? schoolPhoto;
   AttendanceSession session =
-      DateTime.now().hour < 13 ? AttendanceSession.FN : AttendanceSession.AN;
+      DateTime.now().hour < 13 ? AttendanceSession.fN : AttendanceSession.aN;
   List<Map<String, dynamic>> holidays = [];
   final List<Map<String, dynamic>> staffList = [];
   bool isLoading = true;
@@ -55,7 +55,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   Map<String, String> attendanceMap = {};
   Map<String, Map<String, String>> attendanceCache = {};
 
-  String get sessionKey => session == AttendanceSession.FN ? 'fn' : 'an';
+  String get sessionKey => session == AttendanceSession.fN ? 'fn' : 'an';
   @override
   void initState() {
     super.initState();
@@ -66,13 +66,13 @@ class _StaffAttendanceState extends State<StaffAttendance> {
       final hour = now.hour;
 
       if (hour < 13 && !isHolidayFn) {
-        setState(() => session = AttendanceSession.FN);
+        setState(() => session = AttendanceSession.fN);
       } else if (hour >= 13 && !isHolidayAn) {
-        setState(() => session = AttendanceSession.AN);
+        setState(() => session = AttendanceSession.aN);
       } else if (!isHolidayFn) {
-        setState(() => session = AttendanceSession.FN);
+        setState(() => session = AttendanceSession.fN);
       } else if (!isHolidayAn) {
-        setState(() => session = AttendanceSession.AN);
+        setState(() => session = AttendanceSession.aN);
       }
 
       await fetchSchoolInfo();
@@ -154,7 +154,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
         });
       }
     } catch (e) {
-      print('Image decode error: $e');
+      //print('Image decode error: $e');
     }
   }
 
@@ -306,9 +306,9 @@ class _StaffAttendanceState extends State<StaffAttendance> {
                       children: [
                         const Text("Session: ", style: TextStyle(fontSize: 20)),
                         const SizedBox(width: 8),
-                        _buildSessionButton('FN', AttendanceSession.FN),
+                        _buildSessionButton('FN', AttendanceSession.fN),
                         const SizedBox(width: 8),
-                        _buildSessionButton('AN', AttendanceSession.AN),
+                        _buildSessionButton('AN', AttendanceSession.aN),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -349,7 +349,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ...staffList.map(_buildStaffCard).toList(),
+                    ...staffList.map(_buildStaffCard),
                     SizedBox(height: 100),
                   ],
                 ),
@@ -494,8 +494,8 @@ class _StaffAttendanceState extends State<StaffAttendance> {
     final isSelected = session == type;
 
     final isDisabled =
-        (type == AttendanceSession.FN && isHolidayFn) ||
-        (type == AttendanceSession.AN && isHolidayAn);
+        (type == AttendanceSession.fN && isHolidayFn) ||
+        (type == AttendanceSession.aN && isHolidayAn);
 
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -531,7 +531,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
           date: currentDate,
           session: sessionKey.toUpperCase(),
           status: entry.value,
-          school_id: widget.schoolId,
+          schoolId: widget.schoolId,
         );
         if (!result) failedUsernames.add(entry.key);
       }),

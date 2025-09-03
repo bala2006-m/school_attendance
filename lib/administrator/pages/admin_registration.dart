@@ -130,23 +130,26 @@ class _AdminRegistrationState extends State<AdminRegistration> {
         fillPass && fillMobile && countryCodeController.text.isNotEmpty;
     final isMobile = MediaQuery.of(context).size.width < 500;
 
-    return WillPopScope(
-      onWillPop: () async {
-        FirstPageState.selectedIndex = 1;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => FirstPage(
-                  username: widget.username,
-                  schoolName: widget.schoolName,
-                  schoolAddress: widget.schoolAddress,
-                  schoolId: widget.schoolId.toString(),
-                ),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          FirstPageState.selectedIndex = 1;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => FirstPage(
+                    username: widget.username,
+                    schoolName: widget.schoolName,
+                    schoolAddress: widget.schoolAddress,
+                    schoolId: widget.schoolId.toString(),
+                  ),
+            ),
+          );
+        }
       },
+
       child: RefreshIndicator(
         onRefresh: init,
         child: Scaffold(
@@ -211,12 +214,11 @@ class _AdminRegistrationState extends State<AdminRegistration> {
                     Row(
                       children: [
                         Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: buildInputField(
                             label: "Code",
                             controller: countryCodeController,
                             focusNode: countryCodeFocus,
-                            keyboardType: TextInputType.phone,
                             icon: Icons.flag,
                           ),
                         ),
@@ -395,6 +397,16 @@ class _AdminRegistrationState extends State<AdminRegistration> {
     );
   }
 
+  Future<void> sendMessage(String message, Color color) async {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
+  }
+
+  Future<void> focus() async {
+    FocusScope.of(context).requestFocus(mobileFocus);
+  }
+
   Future<void> handleSubmit() async {
     final username = mobileController.text.trim();
     final password = passwordController.text.trim();
@@ -414,36 +426,26 @@ class _AdminRegistrationState extends State<AdminRegistration> {
     }
     String fullMobileNumber = '$countryCode$mobileNumber';
 
-    if (!RegExp(r'^\+\d{1,3}\d{4,14}\$').hasMatch(fullMobileNumber)) {
-      setState(() {
-        fieldErrors['Mobile Number'] =
-            'Invalid mobile number format. Include a valid country code (e.g., +91).';
-      });
-      return;
-    }
-
     final result = await ApiService.registerUser(
       username: username,
       password: password,
       role: 'admin',
-      school_id: widget.schoolId.toString(),
+      schoolId: widget.schoolId.toString(),
     );
 
     final res = await ApiService.registerUserDesignation(
       username: username,
       designation: designation,
-      school_id: widget.schoolId.toString(),
+      schoolId: widget.schoolId.toString(),
       mobile: fullMobileNumber,
       table: 'admin',
     );
 
     if (result['success'] && res['success']) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result['message'])));
+      sendMessage(result['message'], Colors.green);
       passwordController.clear();
       mobileController.clear();
-      FocusScope.of(context).requestFocus(mobileFocus);
+      focus();
       init();
       setState(() {
         fillPass = false;
@@ -452,12 +454,7 @@ class _AdminRegistrationState extends State<AdminRegistration> {
         fieldErrors.updateAll((key, value) => null);
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${result['error']}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      sendMessage('Error: ${result['error']}', Colors.red);
     }
   }
 }

@@ -26,8 +26,6 @@ class StudentRegistrationMobile extends StatefulWidget {
 }
 
 class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
-  final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
@@ -62,7 +60,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
   List<Map<String, dynamic>> availableClasses = [];
   List<String> classList = [];
   List<String> sectionList = [];
-  Map<String, String?> _fieldErrors = {}; // add in state
+  Map<String, String?> fieldErrors = {}; // add in state
 
   Widget buildTextField({
     required String label,
@@ -99,7 +97,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
           hintText: hintText,
           counterText: '',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          errorText: _fieldErrors[label], // <-- shows error below text box
+          errorText: fieldErrors[label], // <-- shows error below text box
           suffixIcon:
               isPassword
                   ? IconButton(
@@ -138,7 +136,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
               if (existingEmails.contains(val.trim())) {
                 error = 'Email already exists';
               } else if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
               ).hasMatch(val.trim())) {
                 error = 'Enter a valid email address';
               }
@@ -153,7 +151,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
             }
 
             setState(() {
-              _fieldErrors[label] = error;
+              fieldErrors[label] = error;
             });
 
             _validateForm();
@@ -175,13 +173,15 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
   }
 
   void _addListeners() {
-    [
+    for (var controller in [
       _nameController,
       _emailController,
       _mobileController,
       _usernameController,
       _passwordController,
-    ].forEach((controller) => controller.addListener(_validateForm));
+    ]) {
+      controller.addListener(_validateForm);
+    }
   }
 
   void _validateForm() {
@@ -239,9 +239,26 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
     try {
       final res = await AdminApiService.fetchAllClasses(widget.schoolId);
       availableClasses = List<Map<String, dynamic>>.from(res);
+
       classList =
-          availableClasses.map((e) => e['class'].toString()).toSet().toList()
-            ..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
+          availableClasses.map((e) => e['class'].toString()).toSet().toList();
+
+      // Custom sort: numbers first, then alphabetic
+      classList.sort((a, b) {
+        final aNum = int.tryParse(a);
+        final bNum = int.tryParse(b);
+
+        if (aNum != null && bNum != null) {
+          return aNum.compareTo(bNum);
+        } else if (aNum != null) {
+          return -1; // numbers before text
+        } else if (bNum != null) {
+          return 1; // text after numbers
+        } else {
+          return a.compareTo(b); // both text → alphabetic
+        }
+      });
+
       setState(() {});
     } catch (e) {
       debugPrint('Error fetching classes: $e');
@@ -286,7 +303,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
         username: username,
         password: password,
         role: 'student',
-        school_id: widget.schoolId,
+        schoolId: widget.schoolId,
       );
 
       if (!(userRes['success'] ?? false)) {
@@ -324,7 +341,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
         _showError(regRes['message'] ?? 'Student registration failed');
       }
     } catch (e) {
-      _showError('Unexpected error: $e');
+      _showError('Unexpected error');
     } finally {
       setState(() => _isLoading = false);
     }

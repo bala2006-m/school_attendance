@@ -128,7 +128,7 @@ class Uploads {
               ),
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 20),
       ],
     );
@@ -279,7 +279,7 @@ class Uploads {
               ),
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 20),
         const Divider(),
       ],
@@ -440,7 +440,7 @@ class Uploads {
               ),
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 20),
         const Divider(),
       ],
