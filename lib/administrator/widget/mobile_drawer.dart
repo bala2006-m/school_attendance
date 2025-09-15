@@ -20,7 +20,7 @@ class MobileDrawer extends StatefulWidget {
 class _MobileDrawerState extends State<MobileDrawer> {
   void back() {
     Navigator.pop(context); // Close drawer
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const LoginPage()),
     );

@@ -108,7 +108,7 @@ class _EditPasswordState extends State<EditPassword> {
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => AdministratorDashboard(userName: widget.username),
@@ -120,7 +120,7 @@ class _EditPasswordState extends State<EditPassword> {
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdministratorAppbarMobile(
@@ -128,7 +128,7 @@ class _EditPasswordState extends State<EditPassword> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

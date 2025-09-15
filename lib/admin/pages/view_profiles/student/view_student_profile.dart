@@ -103,7 +103,7 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -124,7 +124,7 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -135,7 +135,7 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -147,7 +147,25 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Student Profiles'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Student Profiles',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

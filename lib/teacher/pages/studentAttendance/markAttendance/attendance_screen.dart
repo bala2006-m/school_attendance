@@ -99,7 +99,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         bool? proceed = await _showAlreadyMarkedDialog();
         if (proceed != true) {
           if (mounted) {
-            Navigator.pushReplacement(
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder:
@@ -196,7 +196,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 onPressed:
                     () =>
                         sessionLabel == "Both Sessions"
-                            ? Navigator.pushReplacement(
+                            ? Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder:
@@ -414,7 +414,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -422,7 +422,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../components/build_profile_card_mobile.dart';
 import '../pages/homework/homework_class_list.dart';
 import '../pages/manage/post_tickets.dart';
-import '../pages/manage/timetable_screen.dart';
 import '../pages/manage/view_leave_request.dart';
+import '../pages/time_table/timetable_class_list.dart';
 
 class ManagePage extends StatelessWidget {
   final String schoolId;
@@ -83,7 +83,7 @@ class ManagePage extends StatelessWidget {
                           buttonHeight,
                           'Time\nTable',
                           Icons.calendar_month_outlined,
-                          TimetableScreen(
+                          TimetableClassList(
                             schoolId: schoolId,
                             username: username,
                           ),

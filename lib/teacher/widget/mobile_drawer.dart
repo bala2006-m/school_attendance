@@ -137,82 +137,84 @@ class MobileDrawer extends StatelessWidget {
             },
           ),
           const Spacer(),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: ListTile(
-              tileColor: Colors.red.withValues(alpha: 0.05),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
               ),
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.red, fontSize: 16),
+              child: ListTile(
+                tileColor: Colors.red.withValues(alpha: 0.05),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red, fontSize: 16),
+                ),
+                onTap: () {
+                  final rootContext =
+                      Navigator.of(context, rootNavigator: true).context;
+
+                  Navigator.pop(context); // Close drawer
+
+                  Future.delayed(const Duration(milliseconds: 200), () {
+                    showDialog(
+                      context: rootContext,
+                      builder: (BuildContext dialogContext) {
+                        return AlertDialog(
+                          title: const Text('Confirm Logout'),
+                          content: const Text(
+                            'Are you sure you want to log out?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                              onPressed: () async {
+                                Navigator.pop(dialogContext);
+
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.remove('role');
+                                await prefs.remove('username');
+                                await prefs.remove('rememberMe');
+                                await prefs.remove('schoolId');
+                                await prefs.remove('rememberMe');
+                                await prefs.remove('staffName');
+                                await prefs.remove('staffUsername');
+                                await prefs.remove('staffPhoto');
+                                await prefs.remove('schoolName');
+                                await prefs.remove('schoolAddress');
+                                await prefs.remove('schoolPhoto');
+                                await prefs.clear();
+                                Navigator.pushAndRemoveUntil(
+                                  rootContext,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginPage(),
+                                  ),
+                                  (route) => false,
+                                );
+                              },
+                              child: const Text(
+                                'Logout',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  });
+                },
               ),
-              onTap: () {
-                final rootContext =
-                    Navigator.of(context, rootNavigator: true).context;
-
-                Navigator.pop(context); // Close drawer
-
-                Future.delayed(const Duration(milliseconds: 200), () {
-                  showDialog(
-                    context: rootContext,
-                    builder: (BuildContext dialogContext) {
-                      return AlertDialog(
-                        title: const Text('Confirm Logout'),
-                        content: const Text(
-                          'Are you sure you want to log out?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                            ),
-                            onPressed: () async {
-                              Navigator.pop(dialogContext);
-
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.remove('role');
-                              await prefs.remove('username');
-                              await prefs.remove('rememberMe');
-                              await prefs.remove('schoolId');
-                              await prefs.remove('rememberMe');
-                              await prefs.remove('staffName');
-                              await prefs.remove('staffUsername');
-                              await prefs.remove('staffPhoto');
-                              await prefs.remove('schoolName');
-                              await prefs.remove('schoolAddress');
-                              await prefs.remove('schoolPhoto');
-                              await prefs.clear();
-                              Navigator.pushAndRemoveUntil(
-                                rootContext,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginPage(),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                            child: const Text(
-                              'Logout',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                });
-              },
             ),
           ),
           const SizedBox(height: 10),

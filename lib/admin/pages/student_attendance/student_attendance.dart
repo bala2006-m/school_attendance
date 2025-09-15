@@ -117,7 +117,7 @@ class _StudentState extends State<Student> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -154,7 +154,7 @@ class _StudentState extends State<Student> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? AdminAppbarMobile(
@@ -165,7 +165,7 @@ class _StudentState extends State<Student> {
                   enableBack: true,
                   onBack: () {
                     AdminDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -177,7 +177,25 @@ class _StudentState extends State<Student> {
                     );
                   },
                 )
-                : const AdminAppbarDesktop(title: 'Class List'),
+                : AdminAppbarDesktop(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
+                  title: 'Class List',
+
+                  onBack: () {
+                    AdminDashboardState.selectedIndex = 0;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => AdminDashboard(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           isLoading
@@ -368,7 +386,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -405,7 +423,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? AdminAppbarMobile(
@@ -415,7 +433,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -427,7 +445,24 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                     );
                   },
                 )
-                : const AdminAppbarDesktop(title: 'Attendance'),
+                : AdminAppbarDesktop(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
+                  title: 'Attendance',
+
+                  onBack: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => Student(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           isLoading

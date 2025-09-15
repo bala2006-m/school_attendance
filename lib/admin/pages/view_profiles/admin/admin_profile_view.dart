@@ -47,7 +47,7 @@ class _AdminProfileState extends State<AdminProfile> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -68,7 +68,7 @@ class _AdminProfileState extends State<AdminProfile> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -78,7 +78,7 @@ class _AdminProfileState extends State<AdminProfile> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -90,7 +90,24 @@ class _AdminProfileState extends State<AdminProfile> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Admin Profile'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Admin Profile',
+
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ViewAdminProfile(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

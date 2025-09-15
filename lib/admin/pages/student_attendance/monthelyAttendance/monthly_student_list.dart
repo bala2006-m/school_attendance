@@ -69,7 +69,7 @@ class _StudentListState extends State<StudentList> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -121,12 +121,25 @@ class _StudentListState extends State<StudentList> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-
+    final monthMap = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
     return WillPopScope(
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -136,7 +149,7 @@ class _StudentListState extends State<StudentList> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -148,7 +161,24 @@ class _StudentListState extends State<StudentList> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Monthly Attendance'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Monthly Attendance',
+
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => MonthlyAttendance(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
@@ -194,7 +224,10 @@ class _StudentListState extends State<StudentList> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildInfoTile("Month", widget.month),
+                              _buildInfoTile(
+                                "Month",
+                                monthMap[(int.parse(widget.month) - 1)],
+                              ),
                               _buildInfoTile("Year", widget.year),
                             ],
                           ),

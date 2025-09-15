@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.ramchin_smart_school"
+    namespace = "com.demo.ramchin_smart_school"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "29.0.13113456"
 
@@ -30,13 +30,13 @@ android {
     }
 
     defaultConfig {
-        // ⚠️ Change this to your **real package name**
-        applicationId = "com.ramchin_smart_school"
+        applicationId = "com.demo.ramchin_smart_school"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders.putAll(mapOf("usesCleartextTraffic" to "true"))
     }
 
     signingConfigs {
@@ -47,18 +47,35 @@ android {
             storePassword = keystoreProperties["storePassword"] as String?
         }
     }
-
+//    signingConfigs {
+//        release {
+//            storeFile file("C:\\School Attendance\\school_attendance\\android\\app\\my-release-key.keystore")
+//            storePassword "Ramchin@123"
+//            keyAlias "my-key-alias"
+//            keyPassword "Ramchin@123"
+//        }
+//    }
     buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         release {
+            // Uses the "release" signing config (must be defined in signingConfigs block)
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            isShrinkResources = true
+
+            // Code shrinking & obfuscation
+            isMinifyEnabled = false
+            isShrinkResources = false
+
+            // ProGuard/R8 rules files
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+
 }
 
 dependencies {

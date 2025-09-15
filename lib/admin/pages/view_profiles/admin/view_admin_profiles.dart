@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
+import '../../../services/admin_api_service.dart';
 import '../../dashboard/admin_dashboard.dart';
 import 'admin_profile_view.dart';
 
@@ -13,6 +13,7 @@ class ViewAdminProfile extends StatefulWidget {
     required this.username,
     required this.schoolId,
   });
+
   final String username;
   final String schoolId;
 
@@ -21,16 +22,16 @@ class ViewAdminProfile extends StatefulWidget {
 }
 
 class _ViewAdminProfileState extends State<ViewAdminProfile> {
-  List<dynamic> admins = [];
-  List<dynamic> filteredAdmins = []; // ✅ for search results
+  List<Map<String, dynamic>> admins = [];
+  List<Map<String, dynamic>> filteredAdmins = [];
   bool isLoading = true;
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     init();
-
     _searchController.addListener(_filterAdmins);
   }
 
@@ -44,17 +45,22 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
     final id = int.tryParse(widget.schoolId);
     if (id == null) return;
 
-    final users = await ApiService.getUsersByRole(role: 'admin', schoolId: id);
-
-    users.removeWhere(
-      (user) =>
-          user["username"] == widget.username &&
-          user["school_id"].toString() == widget.schoolId,
+    final users = await AdminApiService.fetchAllAdmin(
+      schoolId: widget.schoolId,
     );
+    final converted =
+        (users as List<dynamic>?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
 
     setState(() {
-      admins = users;
-      filteredAdmins = users; // ✅ initialize filtered list
+      admins =
+          converted.where((admin) {
+            return admin['username']?.toString() != widget.username;
+          }).toList();
+
+      filteredAdmins = List<Map<String, dynamic>>.from(admins);
       isLoading = false;
     });
   }
@@ -66,21 +72,22 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
     } else {
       setState(() {
         filteredAdmins =
-            admins
-                .where(
-                  (admin) => admin['username']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query),
-                )
-                .toList();
+            admins.where((admin) {
+              final name = admin['name']?.toString().toLowerCase() ?? '';
+              final mobile = admin['mobile']?.toString().toLowerCase() ?? '';
+              final designation =
+                  admin['designation']?.toString().toLowerCase() ?? '';
+              return name.contains(query) ||
+                  mobile.contains(query) ||
+                  designation.contains(query);
+            }).toList();
       });
     }
   }
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -101,7 +108,7 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -112,7 +119,7 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -124,7 +131,25 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Admin Profiles'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Admin Profiles',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
@@ -146,7 +171,7 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: 'Search by username',
+                          hintText: 'Search by name, mobile, or designation',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -181,11 +206,23 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                                         ),
                                       ),
                                       title: Text(
-                                        admin['username'] ?? 'Unknown',
+                                        admin['name'] ?? 'Unknown',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Mobile: ${admin['mobile'] ?? 'N/A'}',
+                                          ),
+                                          Text(
+                                            'Designation: ${admin['designation'] ?? 'N/A'}',
+                                          ),
+                                        ],
                                       ),
                                       trailing: const Icon(
                                         Icons.arrow_forward_ios,

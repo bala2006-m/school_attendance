@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../components/build_home_page.dart';
-import '../pages/dashboard/attendance/admin_student.dart';
-import '../pages/dashboard/manage/admin_management.dart';
+import '../pages/dashboard/attendance/admin_student_mobile.dart';
+import '../pages/dashboard/components/build_home_page.dart';
+import '../pages/dashboard/manage/admin_management_mobile.dart';
 
 class AdminMobileDashboard extends StatefulWidget {
   const AdminMobileDashboard({
@@ -60,7 +61,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
   @override
   void initState() {
     super.initState();
-    init();
+    //init();
   }
 
   Future<void> init() async {
@@ -69,6 +70,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
 
     if (role == 'admin') {
       await _askNotificationPermission();
+      await _initTimeZones();
       await _initNotifications();
       await _scheduleDailyNotifications();
     }
@@ -78,6 +80,11 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
     if (await Permission.notification.isDenied) {
       await Permission.notification.request();
     }
+  }
+
+  Future<void> _initTimeZones() async {
+    tzdata.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
   }
 
   Future<void> _initNotifications() async {
@@ -106,6 +113,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
       importance: Importance.max,
       priority: Priority.high,
     );
+
     const iosDetails = DarwinNotificationDetails();
     const platformDetails = NotificationDetails(
       android: androidDetails,
@@ -116,7 +124,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
       1,
       'FN Attendance Reminder',
       'Please ensure FN attendance is marked.',
-      _nextInstanceOfTime(11, 40),
+      _nextInstanceOfTime(12, 30), // 12:30 PM IST
       platformDetails,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -128,21 +136,20 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
       2,
       'AN Attendance Reminder',
       'Please ensure AN attendance is marked.',
-      _nextInstanceOfTime(15, 30),
+      _nextInstanceOfTime(15, 30), // 3:30 PM IST
       platformDetails,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
-
-    // debugPrint("✅ Daily notifications scheduled.");
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final now = tz.TZDateTime.now(tz.local);
+    final now = tz.TZDateTime.now(tz.getLocation('Asia/Kolkata'));
+
     var scheduled = tz.TZDateTime(
-      tz.local,
+      tz.getLocation('Asia/Kolkata'),
       now.year,
       now.month,
       now.day,
@@ -154,63 +161,8 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
       scheduled = scheduled.add(const Duration(days: 1));
     }
 
-    // debugPrint("⏰ Scheduling notification at local: $scheduled (now: $now)");
     return scheduled;
   }
-
-  // Future<void> _showTestNotification() async {
-  //   const androidDetails = AndroidNotificationDetails(
-  //     'test_channel',
-  //     'Test Notifications',
-  //     channelDescription: 'Channel for testing notifications',
-  //     importance: Importance.max,
-  //     priority: Priority.high,
-  //   );
-  //   const iosDetails = DarwinNotificationDetails();
-  //   const platformDetails = NotificationDetails(
-  //     android: androidDetails,
-  //     iOS: iosDetails,
-  //   );
-  //
-  //   await flutterLocalNotificationsPlugin.show(
-  //     999,
-  //     'Test Notification',
-  //     'This is a test notification!',
-  //     platformDetails,
-  //   );
-  // }
-
-  // Future<void> _scheduleOneMinuteTestNotification() async {
-  //   const androidDetails = AndroidNotificationDetails(
-  //     'test_channel',
-  //     'Test Notifications',
-  //     channelDescription: 'Channel for testing notifications',
-  //     importance: Importance.max,
-  //     priority: Priority.high,
-  //   );
-  //   const iosDetails = DarwinNotificationDetails();
-  //   const platformDetails = NotificationDetails(
-  //     android: androidDetails,
-  //     iOS: iosDetails,
-  //   );
-  //
-  //   final scheduled = tz.TZDateTime.now(
-  //     tz.local,
-  //   ).add(const Duration(minutes: 1));
-  //
-  //   await flutterLocalNotificationsPlugin.zonedSchedule(
-  //     1000,
-  //     'Quick Test',
-  //     'This notification should fire in 1 minute.',
-  //     scheduled,
-  //     platformDetails,
-  //     uiLocalNotificationDateInterpretation:
-  //         UILocalNotificationDateInterpretation.absoluteTime,
-  //     androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-  //   );
-  //
-  //   debugPrint("⏰ Quick test scheduled for $scheduled");
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +170,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
       body: IndexedStack(
         index: widget.selectedIndex,
         children: [
-          AdminStudent(
+          AdminStudentMobile(
             schoolId: widget.schoolId,
             adminUsername: widget.username,
             adminName: widget.adminName,
@@ -245,7 +197,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
             attendanceStatusMapFn: widget.attendanceStatusMapFn,
             attendanceStatusMapAn: widget.attendanceStatusMapAn,
           ),
-          AdminManagement(
+          AdminManagementMobile(
             adminUsername: widget.username,
             schoolId: widget.schoolId,
             schoolName: widget.schoolName,

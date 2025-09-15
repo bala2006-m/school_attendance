@@ -79,7 +79,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -88,7 +88,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   enableBack: true,
                   onBack: () {
                     StaffDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

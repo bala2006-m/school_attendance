@@ -38,7 +38,7 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
 
   Future<void> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -319,7 +319,7 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
       },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -330,7 +330,7 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -342,7 +342,25 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Bulk Upload Admin'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Bulk Upload Admin',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

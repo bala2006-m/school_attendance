@@ -137,7 +137,7 @@ class _EditPasswordState extends State<EditPassword> {
     final isMobile = MediaQuery.of(context).size.width < 500;
     return WillPopScope(
       onWillPop: () async {
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder:
@@ -152,7 +152,7 @@ class _EditPasswordState extends State<EditPassword> {
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -160,7 +160,7 @@ class _EditPasswordState extends State<EditPassword> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

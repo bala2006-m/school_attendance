@@ -8,11 +8,15 @@ class HomePage extends StatelessWidget {
     required this.staffs,
     required this.students,
     required this.admins,
+    required this.usageCountStudent,
+    required this.usageCountStaff,
   });
   final List<dynamic> classes;
   final List<dynamic> staffs;
   final List<dynamic> students;
   final List<dynamic> admins;
+  final int usageCountStudent;
+  final int usageCountStaff;
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -73,6 +77,28 @@ class HomePage extends StatelessWidget {
                                 fontSize: 16,
                               ),
                             ),
+                            PieChartSectionData(
+                              radius: 100,
+                              value: usageCountStudent.toDouble(),
+                              color: Colors.deepOrange,
+                              title: "Stu Use",
+                              titleStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            PieChartSectionData(
+                              radius: 100,
+                              value: usageCountStaff.toDouble(),
+                              color: Colors.yellow,
+                              title: "Stf Use",
+                              titleStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ],
                           centerSpaceRadius: 0,
                           sectionsSpace: 3,
@@ -104,7 +130,16 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 32),
-
+                          _buildLegend(
+                            "Student Usage(Days)",
+                            usageCountStudent,
+                            Colors.deepOrange,
+                          ),
+                          _buildLegend(
+                            "Staff Usage(Days)",
+                            usageCountStaff,
+                            Colors.yellow,
+                          ),
                           _buildLegend(
                             "Classes",
                             classes.length,
@@ -184,6 +219,28 @@ class HomePage extends StatelessWidget {
                                 fontSize: 14,
                               ),
                             ),
+                            PieChartSectionData(
+                              radius: 100,
+                              value: usageCountStudent.toDouble(),
+                              color: Colors.deepOrange,
+                              title: "Student Usage",
+                              titleStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            PieChartSectionData(
+                              radius: 100,
+                              value: usageCountStaff.toDouble(),
+                              color: Colors.yellow,
+                              title: "Staff Usage",
+                              titleStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ],
                           centerSpaceRadius: 0,
                           sectionsSpace: 2,
@@ -210,7 +267,16 @@ class HomePage extends StatelessWidget {
                           style: TextStyle(fontSize: 14, color: Colors.black54),
                         ),
                         const SizedBox(height: 24),
-
+                        _buildLegend(
+                          "Student Usage(Days)",
+                          usageCountStudent,
+                          Colors.deepOrange,
+                        ),
+                        _buildLegend(
+                          "Staff Usage(Days)",
+                          usageCountStaff,
+                          Colors.yellow,
+                        ),
                         _buildLegend(
                           "Classes",
                           classes.length,

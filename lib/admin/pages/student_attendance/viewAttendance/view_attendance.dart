@@ -6,7 +6,6 @@ import '../../../../student/services/student_api_services.dart';
 import '../../../../teacher/services/teacher_api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
-import '../../../components/export_attendance_to_excel.dart';
 import '../../../widget/attendance_screen.dart';
 import '../../dashboard/admin_dashboard.dart';
 import 'view_student_attendance.dart';
@@ -61,7 +60,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -144,7 +143,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -154,7 +153,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -166,7 +165,24 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Student Attendance'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Student Attendance',
+
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ClassList(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             students.isEmpty
@@ -270,21 +286,21 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                                         title: 'Student Attendance',
                                       ),
                                       const SizedBox(height: 16),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: ElevatedButton.icon(
-                                          icon: const Icon(
-                                            Icons.download_outlined,
-                                          ),
-                                          label: const Text("Export Excel"),
-                                          onPressed:
-                                              () => exportAttendanceToExcel(
-                                                context,
-                                                attendance,
-                                                userName,
-                                              ),
-                                        ),
-                                      ),
+                                      // Align(
+                                      //   alignment: Alignment.centerRight,
+                                      //   child: ElevatedButton.icon(
+                                      //     icon: const Icon(
+                                      //       Icons.download_outlined,
+                                      //     ),
+                                      //     label: const Text("Export Excel"),
+                                      //     onPressed:
+                                      //         () => exportAttendanceToExcel(
+                                      //           context,
+                                      //           attendance,
+                                      //           userName,
+                                      //         ),
+                                      //   ),
+                                      // ),
                                     ],
                                   )
                                 else

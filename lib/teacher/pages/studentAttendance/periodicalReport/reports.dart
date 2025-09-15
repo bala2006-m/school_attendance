@@ -67,7 +67,7 @@ class _ReportsState extends State<Reports> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -99,7 +99,7 @@ class _ReportsState extends State<Reports> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -107,7 +107,7 @@ class _ReportsState extends State<Reports> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

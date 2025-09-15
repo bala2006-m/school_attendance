@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'build_marking_card.dart';
-import 'build_profile_card_desktop.dart';
-import 'build_profile_card_mobile.dart';
+import '../../../components/build_marking_card.dart';
+import '../../../components/build_profile_card_desktop.dart';
+import '../../../components/build_profile_card_mobile.dart';
+import '../../../components/message_box.dart';
 import 'desktop_stats.dart';
-import 'message_box.dart';
+import 'mobile_stats.dart';
 
 class BuildHomePage {
   static Widget buildHomePage({
@@ -52,7 +53,7 @@ class BuildHomePage {
                 ),
             MessageBox(message: message),
             const SizedBox(height: 10),
-            DesktopStats(
+            MobileStats(
               screenWidth: screenWidth,
               screenHeight: screenHeight,
               total: totalStaff,
@@ -64,7 +65,7 @@ class BuildHomePage {
               schoolId: '',
             ),
             SizedBox(height: 10),
-            DesktopStats(
+            MobileStats(
               screenWidth: screenWidth,
               screenHeight: screenHeight,
               total: totalStudents,
@@ -93,6 +94,8 @@ class BuildHomePage {
 
 class BuildHomePageDesktop {
   static Widget buildHomePageDesktop({
+    required Map<String, bool> attendanceStatusMapFn,
+    required Map<String, bool> attendanceStatusMapAn,
     required BuildContext context,
     required String totalStudents,
     required String presentStudentFN,
@@ -105,9 +108,8 @@ class BuildHomePageDesktop {
     required Image? adminPhoto,
     required String schoolName,
     required String schoolAddress,
+    required String message,
     required Image? schoolPhoto,
-    required Map<String, bool> attendanceStatusMapFn,
-    required Map<String, bool> attendanceStatusMapAn,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -129,44 +131,32 @@ class BuildHomePageDesktop {
                 schoolName: schoolName,
               ),
           const SizedBox(height: 40),
-          // Wrap(
-          //   spacing: 15,
-          //   runSpacing: 15,
-          //   alignment: WrapAlignment.center,
-          //   children:
-          //       DateTime.now().hour < 13
-          //           ? [
-          //             BuildStatsCardMobile.buildStatCard(
-          //               icon: Icons.school,
-          //               label: 'Students',
-          //               value:
-          //                   presentStudentFN == -1
-          //                       ? 'T: $totalStudents\tP: N/A'
-          //                       : 'T: $totalStudents\tP: $presentStudentFN',
-          //               context: context,
-          //             ),
-          //             BuildStatsCardMobile.buildStatCard(
-          //               icon: Icons.people,
-          //               label: 'Staff',
-          //               value: 'T: $totalStaff\tP: $presentStaffFN',
-          //               context: context,
-          //             ),
-          //           ]
-          //           : [
-          //             BuildStatsCardMobile.buildStatCard(
-          //               icon: Icons.school,
-          //               label: 'Students', //
-          //               value: 'T: $totalStudents\tP: $presentStudentAN',
-          //               context: context,
-          //             ),
-          //             BuildStatsCardMobile.buildStatCard(
-          //               icon: Icons.people,
-          //               label: 'Staff',
-          //               value: 'T: $totalStaff\tP: $presentStaffAN',
-          //               context: context,
-          //             ),
-          //           ],
-          // ),
+          MessageBox(message: message),
+          const SizedBox(height: 10),
+          DesktopStats(
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
+            total: totalStaff,
+            name: 'Staff',
+            presentFN: presentStaffFN,
+            presentAN: presentStaffAN,
+            isClassShown: false,
+            classIds: [],
+            schoolId: '',
+          ),
+          SizedBox(height: 10),
+          DesktopStats(
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
+            total: totalStudents,
+            name: 'Students',
+            presentFN: presentStudentFN,
+            presentAN: presentStudentAN,
+            isClassShown: false,
+            classIds: [],
+            schoolId: '',
+          ),
+          SizedBox(height: 10),
           BuildMarkingCard(
             screenWidth: screenWidth,
             screenHeight: screenHeight,

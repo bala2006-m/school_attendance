@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/pages/view_profiles/student/view_student_profile.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
@@ -106,7 +107,7 @@ class _StudentProfileState extends State<StudentProfile> {
       });
       return false;
     } else {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder:
@@ -128,7 +129,7 @@ class _StudentProfileState extends State<StudentProfile> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -146,7 +147,7 @@ class _StudentProfileState extends State<StudentProfile> {
                           selectedStudent = null;
                         });
                       } else {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder:
@@ -159,11 +160,42 @@ class _StudentProfileState extends State<StudentProfile> {
                       }
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Student Profile'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title:
+                        selectedStudent == null
+                            ? 'Student Profile'
+                            : 'Student Details',
+
+                    onBack: () {
+                      if (selectedStudent != null) {
+                        setState(() {
+                          selectedStudent = null;
+                        });
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ViewStudentProfile(
+                                  schoolId: widget.schoolId,
+                                  username: widget.username,
+                                ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
         ),
         body:
             isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : Padding(
                   padding: const EdgeInsets.all(12.0),
                   child:

@@ -139,7 +139,7 @@ class _EditPasswordState extends State<EditPassword> {
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
@@ -155,7 +155,7 @@ class _EditPasswordState extends State<EditPassword> {
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -165,7 +165,7 @@ class _EditPasswordState extends State<EditPassword> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -177,7 +177,24 @@ class _EditPasswordState extends State<EditPassword> {
                       );
                     },
                   )
-                  : AdminAppbarDesktop(title: 'Change Password'),
+                  : AdminAppbarDesktop(
+                    username: widget.username,
+                    schoolId: '${widget.schoolId}',
+                    title: 'Change Password',
+
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => AdminDashboard(
+                                username: widget.username,
+                                schoolId: '${widget.schoolId}',
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),

@@ -1,12 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:school_attendance/utils/utils.dart';
 
 class ApiService {
-  static const String baseUrl = "http://194.238.23.250:3000";
-  // static const String oldUrl = "http://51.20.189.225";
-  // static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
-
   Future<Map<String, dynamic>> storeTickets({
     required String username,
     required String name,
@@ -676,7 +673,7 @@ class ApiService {
         'an': an,
       }),
     );
-
+    //print(response.body);
     if (response.statusCode != 200 && response.statusCode != 201) {
       final error = jsonDecode(response.body);
       final err = error['error'];
@@ -796,6 +793,7 @@ class ApiService {
     required String schoolId,
     required String mobile,
     required String table,
+    String? faculty,
   }) async {
     final url = Uri.parse('$baseUrl/auth/register-designation');
 
@@ -809,6 +807,7 @@ class ApiService {
           'school_id': schoolId.trim(),
           'table': table.trim(),
           'mobile': mobile.trim(),
+          'faculty': faculty?.toLowerCase(),
         }),
       );
 

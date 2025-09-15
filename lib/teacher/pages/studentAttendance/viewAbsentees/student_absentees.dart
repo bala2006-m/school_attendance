@@ -171,7 +171,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -192,7 +192,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -201,7 +201,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

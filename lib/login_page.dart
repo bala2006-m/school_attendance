@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
       if (user == null) {
-        showError("Invalid username or password");
+        showError("Invalid user Id or password");
         return;
       }
 
@@ -134,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
       final isPasswordValid = BCrypt.checkpw(enteredPassword, hashedPassword);
 
       if (!isPasswordValid) {
-        showError("Invalid username or password");
+        showError("Invalid user Id or password");
         return;
       }
 
@@ -147,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
       // Navigate by role
       switch (foundRole) {
         case 'student':
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
@@ -159,19 +159,19 @@ class _LoginPageState extends State<LoginPage> {
           );
           break;
         case 'staff':
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
                   (_) => StaffDashboard(
-                    username: user?['username'],
+                    username: user!['username'].toString(),
                     schoolId: '$schoolId',
                   ),
             ),
           );
           break;
         case 'admin':
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
@@ -183,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
           );
           break;
         case 'administrator':
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
@@ -231,7 +231,7 @@ class _LoginPageState extends State<LoginPage> {
                 // Username
                 _buildInputField(
                   controller: _usernameController,
-                  hint: "Username",
+                  hint: "User Id",
                   icon: Icons.person,
                 ),
                 const SizedBox(height: 16),

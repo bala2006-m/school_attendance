@@ -180,7 +180,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -188,7 +188,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -217,129 +217,134 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              Center(
-                                child: Stack(
-                                  alignment: Alignment.bottomRight,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 60,
-                                      backgroundImage: imageProvider,
-                                      child:
-                                          imageProvider == null
-                                              ? const Icon(
-                                                Icons.person,
-                                                size: 60,
-                                              )
-                                              : null,
-                                    ),
-                                    Positioned(
-                                      bottom: 4,
-                                      right: 4,
-                                      child: InkWell(
-                                        onTap: _pickImage,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.white,
-                                          ),
-                                          child: const Icon(
-                                            Icons.edit,
-                                            size: 20,
+                    child: Column(
+                      children: [
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  Center(
+                                    child: Stack(
+                                      alignment: Alignment.bottomRight,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 60,
+                                          backgroundImage: imageProvider,
+                                          child:
+                                              imageProvider == null
+                                                  ? const Icon(
+                                                    Icons.person,
+                                                    size: 60,
+                                                  )
+                                                  : null,
+                                        ),
+                                        Positioned(
+                                          bottom: 4,
+                                          right: 4,
+                                          child: InkWell(
+                                            onTap: _pickImage,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: const BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Colors.white,
+                                              ),
+                                              child: const Icon(
+                                                Icons.edit,
+                                                size: 20,
+                                              ),
+                                            ),
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Center(
+                                    child: Text("Upload image up to 80 KB"),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildInputField(
+                                    label: 'Full Name',
+                                    controller: _nameController,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildInputField(
+                                    label: 'Email',
+                                    controller: _emailController,
+                                    keyboardType: TextInputType.emailAddress,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildInputField(
+                                    label: 'Designation',
+                                    controller: _designationController,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildInputField(
+                                    label: 'Mobile',
+                                    controller: _mobileController,
+                                    keyboardType: TextInputType.phone,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  DropdownButtonFormField<String>(
+                                    value:
+                                        (_gender != 'M' &&
+                                                _gender != 'F' &&
+                                                _gender != 'O')
+                                            ? null
+                                            : _gender,
+                                    decoration: InputDecoration(
+                                      labelText: 'Gender',
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Theme.of(context).primaryColor,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              const Center(
-                                child: Text("Upload image up to 80 KB"),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildInputField(
-                                label: 'Full Name',
-                                controller: _nameController,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildInputField(
-                                label: 'Email',
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildInputField(
-                                label: 'Designation',
-                                controller: _designationController,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildInputField(
-                                label: 'Mobile',
-                                controller: _mobileController,
-                                keyboardType: TextInputType.phone,
-                              ),
-                              const SizedBox(height: 12),
-                              DropdownButtonFormField<String>(
-                                value:
-                                    (_gender != 'M' &&
-                                            _gender != 'F' &&
-                                            _gender != 'O')
-                                        ? null
-                                        : _gender,
-                                decoration: InputDecoration(
-                                  labelText: 'Gender',
-                                  border: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Theme.of(context).primaryColor,
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'M',
-                                    child: Text('Male'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'F',
-                                    child: Text('Female'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'O',
-                                    child: Text('Other'),
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'M',
+                                        child: Text('Male'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'F',
+                                        child: Text('Female'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'O',
+                                        child: Text('Other'),
+                                      ),
+                                    ],
+                                    hint: const Text('Select Gender'),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _gender = value;
+                                      });
+                                      _checkForChanges();
+                                    },
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return 'Please select your gender';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ],
-                                hint: const Text('Select Gender'),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _gender = value;
-                                  });
-                                  _checkForChanges();
-                                },
-                                validator: (value) {
-                                  if (value == null) {
-                                    return 'Please select your gender';
-                                  }
-                                  return null;
-                                },
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        SizedBox(height: 80),
+                      ],
                     ),
                   ),
                 ),
@@ -386,7 +391,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                               );
                               StaffDashboardState.selectedIndex = 1;
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder:

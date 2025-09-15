@@ -83,7 +83,7 @@ class _DateWiseAbsenteesState extends State<DateWiseAbsentees> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -124,7 +124,7 @@ class _DateWiseAbsenteesState extends State<DateWiseAbsentees> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -136,7 +136,25 @@ class _DateWiseAbsenteesState extends State<DateWiseAbsentees> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Date wise Absentees'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Date wise Absentees',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

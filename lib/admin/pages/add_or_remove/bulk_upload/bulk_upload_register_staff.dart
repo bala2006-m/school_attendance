@@ -32,14 +32,70 @@ class BulkUploadRegisterStaff extends StatefulWidget {
 class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
   List<dynamic> staff = [];
   Map<String, dynamic> staffData = {};
+  int selectedIndex = 0; // 0 = Teaching, 1 = Non-Teaching
 
   bool isLoading = true;
-
   File? _selectedStaffExcelFile;
 
-  Future<bool> onWillPop() async {
+  @override
+  void initState() {
+    super.initState();
+    _initStaff();
+  }
+
+  Future<void> _initStaff() async {
+    setState(() => isLoading = true);
+    staff = await ApiService.getUsersByRole(
+      role: 'staff',
+      schoolId: int.parse(widget.schoolId),
+    );
+    staffData.clear();
+
+    // Fetch detailed data for each staff
+    List<Future<void>> futures = [];
+    for (var user in staff) {
+      final username = user['username'];
+      futures.add(
+        TeacherApiServices.fetchStaffDataUsername(
+          username: username,
+          schoolId: int.parse(widget.schoolId),
+        ).then((data) => staffData[username] = data),
+      );
+    }
+    await Future.wait(futures);
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+  }
+
+  // Filter staff based on selected index
+  List<dynamic> get filteredStaff {
+    if (selectedIndex == 0) {
+      // Teaching
+      return staff
+          .where(
+            (s) =>
+                staffData[s['username']]?['faculty']?.toLowerCase() ==
+                'teaching',
+          )
+          .toList();
+    } else if (selectedIndex == 1) {
+      // Non-Teaching
+      return staff
+          .where(
+            (s) =>
+                staffData[s['username']]?['faculty']?.toLowerCase() ==
+                'nonteaching',
+          )
+          .toList();
+    } else {
+      return staff;
+    }
+  }
+
+  Future<bool> _onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -52,76 +108,32 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
     return false;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    initStaff();
-  }
-
-  Future<void> initStaff() async {
-    setState(() => isLoading = true);
-    staff = await ApiService.getUsersByRole(
-      role: 'staff',
-      schoolId: int.parse(widget.schoolId),
-    );
-    staffData.clear();
-    List<Future<void>> futures = [];
-
-    for (var user in staff) {
-      final username = user['username'];
-      futures.add(
-        TeacherApiServices.fetchStaffDataUsername(
-          username: username,
-          schoolId: int.parse(widget.schoolId),
-        ).then((data) {
-          staffData[username] = data;
-        }),
-      );
-    }
-
-    await Future.wait(futures);
-    if (!mounted) return;
-    setState(() => isLoading = false);
-  }
-
-  void _showPermissionDenied(String message) {
+  void _showSnack(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> downloadTemplate(String fileName) async {
+  Future<void> _downloadTemplate(String fileName) async {
     try {
       var status = await Permission.storage.status;
       if (!status.isGranted) status = await Permission.storage.request();
       if (!status.isGranted) {
-        var manageStatus = await Permission.manageExternalStorage.request();
-        if (!manageStatus.isGranted) {
-          _showPermissionDenied('Storage permission denied');
-          return;
-        }
-        status = manageStatus;
+        _showSnack('Storage permission denied');
+        return;
       }
 
-      if (status.isGranted) {
-        final byteData = await rootBundle.load('assets/$fileName');
-        final directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) await directory.create(recursive: true);
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(byteData.buffer.asUint8List());
+      final byteData = await rootBundle.load('assets/$fileName');
+      final directory = Directory('/storage/emulated/0/Download');
+      if (!await directory.exists()) await directory.create(recursive: true);
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(byteData.buffer.asUint8List());
 
-        _showPermissionDenied('Template saved to: ${file.path}');
-      } else {
-        _showPermissionDenied('Storage permission denied');
-      }
+      _showSnack('Template saved to: ${file.path}');
     } catch (e) {
-      _showPermissionDenied('Download failed:');
+      _showSnack('Download failed: $e');
     }
   }
-
-  Future<void> downloadTemplateStudent() => downloadTemplate('Student.xlsx');
-  Future<void> downloadTemplateAdmin() => downloadTemplate('Admin.xlsx');
-  Future<void> downloadTemplateStaff() => downloadTemplate('Staff.xlsx');
 
   Future<File?> _pickExcelFile(String expectedFileName) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -132,7 +144,7 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
       final file = File(result.files.single.path!);
       final fileName = file.path.split('/').last;
       if (fileName != expectedFileName) {
-        _showPermissionDenied('Please upload only $expectedFileName');
+        _showSnack('Please upload only $expectedFileName');
         return null;
       }
       return file;
@@ -140,26 +152,33 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
     return null;
   }
 
-  Future<void> pickExcelFileStaff() async {
+  Future<void> _pickStaffFile() async {
     final file = await _pickExcelFile('Staff.xlsx');
     if (file != null) setState(() => _selectedStaffExcelFile = file);
   }
 
-  Future<void> uploadFile(
-    Future<Map<String, dynamic>?> Function(File, String) uploadFunction,
-    Future<void> Function() refreshDataCallback,
-    File excelFile,
-  ) async {
-    setState(() => isLoading = true);
+  Future<void> _uploadFileStaff() async {
+    if (_selectedStaffExcelFile == null) return;
 
-    final result = await uploadFunction(excelFile, widget.schoolId);
+    setState(() => isLoading = true);
+    final faculty =
+        selectedIndex == 0
+            ? 'teaching'
+            : selectedIndex == 1
+            ? 'nonteaching'
+            : 'null';
+
+    final result = await AdminApiService.uploadStaffExcelFile(
+      _selectedStaffExcelFile!,
+      widget.schoolId,
+      faculty,
+    );
+
     if (!mounted) return;
     setState(() => isLoading = false);
 
     if (result == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Upload failed')));
+      _showSnack('Upload failed');
       return;
     }
 
@@ -167,32 +186,9 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
     final existing = result['alreadyExisting'] ?? <dynamic>[];
     final duplicates = result['duplicates'] ?? <dynamic>[];
     final empty = result['empty'] ?? <dynamic>[];
-    final mismatched = result['mismatched'] ?? <dynamic>[]; // ✅ NEW
+    final mismatched = result['mismatched'] ?? <dynamic>[];
     final errors = result['errors'] ?? <dynamic>[];
     final message = result['message'] ?? 'No details provided.';
-
-    if (created.isEmpty &&
-        existing.isEmpty &&
-        duplicates.isEmpty &&
-        empty.isEmpty &&
-        mismatched.isEmpty &&
-        errors.isEmpty) {
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              title: const Text('Excel Upload Result'),
-              content: const Text('Your Excel is empty.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-      );
-      return;
-    }
 
     showDialog(
       context: context,
@@ -256,7 +252,6 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
                     const SizedBox(height: 12),
                   ],
                   if (mismatched.isNotEmpty) ...[
-                    // ✅ NEW HANDLING
                     const Text(
                       '⚠️ Mismatched School IDs:',
                       style: TextStyle(
@@ -297,32 +292,18 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
           ),
     );
 
-    await refreshDataCallback();
-  }
-
-  Future<void> uploadFileStaff() {
-    if (_selectedStaffExcelFile == null) return Future.value();
-    return uploadFile(
-      AdminApiService.uploadStaffExcelFile,
-      initStaff,
-      _selectedStaffExcelFile!,
-    );
+    await _initStaff();
   }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (pop, val) {
-        if (!pop) {
-          onWillPop();
-        }
-      },
+    return WillPopScope(
+      onWillPop: _onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -331,47 +312,54 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
                     title: 'Bulk Upload Staff',
                     enableDrawer: false,
                     enableBack: true,
-                    onBack: () {
-                      AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
-                    },
+                    onBack: _onWillPop,
                   )
-                  : const AdminAppbarDesktop(title: 'Bulk Upload Staff'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Bulk Upload Staff',
+
+                    onBack: _onWillPop,
+                  ),
         ),
         body:
             isLoading
                 ? const Center(
                   child: SpinKitFadingCircle(
                     color: Colors.blueAccent,
-                    size: 60.0,
+                    size: 60,
                   ),
                 )
                 : SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
-                  child: _getBody(),
+                  child: Uploads.buildStaffUpload(
+                    context: context,
+                    downloadTemplateStaff:
+                        () => _downloadTemplate('Staff.xlsx'),
+                    pickExcelFileStaff: _pickStaffFile,
+                    uploadFileStaff: _uploadFileStaff,
+                    staff: filteredStaff, // Filtered staff list
+                    staffData: staffData,
+                    selectedExcelFile: _selectedStaffExcelFile,
+                  ),
                 ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          selectedItemColor: Colors.pink,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) => setState(() => selectedIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people, size: 30),
+              label: 'Teaching',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline, size: 30),
+              label: 'Non Teaching',
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _getBody() {
-    return Uploads.buildStaffUpload(
-      context: context,
-      downloadTemplateStaff: downloadTemplateStaff,
-      pickExcelFileStaff: pickExcelFileStaff,
-      uploadFileStaff: uploadFileStaff,
-      staff: staff,
-      staffData: staffData,
-      selectedExcelFile: _selectedStaffExcelFile,
     );
   }
 }

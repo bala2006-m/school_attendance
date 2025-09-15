@@ -58,6 +58,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
       setState(() => isLoading = true);
       try {
         await StudentApiServices.storeFeedback(
+          username: widget.username,
           name: studentData?['name'],
           email: studentData?['email'],
           feedback: messageController.text.trim(),
@@ -98,7 +99,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -107,7 +108,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   enableBack: true,
                   onBack: () {
                     StudentDashboardState.selectedIndex = 1;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

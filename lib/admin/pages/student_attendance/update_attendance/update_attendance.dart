@@ -189,7 +189,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder:
@@ -275,7 +275,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -298,7 +298,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? AdminAppbarMobile(
@@ -308,7 +308,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -321,7 +321,25 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                     );
                   },
                 )
-                : const AdminAppbarDesktop(title: 'Attendance'),
+                : AdminAppbarDesktop(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
+                  title: 'Attendance',
+
+                  onBack: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => Classes(
+                              schoolId: widget.schoolId,
+                              date: widget.date,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           isLoading

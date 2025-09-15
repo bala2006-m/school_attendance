@@ -6,11 +6,11 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../../../teacher/pages/studentAttendance/viewAbsentees/student_absent.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../components/build_profile_card_mobile.dart';
 import '../../dashboard/admin_dashboard.dart';
+import 'absentees.dart';
 
 class StudentAbsent extends StatefulWidget {
   final String schoolId;
@@ -171,7 +171,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -192,7 +192,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -203,7 +203,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -215,7 +215,25 @@ class _StudentAbsentState extends State<StudentAbsent> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Class List'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Class List',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

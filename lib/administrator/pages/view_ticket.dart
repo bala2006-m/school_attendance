@@ -201,7 +201,7 @@ class _ViewTicketState extends State<ViewTicket> {
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           FirstPageState.selectedIndex = 1;
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
@@ -218,7 +218,7 @@ class _ViewTicketState extends State<ViewTicket> {
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdministratorAppbarMobile(
@@ -227,7 +227,7 @@ class _ViewTicketState extends State<ViewTicket> {
                     enableBack: true,
                     onBack: () {
                       FirstPageState.selectedIndex = 1;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
@@ -13,26 +14,36 @@ import '../services/student_api_services.dart';
 class EditProfile extends StatefulWidget {
   final String username;
   final int schoolId;
+  final VoidCallback onSave;
+
   const EditProfile({
     super.key,
     required this.username,
     required this.onSave,
     required this.schoolId,
   });
-  final VoidCallback onSave;
+
   @override
   State<EditProfile> createState() => _EditProfileState();
 }
 
 class _EditProfileState extends State<EditProfile> {
+  static const List<String> genderOptions = ['M', 'F', 'O'];
   Map<String, dynamic>? studentData;
   final _formKey = GlobalKey<FormState>();
+
   final _nameCtrl = TextEditingController();
+  final _fatherNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _dobCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
+  final _communityCtrl = TextEditingController();
+  final _routeCtrl = TextEditingController();
+
   String? _gender;
   File? _photoFile;
   Uint8List? _photoBytes;
+
   bool _loading = false;
   bool _fetching = true;
   bool _hasChanges = false;
@@ -44,9 +55,26 @@ class _EditProfileState extends State<EditProfile> {
   void initState() {
     super.initState();
     _init();
+
     _nameCtrl.addListener(_checkChanges);
+    _fatherNameCtrl.addListener(_checkChanges);
     _emailCtrl.addListener(_checkChanges);
+    _dobCtrl.addListener(_checkChanges);
     _mobileCtrl.addListener(_checkChanges);
+    _communityCtrl.addListener(_checkChanges);
+    _routeCtrl.addListener(_checkChanges);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _fatherNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _dobCtrl.dispose();
+    _mobileCtrl.dispose();
+    _communityCtrl.dispose();
+    _routeCtrl.dispose();
+    super.dispose();
   }
 
   void _checkChanges() {
@@ -54,8 +82,15 @@ class _EditProfileState extends State<EditProfile> {
 
     final changed =
         _nameCtrl.text.trim() != (studentData?['name'] ?? '') ||
+        _fatherNameCtrl.text.trim() != (studentData?['father_name'] ?? '') ||
         _emailCtrl.text.trim() != (studentData?['email'] ?? '') ||
+        _dobCtrl.text.trim() !=
+            (DateTime.parse(
+              studentData?['DOB'],
+            ).toLocal().toString().split(' ')[0]) ||
         _mobileCtrl.text.trim() != (studentData?['mobile'] ?? '') ||
+        _communityCtrl.text.trim() != (studentData?['community'] ?? '') ||
+        _routeCtrl.text.trim() != (studentData?['route'] ?? '') ||
         _gender != (studentData?['gender'] ?? '') ||
         _photoFile != null;
 
@@ -73,13 +108,12 @@ class _EditProfileState extends State<EditProfile> {
 
       Uint8List? bytes;
       File? file;
-
       if (data?['photo'] != null) {
         if (data?['photo'] is Map) {
           bytes = Uint8List.fromList(
             (data?['photo'] as Map).values.cast<int>().toList(),
           );
-        } else if (Uri.tryParse(data?['photo'])?.isAbsolute ?? false) {
+        } else if (Uri.tryParse(data?['photo'])?.isAbsolute == true) {
           file = null;
         } else if (data!['photo'].toString().isNotEmpty) {
           file = File(data['photo']);
@@ -89,8 +123,13 @@ class _EditProfileState extends State<EditProfile> {
       setState(() {
         studentData = data;
         _nameCtrl.text = data?['name'] ?? '';
+        _fatherNameCtrl.text = data?['father_name'] ?? '';
         _emailCtrl.text = data?['email'] ?? '';
+        _dobCtrl.text =
+            DateTime.parse(data?['DOB']).toLocal().toString().split(' ')[0];
         _mobileCtrl.text = data?['mobile'] ?? '';
+        _communityCtrl.text = data?['community'] ?? '';
+        _routeCtrl.text = data?['route'] ?? '';
         _gender = data?['gender'] ?? '';
         _photoFile = file;
         _photoBytes = bytes;
@@ -125,21 +164,31 @@ class _EditProfileState extends State<EditProfile> {
       schoolId: widget.schoolId,
       username: widget.username,
       name: _nameCtrl.text.trim().isEmpty ? null : _nameCtrl.text.trim(),
+      fatherName:
+          _fatherNameCtrl.text.trim().isEmpty
+              ? null
+              : _fatherNameCtrl.text.trim(),
       email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+      dob: _dobCtrl.text.trim().isEmpty ? null : _dobCtrl.text.trim(),
       mobile: _mobileCtrl.text.trim().isEmpty ? null : _mobileCtrl.text.trim(),
+      community:
+          _communityCtrl.text.trim().isEmpty
+              ? null
+              : _communityCtrl.text.trim(),
+      route: _routeCtrl.text.trim().isEmpty ? null : _routeCtrl.text.trim(),
       gender: _gender,
       photoFile: _photoFile,
     );
-
+    // print(res);
     setState(() => _loading = false);
 
     if (res["status"] == "success") {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("✅ Profile updated successfully!")),
       );
-      widget.onSave;
+      widget.onSave();
       StudentDashboardState.selectedIndex = 1;
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder:
@@ -152,7 +201,7 @@ class _EditProfileState extends State<EditProfile> {
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("❌ ${res["message"]}")));
+      ).showSnackBar(SnackBar(content: Text("Network Error")));
     }
   }
 
@@ -175,7 +224,7 @@ class _EditProfileState extends State<EditProfile> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -183,7 +232,7 @@ class _EditProfileState extends State<EditProfile> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -211,7 +260,7 @@ class _EditProfileState extends State<EditProfile> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Avatar
+                      // Avatar Picker
                       GestureDetector(
                         onTap: _pickImage,
                         child: Stack(
@@ -223,20 +272,19 @@ class _EditProfileState extends State<EditProfile> {
                                   _photoFile != null
                                       ? FileImage(_photoFile!)
                                       : (_photoBytes != null
-                                              ? MemoryImage(_photoBytes!)
-                                              : (studentData?['photo'] !=
-                                                          null &&
-                                                      Uri.tryParse(
-                                                            studentData!['photo'],
-                                                          )?.isAbsolute ==
-                                                          true
-                                                  ? NetworkImage(
+                                          ? MemoryImage(_photoBytes!)
+                                          : (studentData?['photo'] is String &&
+                                                  Uri.tryParse(
+                                                        studentData!['photo'],
+                                                      )?.isAbsolute ==
+                                                      true
+                                              ? NetworkImage(
                                                     studentData!['photo'],
                                                   )
-                                                  : const AssetImage(
-                                                    'assets/default_avatar.png',
-                                                  )))
-                                          as ImageProvider,
+                                                  as ImageProvider
+                                              : const NetworkImage(
+                                                'https://img.favpng.com/9/16/11/student-cartoon-avatar-png-favpng-T0KuPNVPyfp00uNTwQVK2yk7D.jpg',
+                                              ))),
                             ),
                             Positioned.fill(
                               child: Container(
@@ -258,7 +306,6 @@ class _EditProfileState extends State<EditProfile> {
                       const Center(child: Text("Upload image up to 80 KB")),
                       const SizedBox(height: 20),
 
-                      // Name
                       TextFormField(
                         controller: _nameCtrl,
                         decoration: _inputDecoration("Name", Icons.person),
@@ -271,7 +318,15 @@ class _EditProfileState extends State<EditProfile> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Email
+                      TextFormField(
+                        controller: _fatherNameCtrl,
+                        decoration: _inputDecoration(
+                          "Father Name",
+                          Icons.person,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
                       TextFormField(
                         controller: _emailCtrl,
                         decoration: _inputDecoration("Email", Icons.email),
@@ -287,10 +342,48 @@ class _EditProfileState extends State<EditProfile> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Mobile
+                      TextFormField(
+                        controller: _dobCtrl,
+                        readOnly: true,
+                        decoration: _inputDecoration("DOB", Icons.date_range),
+                        onTap: () async {
+                          FocusScope.of(
+                            context,
+                          ).requestFocus(FocusNode()); // Stops keyboard
+                          DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _dobCtrl.text = DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(picked); // e.g. "2025-09-13"
+                            });
+                            _checkChanges();
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
                       TextFormField(
                         controller: _mobileCtrl,
                         decoration: _inputDecoration("Mobile", Icons.phone),
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextFormField(
+                        controller: _communityCtrl,
+                        decoration: _inputDecoration("Community", Icons.group),
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextFormField(
+                        controller: _routeCtrl,
+                        decoration: _inputDecoration("Route", Icons.alt_route),
                       ),
                       const SizedBox(height: 12),
 
@@ -299,14 +392,13 @@ class _EditProfileState extends State<EditProfile> {
                         children: [
                           Expanded(
                             child: ToggleButtons(
-                              isSelected: [
-                                _gender == 'M',
-                                _gender == 'F',
-                                _gender == 'O',
-                              ],
+                              isSelected:
+                                  genderOptions
+                                      .map((g) => g == _gender)
+                                      .toList(),
                               onPressed: (index) {
                                 setState(() {
-                                  _gender = ['M', 'F', 'O'][index];
+                                  _gender = genderOptions[index];
                                 });
                                 _checkChanges();
                               },
@@ -351,7 +443,7 @@ class _EditProfileState extends State<EditProfile> {
                               _loading
                                   ? const SpinKitFadingCircle(
                                     color: Colors.blueAccent,
-                                    size: 60.0,
+                                    size: 24.0,
                                   )
                                   : const Text(
                                     "Save Changes",

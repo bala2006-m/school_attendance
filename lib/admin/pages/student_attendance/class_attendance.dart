@@ -75,7 +75,7 @@ class _ClassAttendanceState extends State<ClassAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -103,7 +103,7 @@ class _ClassAttendanceState extends State<ClassAttendance> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -114,7 +114,7 @@ class _ClassAttendanceState extends State<ClassAttendance> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -126,7 +126,25 @@ class _ClassAttendanceState extends State<ClassAttendance> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Class Attendance'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Class Attendance',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

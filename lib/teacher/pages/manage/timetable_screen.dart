@@ -295,7 +295,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -304,7 +304,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   enableBack: true,
                   onBack: () {
                     StaffDashboardState.selectedIndex = 2;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

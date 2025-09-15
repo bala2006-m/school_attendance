@@ -204,7 +204,7 @@ class AttendancePage extends StatelessWidget {
                           context,
                           screenWidth,
                           buttonHeight,
-                          'View\nYour\nAttendance',
+                          'View\nMy\nAttendance',
                           Icons.insert_chart,
                           ViewStaffAttendance(
                             username: username,

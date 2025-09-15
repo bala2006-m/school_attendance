@@ -69,7 +69,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -157,7 +157,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -165,7 +165,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -279,6 +279,7 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                                   const Text('No attendance data found.'),
                               ],
                             ),
+                          SizedBox(height: 20),
                         ],
                       ),
                     ),

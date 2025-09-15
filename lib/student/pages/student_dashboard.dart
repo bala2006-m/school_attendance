@@ -41,11 +41,22 @@ class StudentDashboardState extends State<StudentDashboard> {
   static int selectedIndex = 1;
   bool isBlocked = false;
   String? reason;
+
+  // Track if data loaded from cache to avoid repeated fetches
+  bool _dataLoadedFromCache = false;
+
   @override
   void initState() {
     super.initState();
-    _loadStudentData();
-    _checkBlocked(widget.schoolId);
+    _initializeDashboard();
+  }
+
+  Future<void> _initializeDashboard() async {
+    await _checkBlocked(widget.schoolId);
+    await _loadCachedData();
+    if (!_dataLoadedFromCache) {
+      await _loadStudentData();
+    }
   }
 
   Future<void> _checkBlocked(int schoolId) async {
@@ -69,7 +80,6 @@ class StudentDashboardState extends State<StudentDashboard> {
                     onPressed: () async {
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-
                       await prefs.clear();
                       Navigator.pushAndRemoveUntil(
                         context,
@@ -83,17 +93,63 @@ class StudentDashboardState extends State<StudentDashboard> {
                   ),
                 ],
               ),
+          barrierDismissible: false,
         );
       }
     } catch (e) {
-      debugPrint("Error: $e");
+      debugPrint("Error checking block status: $e");
       setState(() {
         isBlocked = false;
       });
-    } finally {}
+    }
+  }
+
+  Future<void> _loadCachedData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final cachedStudentName = prefs.getString('studentName');
+    final cachedSchoolName = prefs.getString('schoolName');
+
+    // If critical data found in cache, load it and set state
+    if (cachedStudentName != null && cachedSchoolName != null) {
+      setState(() {
+        _dataLoadedFromCache = true;
+
+        studentData = {
+          'name': cachedStudentName,
+          'school_id': prefs.getString('schoolId'),
+          'photo': null, // Photo can be loaded async if needed
+          // Could add more fields if cached
+        };
+
+        schoolName = cachedSchoolName;
+        schoolAddress = prefs.getString('schoolAddress') ?? '';
+        message = prefs.getString('latestMessage') ?? '';
+        _isLoading = false;
+      });
+
+      // Also load cached school photo in background (optional)
+      _loadCachedSchoolPhoto(prefs);
+    }
+  }
+
+  Future<void> _loadCachedSchoolPhoto(SharedPreferences prefs) async {
+    final schoolPhotoString = prefs.getString('schoolPhoto');
+    if (schoolPhotoString != null && schoolPhotoString.isNotEmpty) {
+      try {
+        // Assuming you store photo bytes as base64 string, convert here if needed
+        // For now, skipping complex photo cache decode
+      } catch (_) {
+        // Ignore photo errors
+      }
+    }
   }
 
   Future<void> _loadStudentData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final prefs = await SharedPreferences.getInstance();
 
     try {
@@ -102,36 +158,52 @@ class StudentDashboardState extends State<StudentDashboard> {
         schoolId: widget.schoolId,
       );
 
-      prefs.setString('schoolId', '${data?['school_id']}');
-      prefs.setString('studentName', '${data?['name']}');
-
-      final photoData = data?['photo'];
-      Uint8List photoBytes = Uint8List(0);
-      if (photoData != 'null') {
-        photoBytes =
-            (photoData != null && photoData is Map)
-                ? Uint8List.fromList(List<int>.from(photoData.values.toList()))
-                : Uint8List(0);
-      } else {
-        photoBytes = Uint8List(0);
+      if (data == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
       }
-      prefs.setString('studentPhoto', '$photoBytes');
+
+      // Cache critical data
+      await prefs.setString('schoolId', '${data['school_id']}');
+      await prefs.setString('studentName', '${data['name']}');
+
+      final photoData = data['photo'];
+      Uint8List photoBytes = Uint8List(0);
+      if (photoData != 'null' && photoData is Map) {
+        photoBytes = Uint8List.fromList(
+          List<int>.from(photoData.values.toList()),
+        );
+      }
+      // Store photo as string if needed, or skip caching binary data here for simplicity
+
+      await prefs.setString('studentPhoto', '$photoBytes');
 
       setState(() {
         studentData = data;
       });
-      _loadSchoolAndClassData();
+
+      await _loadSchoolAndClassData();
     } catch (e) {
-      //print("Error loading student data: $e");
-      setState(() => _isLoading = false);
+      debugPrint("Error loading student data: $e");
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _loadSchoolAndClassData() async {
     final prefs = await SharedPreferences.getInstance();
-    try {
-      if (studentData == null) return;
 
+    if (studentData == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
       int weekday = DateTime.now().weekday;
       List<String> weekdayNames = [
         'Mon',
@@ -164,6 +236,7 @@ class StudentDashboardState extends State<StudentDashboard> {
       await prefs.setString('schoolAddress', '${schoolResult[0]['address']}');
       await prefs.setString('schoolName', '${schoolResult[0]['name']}');
       await prefs.setString('schoolPhoto', '${schoolResult[0]['photo']}');
+      await prefs.setString('latestMessage', mes);
 
       setState(() {
         timetable = timeTable[weekdayNames[weekday - 1]] ?? [];
@@ -181,14 +254,17 @@ class StudentDashboardState extends State<StudentDashboard> {
         _isLoading = false;
       });
     } catch (e) {
-      //print("Error loading school/class data: $e");
+      debugPrint("Error loading school/class data: $e");
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    final isMobile = screenWidth < 500;
 
     if (_isLoading) {
       return Scaffold(
@@ -203,7 +279,7 @@ class StudentDashboardState extends State<StudentDashboard> {
       return Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? StudentAppbarMobile(
@@ -232,28 +308,30 @@ class StudentDashboardState extends State<StudentDashboard> {
     final gender = studentData?['gender'] ?? '';
     final mobile = studentData?['mobile'] ?? '';
     final photoData = studentData?['photo'];
-
+    final String community = studentData?['community'] ?? '';
+    final String fatherName = studentData?['father_name'] ?? '';
+    final String DOB = studentData?['DOB'] ?? '';
+    final String route = studentData?['route'] ?? '';
     final Uint8List photoBytes =
         (photoData != null && photoData is Map)
             ? Uint8List.fromList(List<int>.from(photoData.values.toList()))
             : Uint8List(0);
 
-    final schoolName = schoolData?['name'] ?? 'Unknown School';
-    final schoolAddress = schoolData?['address'] ?? '';
+    final schoolNameLocal = schoolData?['name'] ?? 'Unknown School';
+    final schoolAddressLocal = schoolData?['address'] ?? '';
     final className =
         '${classData?['class'] ?? 'Unknown Class'} ${classData?['section'] ?? ''}';
     final photoData1 = schoolData?['photo'];
-
     final Uint8List photoBytes1 =
         (photoData1 != null && photoData1 is Map)
             ? Uint8List.fromList(List<int>.from(photoData1.values.toList()))
             : Uint8List(0);
     final schoolPhoto1 = Image.memory(photoBytes1);
-    //print(schoolPhoto1);
+
     return Scaffold(
       backgroundColor: Colors.blue.shade50,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -279,8 +357,13 @@ class StudentDashboardState extends State<StudentDashboard> {
                   photo: photoBytes,
                   username: widget.username,
                   mobile: mobile,
-                  schoolName: schoolName,
+                  schoolName: schoolNameLocal,
                   className: className,
+                  community: community,
+                  father_name: fatherName,
+                  DOB: DOB,
+                  route: route,
+                  gender: gender,
                 ),
               ),
       body:
@@ -294,10 +377,10 @@ class StudentDashboardState extends State<StudentDashboard> {
                 gender: gender,
                 photo: photoBytes,
                 mobile: mobile,
-                schoolName: schoolName,
+                schoolName: schoolNameLocal,
                 className: className,
                 message: message,
-                schoolAddress: schoolAddress,
+                schoolAddress: schoolAddressLocal,
                 schoolPhoto: schoolPhoto1,
               )
               : StudentMobileDashboard(
@@ -309,10 +392,10 @@ class StudentDashboardState extends State<StudentDashboard> {
                 schoolId: schoolId,
                 classId: classId,
                 gender: gender,
-                schoolName: schoolName,
+                schoolName: schoolNameLocal,
                 className: className,
                 selectedIndex: selectedIndex,
-                schoolAddress: schoolAddress,
+                schoolAddress: schoolAddressLocal,
                 message: message,
               ),
       bottomNavigationBar: BottomNavigationBar(
@@ -333,10 +416,6 @@ class StudentDashboardState extends State<StudentDashboard> {
             icon: Icon(Icons.home_work_outlined, size: 30),
             label: 'Homework',
           ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.analytics, size: 30),
-          //   label: 'Manage',
-          // ),
         ],
       ),
     );

@@ -25,7 +25,8 @@ class AddOrRemoveAdmin extends StatefulWidget {
 
 class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
   final GlobalKey _formKey = GlobalKey();
-  final GlobalKey _formKey1 = GlobalKey();
+  final ScrollController _scrollController = ScrollController(); // 🔹 Add this
+
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _designationController = TextEditingController(
@@ -73,6 +74,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
     _passwordFocus.dispose();
     _mobileFocus.dispose();
     _countryCodeFocus.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -134,7 +136,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -155,7 +157,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -166,7 +168,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -178,7 +180,25 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Add Or Remove Admin'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Admin',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
@@ -189,9 +209,9 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                   ),
                 )
                 : ListView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   children: [
-                    SizedBox(key: _formKey1, height: 10),
                     if (showForm)
                       Column(
                         children: [
@@ -368,7 +388,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                         ),
                       );
                     }),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 90),
                     const Divider(),
                   ],
                 ),
@@ -378,6 +398,19 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
             setState(() {
               showForm = !showForm;
             });
+
+            if (showForm) {
+              // 🔹 Smooth scroll to top when form is shown
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              });
+            }
           },
           child:
               showForm

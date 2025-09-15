@@ -30,12 +30,13 @@ class _StudentRegistrationState extends State<StudentRegistration> {
   Map<String, dynamic> studentData = {};
   bool isLoading = true;
   bool showForm = false;
+  final ScrollController _scrollController = ScrollController(); // 🔹 Add this
 
   String searchQuery = "";
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -85,6 +86,12 @@ class _StudentRegistrationState extends State<StudentRegistration> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
@@ -105,7 +112,7 @@ class _StudentRegistrationState extends State<StudentRegistration> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -116,7 +123,7 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -128,7 +135,25 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Add Or Remove Student'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Student',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
@@ -139,6 +164,7 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                   ),
                 )
                 : ListView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (showForm)
@@ -298,7 +324,8 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                         ),
                       );
                     }),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 90),
+                    const Divider(),
                   ],
                 ),
         floatingActionButton: FloatingActionButton(
@@ -307,6 +334,18 @@ class _StudentRegistrationState extends State<StudentRegistration> {
             setState(() {
               showForm = !showForm;
             });
+            if (showForm) {
+              // 🔹 Smooth scroll to top when form is shown
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              });
+            }
           },
           child:
               showForm

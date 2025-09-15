@@ -178,7 +178,7 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -274,7 +274,7 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -283,7 +283,7 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

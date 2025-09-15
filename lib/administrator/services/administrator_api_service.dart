@@ -2,11 +2,31 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:school_attendance/utils/utils.dart';
 
 class AdministratorApiService {
-  static const String baseUrl = "http://194.238.23.250:3000";
-  //static const String oldUrl = "http://51.20.189.225";
-  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static Future<int> fetchUsageCountStudent(String schoolId) async {
+    final uri = Uri.parse('$baseUrl/students/count_usage?school_id=$schoolId');
+
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return int.parse(response.body);
+    } else {
+      throw Exception('Failed to load usage count');
+    }
+  }
+
+  static Future<int> fetchUsageCountStaff(String schoolId) async {
+    final uri = Uri.parse('$baseUrl/staff/count_usage?school_id=$schoolId');
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      return int.parse(response.body);
+    } else {
+      throw Exception('Failed to load usage count');
+    }
+  }
 
   static Future<List<Map<String, dynamic>>> fetchTicket(String schoolId) async {
     int id = int.parse(schoolId);

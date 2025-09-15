@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/admin/pages/view_profiles/staff/staff_profile.dart';
 
-import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
+import '../../../services/admin_api_service.dart';
 import '../../dashboard/admin_dashboard.dart';
+import 'staff_profile.dart';
 
 class ViewStaffProfile extends StatefulWidget {
   const ViewStaffProfile({
@@ -22,18 +22,25 @@ class ViewStaffProfile extends StatefulWidget {
 }
 
 class _ViewStaffProfileState extends State<ViewStaffProfile> {
-  List<dynamic> staffs = [];
-  List<dynamic> filteredStaffs = []; // ✅ for search results
+  List<Map<String, dynamic>> staffs = [];
+  List<Map<String, dynamic>> filteredStaffs = [];
   bool isLoading = true;
-
+  static int selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    init();
-
     _searchController.addListener(_filterStaffs);
+    init();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!isLoading) {
+      _filterStaffs(); // Apply filter when returning to this page
+    }
   }
 
   @override
@@ -46,43 +53,76 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
     final id = int.tryParse(widget.schoolId);
     if (id == null) return;
 
-    final users = await ApiService.getUsersByRole(role: 'staff', schoolId: id);
+    final users = await AdminApiService.fetchStaffData(widget.schoolId);
 
+    // Remove currently logged-in staff
     users.removeWhere(
       (user) =>
-          user["username"] == widget.username &&
+          user["username"]?.toString() == widget.username &&
           user["school_id"].toString() == widget.schoolId,
     );
 
+    final converted =
+        (users as List<dynamic>?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
     setState(() {
-      staffs = users;
-      filteredStaffs = users; // ✅ initialize filtered list
+      staffs = converted;
       isLoading = false;
     });
+
+    _filterStaffs(); // Apply initial filter
   }
 
   void _filterStaffs() {
     final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) {
-      setState(() => filteredStaffs = staffs);
-    } else {
-      setState(() {
-        filteredStaffs =
-            staffs
-                .where(
-                  (staff) => staff['username']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query),
-                )
-                .toList();
-      });
+
+    // Filter by search query
+    List<Map<String, dynamic>> tempList =
+        staffs.where((staff) {
+          final username = staff['username']?.toString().toLowerCase() ?? '';
+          final name = staff['name']?.toString().toLowerCase() ?? '';
+          final mobile = staff['mobile']?.toString().toLowerCase() ?? '';
+          final designation =
+              staff['designation']?.toString().toLowerCase() ?? '';
+
+          return username.contains(query) ||
+              name.contains(query) ||
+              mobile.contains(query) ||
+              designation.contains(query);
+        }).toList();
+
+    // Filter by bottom navigation selection
+    if (selectedIndex == 0) {
+      // Teaching staff
+      tempList =
+          tempList
+              .where(
+                (staff) =>
+                    staff['faculty']?.toString().toLowerCase() == 'teaching',
+              )
+              .toList();
+    } else if (selectedIndex == 1) {
+      // Non-Teaching staff
+      tempList =
+          tempList
+              .where(
+                (staff) =>
+                    staff['faculty']?.toString().toLowerCase() == 'nonteaching',
+              )
+              .toList();
     }
+
+    setState(() {
+      filteredStaffs = tempList;
+    });
   }
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -103,7 +143,7 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -114,7 +154,7 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -126,7 +166,25 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Staff Profiles'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Staff Profiles',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
@@ -138,7 +196,7 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                 )
                 : Column(
                   children: [
-                    // ✅ Search bar
+                    // Search bar
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -148,7 +206,7 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),
-                          hintText: 'Search by username',
+                          hintText: 'Search by name, mobile, or designation',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -183,11 +241,23 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                                         ),
                                       ),
                                       title: Text(
-                                        staff['username'] ?? 'Unknown',
+                                        staff['name'] ?? 'Unknown',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Mobile: ${staff['mobile'] ?? 'N/A'}',
+                                          ),
+                                          Text(
+                                            'Designation: ${staff['designation'] ?? 'N/A'}',
+                                          ),
+                                        ],
                                       ),
                                       trailing: const Icon(
                                         Icons.arrow_forward_ios,
@@ -199,8 +269,7 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                                           MaterialPageRoute(
                                             builder:
                                                 (_) => StaffProfile(
-                                                  schoolId:
-                                                      '${staff['school_id']}',
+                                                  schoolId: widget.schoolId,
                                                   staffName: staff['username'],
                                                   username: widget.username,
                                                 ),
@@ -214,6 +283,25 @@ class _ViewStaffProfileState extends State<ViewStaffProfile> {
                     ),
                   ],
                 ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          selectedItemColor: Colors.pink,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) {
+            setState(() => selectedIndex = index);
+            _filterStaffs(); // Apply category filter on tab change
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people, size: 30),
+              label: 'Teaching',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline, size: 30),
+              label: 'Non Teaching',
+            ),
+          ],
+        ),
       ),
     );
   }

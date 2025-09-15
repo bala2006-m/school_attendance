@@ -39,7 +39,7 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -322,7 +322,7 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
       },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -333,7 +333,7 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -345,7 +345,25 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Bulk Upload Student'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Bulk Upload Student',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

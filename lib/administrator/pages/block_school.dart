@@ -193,7 +193,7 @@ class _BlockSchoolState extends State<BlockSchool> {
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           FirstPageState.selectedIndex = 1;
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
@@ -210,7 +210,7 @@ class _BlockSchoolState extends State<BlockSchool> {
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdministratorAppbarMobile(
@@ -219,7 +219,7 @@ class _BlockSchoolState extends State<BlockSchool> {
                     enableBack: true,
                     onBack: () {
                       FirstPageState.selectedIndex = 1;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

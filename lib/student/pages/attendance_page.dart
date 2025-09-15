@@ -155,7 +155,7 @@ class _AttendancePageState extends State<AttendancePage> {
       case 'H':
         return '🏖️ Holiday';
       case 'W':
-        return '🛌 Weekend';
+        return '🛌 Working Day';
       default:
         return 'N/A';
     }
@@ -169,7 +169,7 @@ class _AttendancePageState extends State<AttendancePage> {
     final stats = _getMonthlyAttendanceStats(_focusedDay);
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -178,7 +178,7 @@ class _AttendancePageState extends State<AttendancePage> {
                   enableBack: true,
                   onBack: () {
                     StudentDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

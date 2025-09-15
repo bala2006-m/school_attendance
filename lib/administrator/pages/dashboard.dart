@@ -79,7 +79,7 @@ class AdministratorDashboardState extends State<AdministratorDashboard> {
         child: Scaffold(
           backgroundColor: Colors.blue.shade50,
           appBar: PreferredSize(
-            preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+            preferredSize: Size.fromHeight(isMobile ? 190 : 150),
             child:
                 isMobile
                     ? AdministratorAppbarMobile(

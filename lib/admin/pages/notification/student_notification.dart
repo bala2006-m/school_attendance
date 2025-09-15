@@ -143,7 +143,14 @@ class _StudentNotificationState extends State<StudentNotification> {
             (fb) => Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: ListTile(
-                title: Text(fb['name'] ?? "Unknown"),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(fb['username'] ?? "Unknown"),
+                    Text(fb['name'] ?? "Unknown"),
+                    Divider(),
+                  ],
+                ),
                 subtitle: Text(fb['feedback']),
                 trailing: Text(fb['created_at'].toString().split("T")[0]),
                 onTap: () => NotificationsState.markFeedbackSeen(fb['id']),

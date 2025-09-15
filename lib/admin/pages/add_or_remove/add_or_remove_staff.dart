@@ -12,6 +12,7 @@ import '../dashboard/admin_dashboard.dart';
 class AddOrRemoveStaff extends StatefulWidget {
   final String schoolId;
   final String username;
+
   const AddOrRemoveStaff({
     super.key,
     required this.schoolId,
@@ -19,10 +20,10 @@ class AddOrRemoveStaff extends StatefulWidget {
   });
 
   @override
-  State<AddOrRemoveStaff> createState() => _AddOrRemoveStaffState();
+  State<AddOrRemoveStaff> createState() => AddOrRemoveStaffState();
 }
 
-class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
+class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
   final GlobalKey _formKey = GlobalKey();
   final GlobalKey _formKey1 = GlobalKey();
   final TextEditingController _usernameController = TextEditingController();
@@ -31,19 +32,21 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _countryCodeController = TextEditingController(
     text: '+91',
-  ); // Default to +91
+  );
   final TextEditingController _searchController = TextEditingController();
 
   late FocusNode _usernameFocus;
   late FocusNode _passwordFocus;
   late FocusNode _mobileFocus;
   late FocusNode _countryCodeFocus;
+  static int selectedIndex = 0;
 
   List<dynamic> staff = [];
   List<dynamic> filteredStaff = [];
   Map<String, dynamic> staffData = {};
   bool showForm = false;
   bool isLoading = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -58,6 +61,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
 
   Future<void> init() async {
     setState(() => isLoading = true);
+
     staff = await ApiService.getUsersByRole(
       role: 'staff',
       schoolId: int.parse(widget.schoolId),
@@ -84,11 +88,12 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     }
 
     await Future.wait(futures);
+
     if (!mounted) return;
 
     setState(() {
       isLoading = false;
-      filteredStaff = List.from(staff); // initialize filtered list
+      filteredStaff = List.from(staff);
     });
   }
 
@@ -120,12 +125,13 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     _mobileController.dispose();
     _countryCodeController.dispose();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -140,17 +146,15 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          onWillPop();
-        }
+        if (!didPop) onWillPop();
       },
-
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -161,7 +165,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -173,7 +177,25 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Add Or Remove Staff'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Staff',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
@@ -184,6 +206,7 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                   ),
                 )
                 : ListView(
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   children: [
                     SizedBox(key: _formKey1, height: 10),
@@ -218,8 +241,6 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                         ],
                       ),
                     const SizedBox(height: 20),
-
-                    // 🔍 Search Bar
                     TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
@@ -231,136 +252,60 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    Center(
-                      child: const Text(
-                        'Registered Staffs',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal,
-                        ),
-                      ),
+                    IndexedStack(
+                      index: selectedIndex,
+                      children: [teachingStaffStack(), nonTeachingStaffStack()],
                     ),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Text(
-                          'Total : ${filteredStaff.length}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    ...filteredStaff.map((staffUser) {
-                      final username = staffUser['username'];
-                      final data = staffData[username] ?? {};
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 8,
-                        ),
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          leading: const Icon(Icons.people, color: Colors.blue),
-                          title: Text(
-                            data['name'] ?? 'Name not available',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Username: $username'),
-                              Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
-                              Text(
-                                'Designation: ${data['designation'] ?? 'N/A'}',
-                              ),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (context) => AlertDialog(
-                                      title: const Text('Delete Staff'),
-                                      content: Text(
-                                        'Are you sure you want to delete "$username"?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                          ),
-                                          onPressed:
-                                              () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-
-                              if (confirm == true) {
-                                int id = int.parse(widget.schoolId);
-                                final success = await ApiService.deleteUser(
-                                  username: username,
-                                  role: 'staff',
-                                  schoolId: id,
-                                );
-
-                                if (!mounted) return;
-
-                                if (success) {
-                                  await init();
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Deleted $username'),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Failed to delete $username\n$username is used in other services',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 90),
                     const Divider(),
                   ],
                 ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          selectedItemColor: Colors.pink,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) {
+            setState(() {
+              selectedIndex = index;
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              });
+            });
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people, size: 30),
+              label: 'Teaching',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_outline, size: 30),
+              label: 'Non Teaching',
+            ),
+          ],
+        ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.blue.shade50,
           onPressed: () {
             setState(() {
               showForm = !showForm;
             });
+            if (showForm) {
+              Future.delayed(Duration(milliseconds: 100), () {
+                if (_scrollController.hasClients) {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              });
+            }
           },
           child:
               showForm
@@ -371,63 +316,157 @@ class _AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     );
   }
 
-  // 🔹 Reusable Animated Input Field
-  Widget buildAnimatedField({
-    required String label,
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    bool isPassword = false,
-    bool obscureText = false,
-    void Function()? toggleObscure,
-    TextInputType? keyboardType,
-  }) {
-    bool isFocused = focusNode.hasFocus || controller.text.isNotEmpty;
+  Widget teachingStaffStack() {
+    final teachingStaff =
+        filteredStaff.where((staffUser) {
+          final username = staffUser['username'];
+          final data = staffData[username] ?? {};
+          return data['faculty'] == 'teaching';
+        }).toList();
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isFocused ? Colors.white : Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isFocused ? Colors.blue : Colors.grey.shade400,
-          width: isFocused ? 2 : 1,
-        ),
-        boxShadow:
-            isFocused
-                ? [
-                  BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-                : [],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              obscureText: isPassword && obscureText,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(
-                labelText: label,
-                border: InputBorder.none,
-                labelStyle: const TextStyle(fontSize: 18),
-              ),
+    return Column(
+      children: [
+        Center(
+          child: const Text(
+            'Teaching Staffs',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.teal,
             ),
           ),
-          if (isPassword)
-            IconButton(
-              icon: Icon(
-                obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
-              ),
-              onPressed: toggleObscure,
+        ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Text(
+              'Total : ${teachingStaff.length}',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-        ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...teachingStaff.map((staffUser) {
+          final username = staffUser['username'];
+          final data = staffData[username] ?? {};
+          return staffCard(username, data);
+        }),
+      ],
+    );
+  }
+
+  Widget nonTeachingStaffStack() {
+    final nonTeachingStaff =
+        filteredStaff.where((staffUser) {
+          final username = staffUser['username'];
+          final data = staffData[username] ?? {};
+          return data['faculty'] == 'nonteaching';
+        }).toList();
+
+    return Column(
+      children: [
+        Center(
+          child: const Text(
+            'Non Teaching Staffs',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.teal,
+            ),
+          ),
+        ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Text(
+              'Total : ${nonTeachingStaff.length}',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...nonTeachingStaff.map((staffUser) {
+          final username = staffUser['username'];
+          final data = staffData[username] ?? {};
+          return staffCard(username, data);
+        }),
+      ],
+    );
+  }
+
+  Widget staffCard(String username, Map<String, dynamic> data) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const Icon(Icons.people, color: Colors.blue),
+        title: Text(
+          data['name'] ?? 'Name not available',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Username: $username'),
+            Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
+            Text('Designation: ${data['designation'] ?? 'N/A'}'),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text('Delete Staff'),
+                    content: Text(
+                      'Are you sure you want to delete "$username"?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+            );
+
+            if (confirm == true) {
+              final success = await ApiService.deleteUser(
+                username: username,
+                role: 'staff',
+                schoolId: int.parse(widget.schoolId),
+              );
+
+              if (!mounted) return;
+
+              if (success) {
+                await init();
+                if (!mounted) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Deleted $username')));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Failed to delete $username\n$username is used in other services',
+                    ),
+                  ),
+                );
+              }
+            }
+          },
+        ),
       ),
     );
   }

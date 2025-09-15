@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
@@ -14,6 +16,7 @@ import 'login_page.dart';
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 Future<void> main() async {
+  // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   WidgetsFlutterBinding.ensureInitialized();
   await Permission.manageExternalStorage.isGranted;
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -22,9 +25,17 @@ Future<void> main() async {
   String username = prefs.getString('username') ?? '';
   String? schoolId = '';
   if (role == 'administrator') {
-    schoolId = prefs.getInt('schoolId').toString();
+    try {
+      schoolId = prefs.getInt('schoolId').toString();
+    } catch (e) {
+      schoolId = prefs.getString('schoolId').toString();
+    }
   } else {
-    schoolId = prefs.getString('schoolId').toString();
+    try {
+      schoolId = prefs.getString('schoolId').toString();
+    } catch (e) {
+      schoolId = prefs.getInt('schoolId').toString();
+    }
   }
   int id = int.tryParse(schoolId.toString()) ?? 0;
   // String schoolName = prefs.getString('schoolName') ?? '';
@@ -34,19 +45,16 @@ Future<void> main() async {
 
   if (isLoggedIn) {
     if (role == 'student') {
-      startPage = StudentDashboard(username: username, schoolId: id);
+      startPage = StudentDashboard(username: username.toString(), schoolId: id);
     } else if (role == 'staff') {
-      startPage = StaffDashboard(
-        username: username,
-        schoolId: schoolId.toString(),
-      );
+      startPage = StaffDashboard(username: username, schoolId: schoolId);
     } else if (role == 'admin') {
       startPage = AdminDashboard(
-        username: username,
+        username: username.toString(),
         schoolId: schoolId.toString(),
       );
     } else if (role == 'administrator') {
-      startPage = AdministratorDashboard(userName: username);
+      startPage = AdministratorDashboard(userName: username.toString());
     } else {
       startPage = const LoginPage();
     }
@@ -86,6 +94,18 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF8F8F8),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        MonthYearPickerLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'), // Add more if needed
+      ],
+      // builder:
+      //     (context, child) =>
+      //         SafeArea(top: false, bottom: true, child: child ?? SizedBox()),
       home: startPage,
       //home: StaffDashboard(username: '2210801'),
       // home: const AdminDashboard(schoolId: '1'),

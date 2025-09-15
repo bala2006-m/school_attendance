@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 import '../../teacher/services/teacher_api_service.dart';
+import '../pages/add_or_remove/add_or_remove_staff.dart';
 
 class StaffRegistrationMobile extends StatefulWidget {
   final TextEditingController passwordController;
@@ -394,20 +395,27 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
         role: 'staff',
         schoolId: widget.schoolId,
       );
-      //print(result1);
+      //print(AddOrRemoveStaffState.selectedIndex);
+      final String faculty =
+          AddOrRemoveStaffState.selectedIndex == 0
+              ? 'teaching'
+              : AddOrRemoveStaffState.selectedIndex == 1
+              ? 'nonteaching'
+              : 'null';
+
       final result2 = await ApiService.registerUserDesignation(
         username: username,
         designation: 'staff',
         schoolId: widget.schoolId,
         mobile: fullMobile,
         table: 'staff',
+        faculty: faculty,
       );
-      //print(result2);
+
       if (result1['success'] && result2['success']) {
         showSnackBar(result1['message']);
         widget.passwordController.clear();
         widget.mobileController.clear();
-
         FocusScope.of(context).requestFocus(widget.mobileFocus);
 
         setState(() {
@@ -456,7 +464,7 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
           color: Colors.white,
           child: Center(
             child: Container(
-              height: MediaQuery.of(context).size.height / 1.7,
+              height: MediaQuery.of(context).size.height * 0.35,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -465,53 +473,55 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
                   BoxShadow(color: Colors.black12, blurRadius: 8),
                 ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: buildAnimatedField(
-                          label: 'Code',
-                          isCountry: true,
-                          controller: widget.countryCodeController,
-                          focusNode: widget.countryCodeFocus,
-                          keyboardType: TextInputType.phone,
-                          onFocus: () {},
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: buildAnimatedField(
+                            label: 'Code',
+                            isCountry: true,
+                            controller: widget.countryCodeController,
+                            focusNode: widget.countryCodeFocus,
+                            keyboardType: TextInputType.phone,
+                            onFocus: () {},
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 5,
-                        child: buildAnimatedField(
-                          label: 'Mobile Number',
-                          isMobileNumber: true,
-                          controller: widget.mobileController,
-                          focusNode: widget.mobileFocus,
-                          keyboardType: TextInputType.phone,
-                          onFocus: () {},
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 5,
+                          child: buildAnimatedField(
+                            label: 'Mobile Number',
+                            isMobileNumber: true,
+                            controller: widget.mobileController,
+                            focusNode: widget.mobileFocus,
+                            keyboardType: TextInputType.phone,
+                            onFocus: () {},
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  buildAnimatedField(
-                    label: 'Password',
-                    hintText: "At least 6 Characters",
-                    controller: widget.passwordController,
-                    focusNode: widget.passwordFocus,
-                    isPassword: true,
-                    obscureText: obscureText,
-                    toggleObscure: () {
-                      setState(() => obscureText = !obscureText);
-                    },
-                    onFocus: () {},
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    buildAnimatedField(
+                      label: 'Password',
+                      hintText: "At least 6 Characters",
+                      controller: widget.passwordController,
+                      focusNode: widget.passwordFocus,
+                      isPassword: true,
+                      obscureText: obscureText,
+                      toggleObscure: () {
+                        setState(() => obscureText = !obscureText);
+                      },
+                      onFocus: () {},
+                    ),
 
-                  const SizedBox(height: 16),
-                  submitButton(isFiled),
-                ],
+                    const SizedBox(height: 16),
+                    submitButton(isFiled),
+                  ],
+                ),
               ),
             ),
           ),

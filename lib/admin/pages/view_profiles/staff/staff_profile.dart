@@ -52,7 +52,6 @@ class _StaffProfileState extends State<StaffProfile> {
 
           if (staff?['photo'] != null) {
             final photoData = staff!['photo'];
-
             if (photoData is String) {
               // API returned Base64 string
               profileImageBytes = base64Decode(photoData);
@@ -77,7 +76,7 @@ class _StaffProfileState extends State<StaffProfile> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -105,7 +104,7 @@ class _StaffProfileState extends State<StaffProfile> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -115,7 +114,7 @@ class _StaffProfileState extends State<StaffProfile> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -127,7 +126,24 @@ class _StaffProfileState extends State<StaffProfile> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Staff Profile'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Staff Profile',
+
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ViewStaffProfile(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

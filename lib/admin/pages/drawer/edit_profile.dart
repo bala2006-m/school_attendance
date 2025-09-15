@@ -215,7 +215,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -245,7 +245,7 @@ class _EditProfileState extends State<EditProfile> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? AdminAppbarMobile(
@@ -255,7 +255,7 @@ class _EditProfileState extends State<EditProfile> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -267,7 +267,24 @@ class _EditProfileState extends State<EditProfile> {
                     );
                   },
                 )
-                : const AdminAppbarDesktop(title: 'Edit Profile'),
+                : AdminAppbarDesktop(
+                  username: widget.username,
+                  schoolId: widget.schoolId,
+                  title: 'Edit Profile',
+
+                  onBack: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => AdminDashboard(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -365,9 +382,11 @@ class _EditProfileState extends State<EditProfile> {
                             ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                              child: Center(
+                                child: SpinKitFadingCircle(
+                                  color: Colors.blueAccent,
+                                  size: 60.0,
+                                ),
                               ),
                             )
                             : const Icon(Icons.save),
@@ -381,6 +400,7 @@ class _EditProfileState extends State<EditProfile> {
                       ),
                     ),
                   ),
+                  SizedBox(height: 50),
                 ],
               ),
             ),

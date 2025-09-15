@@ -119,7 +119,7 @@ class _PostTicketsState extends State<PostTickets> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -140,7 +140,7 @@ class _PostTicketsState extends State<PostTickets> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -149,7 +149,7 @@ class _PostTicketsState extends State<PostTickets> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

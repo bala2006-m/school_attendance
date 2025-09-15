@@ -125,7 +125,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -133,7 +133,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

@@ -67,7 +67,7 @@ class _MessageClassListState extends State<MessageClassList> {
     final isMobile = MediaQuery.of(context).size.width < 500;
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -76,7 +76,7 @@ class _MessageClassListState extends State<MessageClassList> {
                   enableBack: true,
                   onBack: () {
                     StaffDashboardState.selectedIndex = 2;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

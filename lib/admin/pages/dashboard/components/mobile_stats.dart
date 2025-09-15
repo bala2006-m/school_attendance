@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../student/services/student_api_services.dart';
+import '../../../../student/services/student_api_services.dart';
 
-class DesktopStats extends StatefulWidget {
+class MobileStats extends StatefulWidget {
   final double screenWidth;
   final double screenHeight;
   final String presentFN;
@@ -13,7 +13,7 @@ class DesktopStats extends StatefulWidget {
   final List<dynamic> classIds;
   final String schoolId;
 
-  const DesktopStats({
+  const MobileStats({
     super.key,
     required this.screenWidth,
     required this.screenHeight,
@@ -27,10 +27,10 @@ class DesktopStats extends StatefulWidget {
   });
 
   @override
-  State<DesktopStats> createState() => _DesktopStatsState();
+  State<MobileStats> createState() => _MobileStatsState();
 }
 
-class _DesktopStatsState extends State<DesktopStats> {
+class _MobileStatsState extends State<MobileStats> {
   List<Map<String, dynamic>> classes = [];
   bool isLoading = false;
 
@@ -74,8 +74,8 @@ class _DesktopStatsState extends State<DesktopStats> {
       width: widget.screenWidth * 0.9,
       height:
           widget.isClassShown
-              ? widget.screenHeight * 0.40
-              : widget.screenHeight * 0.25,
+              ? widget.screenHeight * 0.41
+              : widget.screenHeight * 0.26,
       decoration: BoxDecoration(
         color: Colors.blue.shade50,
         borderRadius: BorderRadius.circular(8),

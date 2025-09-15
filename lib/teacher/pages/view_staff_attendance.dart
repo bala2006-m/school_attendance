@@ -57,7 +57,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -78,7 +78,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -87,7 +87,7 @@ class _ViewStaffAttendanceState extends State<ViewStaffAttendance> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

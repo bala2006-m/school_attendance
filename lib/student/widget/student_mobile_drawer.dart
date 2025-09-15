@@ -7,7 +7,6 @@ import '../../login_page.dart';
 import '../color/custom_color.dart';
 import '../pages/change_password.dart';
 import '../pages/edit_profile.dart';
-import '../pages/feedback_page.dart';
 import '../pages/profile_page.dart';
 
 class StudentMobileDrawer extends StatelessWidget {
@@ -23,6 +22,11 @@ class StudentMobileDrawer extends StatelessWidget {
     required this.schoolName,
     required this.className,
     required this.onSave,
+    required this.community,
+    required this.father_name,
+    required this.DOB,
+    required this.route,
+    required this.gender,
   });
   final VoidCallback onSave;
   final String schoolId;
@@ -34,7 +38,11 @@ class StudentMobileDrawer extends StatelessWidget {
   final String username;
   final String schoolName;
   final String className;
-
+  final String community;
+  final String father_name;
+  final String DOB;
+  final String route;
+  final String gender;
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -75,7 +83,7 @@ class StudentMobileDrawer extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  email,
+                  username,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -114,6 +122,11 @@ class StudentMobileDrawer extends StatelessWidget {
                       "schoolName": schoolName,
                       "className": className,
                       "photo": photo,
+                      "community": community,
+                      "father_name": father_name,
+                      "DOB": DOB,
+                      "route": route,
+                      "gender": gender,
                     },
                     username: username,
                     schoolId: int.parse(schoolId),
@@ -138,42 +151,48 @@ class StudentMobileDrawer extends StatelessWidget {
                     schoolId: int.parse(schoolId),
                   ),
                 ),
-                _buildListTile(
-                  context,
-                  icon: Icons.feedback,
-                  text: 'Feedback',
-                  page: FeedbackPage(
-                    username: username,
-                    schoolId: schoolId,
-                    classId: classId,
-                  ),
-                ),
+                // _buildListTile(
+                //   context,
+                //   icon: Icons.feedback,
+                //   text: 'Feedback',
+                //   page: FeedbackPage(
+                //     username: username,
+                //     schoolId: schoolId,
+                //     classId: classId,
+                //   ),
+                // ),
                 const Divider(thickness: 1, indent: 16, endIndent: 16),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-            child: ListTile(
-              tileColor: Colors.red.shade50,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logout', style: TextStyle(color: Colors.red)),
-              onTap: () async {
-                SharedPreferences prefs = await SharedPreferences.getInstance();
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+              child: ListTile(
+                tileColor: Colors.red.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () async {
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
 
-                await prefs.remove('role');
-                await prefs.remove('username');
-                await prefs.remove('rememberMe');
-                await prefs.clear();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                  (route) => false,
-                );
-              },
+                  await prefs.remove('role');
+                  await prefs.remove('username');
+                  await prefs.remove('rememberMe');
+                  await prefs.clear();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+              ),
             ),
           ),
         ],

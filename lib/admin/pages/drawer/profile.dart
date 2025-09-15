@@ -70,7 +70,7 @@ class _ProfileState extends State<Profile> {
     AdminDashboardState.selectedIndex = 0;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder:
@@ -99,7 +99,7 @@ class _ProfileState extends State<Profile> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? AdminAppbarMobile(
@@ -110,7 +110,7 @@ class _ProfileState extends State<Profile> {
                   enableBack: true,
                   onBack: () {
                     AdminDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -122,7 +122,25 @@ class _ProfileState extends State<Profile> {
                     );
                   },
                 )
-                : const AdminAppbarDesktop(title: 'My Profile'),
+                : AdminAppbarDesktop(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
+                  title: 'My Profile',
+
+                  onBack: () {
+                    AdminDashboardState.selectedIndex = 0;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => AdminDashboard(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body: Center(
         child: SingleChildScrollView(

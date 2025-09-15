@@ -167,7 +167,7 @@ class _ClassListState extends State<ClassList> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -188,7 +188,7 @@ class _ClassListState extends State<ClassList> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -199,7 +199,7 @@ class _ClassListState extends State<ClassList> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -211,7 +211,25 @@ class _ClassListState extends State<ClassList> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Class List'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Class List',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

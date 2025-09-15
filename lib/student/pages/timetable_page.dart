@@ -72,7 +72,7 @@ class _TimeTablePageState extends State<TimeTablePage> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -81,7 +81,7 @@ class _TimeTablePageState extends State<TimeTablePage> {
                   enableBack: true,
                   onBack: () {
                     StudentDashboardState.selectedIndex = 1;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

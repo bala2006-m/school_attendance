@@ -3,12 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:school_attendance/utils/utils.dart';
 
 class StudentApiServices {
-  static const String baseUrl = "http://194.238.23.250:3000";
-  // static const String oldUrl = "http://51.20.189.225";
-  // static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
-
   static Future<List<dynamic>> fetchHomeworkByClassId({
     required int schoolId,
     required int classId,
@@ -38,6 +35,10 @@ class StudentApiServices {
     String? mobile,
     String? gender,
     File? photoFile,
+    String? fatherName,
+    String? dob,
+    String? community,
+    String? route,
   }) async {
     try {
       // Convert file to Base64 string if provided
@@ -53,16 +54,20 @@ class StudentApiServices {
         if (mobile != null) "mobile": mobile,
         if (gender != null) "gender": gender,
         if (photoBase64 != null) "photo": photoBase64,
+        if (fatherName != null) "father_name": fatherName,
+        if (dob != null) "DOB": dob,
+        if (community != null) "community": community,
+        if (route != null) "route": route,
       };
 
       final res = await http.put(
-        Uri.parse("$baseUrl/students/update").replace(
-          queryParameters: {'username': username, 'school_id': schoolId},
+        Uri.parse(
+          "$baseUrl/students/update?username=$username&school_id=$schoolId",
         ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
-      //  print(res.body);
+
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       } else {
@@ -77,6 +82,7 @@ class StudentApiServices {
   }
 
   static Future<void> storeFeedback({
+    required String username,
     required String name,
     required String email,
     required String feedback,
@@ -90,6 +96,7 @@ class StudentApiServices {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'name': name,
+        'username': username,
         'email': email,
         'feedback': feedback,
         'schoolId': schoolId,
@@ -97,6 +104,7 @@ class StudentApiServices {
       }),
     );
     final data = json.decode(response.body);
+
     if (data['status'] == 'failure') {
       throw Exception('Failed to submit feedback');
     }
@@ -264,7 +272,7 @@ class StudentApiServices {
       '$baseUrl/timetable?schoolId=$schoolId&classId=$classId',
     );
     final response = await http.get(uri);
-
+    //print(response.body);
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
@@ -277,6 +285,28 @@ class StudentApiServices {
                   .toList();
         });
         return timetable;
+      } else {
+        throw Exception(data['message']);
+      }
+    } else {
+      throw Exception('Failed to load timetable');
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchTimetableAdmin({
+    required String schoolId,
+    required String classId,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/timetable?schoolId=$schoolId&classId=$classId',
+    );
+    final response = await http.get(uri);
+    //print(response.body);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      if (data['status'] == 'success') {
+        return data;
       } else {
         throw Exception(data['message']);
       }

@@ -13,9 +13,9 @@ import '../../../services/api_service.dart';
 import '../../../teacher/services/teacher_api_service.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
-import '../../widget/admin_desktop_dashboard.dart';
 import '../../widget/admin_mobile_dashboard.dart';
 import '../drawer/edit_profile.dart';
+import 'widget/admin_desktop_dashboard.dart';
 
 class AdminDashboard extends StatefulWidget {
   final String schoolId;
@@ -58,15 +58,139 @@ class AdminDashboardState extends State<AdminDashboard> {
   int presentStudentAN = 0;
   String message = '';
   bool _isLoading = true;
-  bool _hasLoadedOnce = false;
+
+  static bool _hasLoadedOnce = false;
+
   bool isBlocked = false;
   String? reason;
+
   @override
   void initState() {
     super.initState();
+    loadCachedData();
+    fetchFreshData();
+  }
+
+  Future<void> loadCachedData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      adminName = prefs.getString('adminName') ?? '';
+      adminDesignation = prefs.getString('adminDesignation') ?? '';
+      schoolName = prefs.getString('schoolName');
+      schoolAddress = prefs.getString('schoolAddress');
+      mobile = prefs.getString('mobile');
+
+      final cachedAdminPhoto = prefs.getString('adminPhoto');
+      if (cachedAdminPhoto != null) {
+        adminPhoto = Image.memory(
+          base64Decode(cachedAdminPhoto),
+          gaplessPlayback: true,
+        );
+      }
+
+      final cachedSchoolPhoto = prefs.getString('schoolPhoto');
+      if (cachedSchoolPhoto != null) {
+        schoolPhoto = Image.memory(
+          base64Decode(cachedSchoolPhoto),
+          gaplessPlayback: true,
+        );
+      }
+
+      _isLoading = adminName.isEmpty; // only show loader if no cached data
+    });
+  }
+
+  Future<void> fetchFreshData() async {
+    try {
+      final List responses = await Future.wait([
+        AdminApiService.fetchAdminData(
+          username: widget.username,
+          schoolId: widget.schoolId,
+        ),
+        ApiService.fetchSchoolData(widget.schoolId),
+      ]);
+
+      adminData = responses[0] as Map<String, dynamic>?;
+      schoolData = responses[1] as List<Map<String, dynamic>>?;
+
+      adminName = adminData?['name'] ?? '';
+      adminDesignation = adminData?['designation'] ?? '';
+      mobile = adminData?['mobile'];
+      schoolName = schoolData?[0]['name'];
+      schoolAddress = schoolData?[0]['address'];
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('adminName', adminName);
+      await prefs.setString('adminDesignation', adminDesignation);
+      await prefs.setString('schoolName', '$schoolName');
+      await prefs.setString('schoolAddress', '$schoolAddress');
+      await prefs.setString('adminPhoto', '${adminData!['photo']}');
+      await prefs.setString('schoolPhoto', '${schoolData?[0]['photo']}');
+
+      // decode images
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          if (adminData?['photo'] != null) {
+            adminPhoto = Image.memory(
+              base64Decode(adminData!['photo']),
+              gaplessPlayback: true,
+            );
+          }
+          if (schoolData?[0]['photo'] != null) {
+            schoolPhoto = Image.memory(
+              base64Decode(schoolData![0]['photo']),
+              gaplessPlayback: true,
+            );
+          }
+        });
+      });
+
+      await fetchSecondaryData();
+      _hasLoadedOnce = true;
+    } catch (e) {
+      debugPrint("Fresh data fetch failed: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> loadCachedDataOrInitialize() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Load cached data immediately
+    setState(() {
+      adminName = prefs.getString('adminName') ?? '';
+      adminDesignation = prefs.getString('adminDesignation') ?? '';
+      schoolName = prefs.getString('schoolName');
+      schoolAddress = prefs.getString('schoolAddress');
+      mobile = prefs.getString('mobile');
+
+      final cachedAdminPhoto = prefs.getString('adminPhoto');
+      if (cachedAdminPhoto != null) {
+        adminPhoto = Image.memory(
+          base64Decode(cachedAdminPhoto),
+          gaplessPlayback: true,
+        );
+      }
+
+      final cachedSchoolPhoto = prefs.getString('schoolPhoto');
+      if (cachedSchoolPhoto != null) {
+        schoolPhoto = Image.memory(
+          base64Decode(cachedSchoolPhoto),
+          gaplessPlayback: true,
+        );
+      }
+
+      _isLoading = false;
+    });
+
+    // Check if school is blocked
+    _checkBlocked(int.parse(widget.schoolId));
+
+    // Fetch fresh data in background if not loaded yet
     if (!_hasLoadedOnce) {
       initializeInitialData();
-      _checkBlocked(int.parse(widget.schoolId));
     }
   }
 
@@ -91,7 +215,6 @@ class AdminDashboardState extends State<AdminDashboard> {
                     onPressed: () async {
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-
                       await prefs.clear();
                       Navigator.pushAndRemoveUntil(
                         context,
@@ -109,10 +232,8 @@ class AdminDashboardState extends State<AdminDashboard> {
       }
     } catch (e) {
       debugPrint("Error: $e");
-      setState(() {
-        isBlocked = false;
-      });
-    } finally {}
+      setState(() => isBlocked = false);
+    }
   }
 
   Future<void> initializeInitialData() async {
@@ -121,7 +242,7 @@ class AdminDashboardState extends State<AdminDashboard> {
     setState(() => _isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('schoolId', widget.schoolId);
+    await prefs.setString('schoolId', widget.schoolId);
 
     try {
       final List responses = await Future.wait([
@@ -133,11 +254,11 @@ class AdminDashboardState extends State<AdminDashboard> {
       ]);
 
       adminData = responses[0] as Map<String, dynamic>?;
-      //print(adminData);
       schoolData = responses[1] as List<Map<String, dynamic>>?;
+
       adminName = adminData?['name'] ?? '';
-      if (adminName == '' || adminName.isEmpty || adminName == 'null') {
-        Navigator.pushReplacement(
+      if (adminName.isEmpty || adminName == 'null') {
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder:
@@ -149,54 +270,51 @@ class AdminDashboardState extends State<AdminDashboard> {
                   onBack: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => LoginPage()),
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
                     );
                   },
                 ),
           ),
         );
+        return;
       }
+
       adminDesignation = adminData?['designation'] ?? '';
       mobile = adminData?['mobile'];
-
       schoolName = schoolData?[0]['name'];
       schoolAddress = schoolData?[0]['address'];
 
+      // Save to cache
       await prefs.setString('adminName', adminName);
+      await prefs.setString('adminDesignation', adminDesignation);
       await prefs.setString('schoolAddress', '$schoolAddress');
       await prefs.setString('adminPhoto', '${adminData!['photo']}');
       await prefs.setString('schoolPhoto', '${schoolData?[0]['photo']}');
 
-      setState(() => _isLoading = false); // Show UI immediately
-
-      // Step 2: Decode photos after UI
-      if (adminData?['photo'] != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          setState(() {
+      // Decode photos after UI
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          if (adminData?['photo'] != null) {
             adminPhoto = Image.memory(
               base64Decode(adminData!['photo']),
               gaplessPlayback: true,
             );
-          });
-        });
-      }
-
-      if (schoolData?[0]['photo'] != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          setState(() {
+          }
+          if (schoolData?[0]['photo'] != null) {
             schoolPhoto = Image.memory(
               base64Decode(schoolData![0]['photo']),
               gaplessPlayback: true,
             );
-          });
+          }
         });
-      }
+      });
 
-      fetchSecondaryData();
+      await fetchSecondaryData();
 
       _hasLoadedOnce = true;
     } catch (e) {
-      //print('Initial load failed: $e');
+      debugPrint('Initial load failed: $e');
+    } finally {
       setState(() => _isLoading = false);
     }
   }
@@ -215,9 +333,9 @@ class AdminDashboardState extends State<AdminDashboard> {
       message = results[2] as String;
 
       await fetchAttendanceStatusForAll();
-      fetchAttendanceData();
+      await fetchAttendanceData();
     } catch (e) {
-      //print('Secondary data fetch failed: $e');
+      debugPrint('Secondary data fetch failed: $e');
     }
   }
 
@@ -236,42 +354,29 @@ class AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> fetchAttendanceStatusForAll() async {
-    final String schoolId = widget.schoolId;
-    final String formattedDate = formattedCurrentDate;
     final List<Future<void>> futures = [];
     for (var cls in classes) {
       final classId = cls['id'].toString();
       futures.addAll([
         ApiService.checkAttendanceStatusSession(
-              schoolId,
+              widget.schoolId,
               classId,
-              formattedDate,
+              formattedCurrentDate,
               'FN',
             )
             .then((result) => attendanceStatusMapFn[classId] = result == false)
-            .catchError((e) {
-              // debugPrint("FN error class $classId: $e");
-              attendanceStatusMapFn[classId] = true;
-              return false;
-            }),
+            .catchError((_) => attendanceStatusMapFn[classId] = true),
         ApiService.checkAttendanceStatusSession(
-              schoolId,
+              widget.schoolId,
               classId,
-              formattedDate,
+              formattedCurrentDate,
               'AN',
             )
             .then((result) => attendanceStatusMapAn[classId] = result == false)
-            .catchError((e) {
-              // debugPrint("AN error class $classId: $e");
-              attendanceStatusMapAn[classId] = true;
-              return false;
-            }),
+            .catchError((_) => attendanceStatusMapAn[classId] = true),
       ]);
     }
-
     await Future.wait(futures);
-    // print(attendanceStatusMapFn);
-    // print(attendanceStatusMapAn);
   }
 
   Future<void> fetchAttendanceData() async {
@@ -295,21 +400,17 @@ class AdminDashboardState extends State<AdminDashboard> {
     ]);
 
     final staffAttendanceFn = attendanceFutures[2] as Map<String, dynamic>;
-    // print(staffAttendanceFn);
     final staffAttendanceAn = attendanceFutures[3] as Map<String, dynamic>;
     final studentAttendanceFn = attendanceFutures[4] as Map<String, dynamic>;
     final studentAttendanceAn = attendanceFutures[5] as Map<String, dynamic>;
 
-    int presentFn = staffAttendanceFn.values.where((s) => s == 'P').length;
-    int presentAn = staffAttendanceAn.values.where((s) => s == 'P').length;
-    int presentStuFn = studentAttendanceFn.values.where((s) => s == 'P').length;
-    int presentStuAn = studentAttendanceAn.values.where((s) => s == 'P').length;
-
     setState(() {
-      presentStaffFN = presentFn;
-      presentStaffAN = presentAn;
-      presentStudentFN = presentStuFn;
-      presentStudentAN = presentStuAn;
+      presentStaffFN = staffAttendanceFn.values.where((s) => s == 'P').length;
+      presentStaffAN = staffAttendanceAn.values.where((s) => s == 'P').length;
+      presentStudentFN =
+          studentAttendanceFn.values.where((s) => s == 'P').length;
+      presentStudentAN =
+          studentAttendanceAn.values.where((s) => s == 'P').length;
     });
   }
 
@@ -317,7 +418,7 @@ class AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
 
-    if (_isLoading) {
+    if (_isLoading && adminName.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -341,13 +442,12 @@ class AdminDashboardState extends State<AdminDashboard> {
       );
     }
 
-    return PopScope(
-      canPop: false,
-
+    return WillPopScope(
+      onWillPop: () async => false,
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -358,7 +458,12 @@ class AdminDashboardState extends State<AdminDashboard> {
                     enableBack: false,
                     onBack: () {},
                   )
-                  : const AdminAppbarDesktop(title: 'Admin Dashboard'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Admin Dashboard',
+                    onBack: () {},
+                  ),
         ),
         drawer:
             isMobile

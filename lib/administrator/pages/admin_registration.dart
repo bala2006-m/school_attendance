@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/administrator/pages/first_page.dart';
 
 import '../../admin/services/admin_api_service.dart';
@@ -155,7 +156,7 @@ class _AdminRegistrationState extends State<AdminRegistration> {
         child: Scaffold(
           backgroundColor: Colors.blue.shade50,
           appBar: PreferredSize(
-            preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+            preferredSize: Size.fromHeight(isMobile ? 190 : 150),
             child:
                 isMobile
                     ? AdministratorAppbarMobile(
@@ -388,7 +389,12 @@ class _AdminRegistrationState extends State<AdminRegistration> {
                 : null,
         child:
             isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                )
                 : const Text(
                   "Register",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),

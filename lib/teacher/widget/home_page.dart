@@ -3,8 +3,8 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 
 import '../../admin/components/build_marking_card.dart';
-import '../../admin/components/desktop_stats.dart';
 import '../../admin/components/message_box.dart';
+import '../../admin/pages/dashboard/components/mobile_stats.dart';
 import '../components/build_profile_card_mobile.dart';
 
 class HomePage extends StatefulWidget {
@@ -61,7 +61,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 10),
 
             SizedBox(height: 10),
-            DesktopStats(
+            MobileStats(
               screenWidth: screenWidth,
               screenHeight: screenHeight,
               total: widget.totalStudents,

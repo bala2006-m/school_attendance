@@ -173,7 +173,7 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -229,7 +229,7 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -240,7 +240,7 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -252,7 +252,25 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Report Between Days'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Periodical Report',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

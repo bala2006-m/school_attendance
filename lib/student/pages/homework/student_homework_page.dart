@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
@@ -95,7 +96,7 @@ class _StudentHomeworkPageState extends State<StudentHomeworkPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -104,7 +105,7 @@ class _StudentHomeworkPageState extends State<StudentHomeworkPage> {
                   enableBack: true,
                   onBack: () {
                     StudentDashboardState.selectedIndex = 2;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -142,7 +143,12 @@ class _StudentHomeworkPageState extends State<StudentHomeworkPage> {
       ),
       body:
           isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                child: SpinKitFadingCircle(
+                  color: Colors.blueAccent,
+                  size: 60.0,
+                ),
+              )
               : filteredHomework.isEmpty
               ? const Center(
                 child: Text(

@@ -72,7 +72,7 @@ class _HolidayPageState extends State<HolidayPage> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -81,7 +81,7 @@ class _HolidayPageState extends State<HolidayPage> {
                   enableBack: true,
                   onBack: () {
                     StudentDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

@@ -15,6 +15,8 @@ class MobileFirstPage extends StatelessWidget {
     required this.schoolName,
     required this.schoolAddress,
     required this.schoolId,
+    required this.usageCountStudent,
+    required this.usageCountStaff,
   });
   final int selectedIndex;
   final List<dynamic> classes;
@@ -25,6 +27,8 @@ class MobileFirstPage extends StatelessWidget {
   final String schoolName;
   final String schoolAddress;
   final String schoolId;
+  final int usageCountStudent;
+  final int usageCountStaff;
   @override
   Widget build(BuildContext context) {
     return IndexedStack(
@@ -40,6 +44,8 @@ class MobileFirstPage extends StatelessWidget {
         //   schoolAddress: widget.schoolAddress,
         // ),
         HomePage(
+          usageCountStaff: usageCountStaff,
+          usageCountStudent: usageCountStudent,
           classes: classes,
           admins: admins,
           staffs: staffs,

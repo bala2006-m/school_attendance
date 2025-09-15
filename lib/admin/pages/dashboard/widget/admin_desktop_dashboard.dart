@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/admin/widget/admin_desktop_drawer_small.dart';
+import 'package:school_attendance/admin/pages/dashboard/attendance/admin_student_desktop.dart';
+import 'package:school_attendance/admin/pages/dashboard/widget/admin_desktop_drawer_small.dart';
 
 import '../components/build_home_page.dart';
-import '../pages/dashboard/attendance/admin_student.dart';
-import '../pages/dashboard/manage/admin_management.dart';
+import '../manage/admin_management_desktop.dart';
 import 'admin_desktop_drawer.dart';
 
 class AdminDesktopDashboard extends StatelessWidget {
@@ -108,7 +108,7 @@ class AdminDesktopDashboard extends StatelessWidget {
               child: IndexedStack(
                 index: selectedIndex,
                 children: [
-                  AdminStudent(
+                  AdminStudentDesktop(
                     schoolId: schoolId,
                     adminUsername: username,
                     adminName: adminName,
@@ -117,7 +117,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                     schoolName: schoolName,
                     schoolAddress: schoolAddress,
                   ),
-                  BuildHomePage.buildHomePage(
+                  BuildHomePageDesktop.buildHomePageDesktop(
                     message: message,
                     context: context,
                     totalStudents: '$totalStudents',
@@ -135,7 +135,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                     attendanceStatusMapFn: attendanceStatusMapFn,
                     attendanceStatusMapAn: attendanceStatusMapAn,
                   ),
-                  AdminManagement(
+                  AdminManagementDesktop(
                     adminUsername: username,
                     schoolId: schoolId,
                     schoolAddress: schoolAddress,

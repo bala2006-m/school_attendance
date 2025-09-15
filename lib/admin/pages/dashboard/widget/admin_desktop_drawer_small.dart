@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../login_page.dart';
-import '../../teacher/color/teacher_custom_color.dart' as admin_custom_color;
-import '../pages/dashboard/admin_dashboard.dart';
-import '../pages/drawer/edit_profile.dart';
-import '../pages/drawer/profile.dart';
+import '../../../../login_page.dart';
+import '../../../../teacher/color/teacher_custom_color.dart'
+    as admin_custom_color;
+import '../../drawer/edit_profile.dart';
+import '../../drawer/profile.dart';
+import '../admin_dashboard.dart';
 
 class AdminDesktopDrawerSmall extends StatelessWidget {
   const AdminDesktopDrawerSmall({
@@ -94,7 +95,7 @@ class AdminDesktopDrawerSmall extends StatelessWidget {
                             schoolAddress: schoolAddress,
                             schoolId: schoolId,
                             onBack: () {
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder:

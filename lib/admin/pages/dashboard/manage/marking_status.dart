@@ -19,7 +19,7 @@ class MarkingStatus extends StatefulWidget {
 class _MarkingStatusState extends State<MarkingStatus> {
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:

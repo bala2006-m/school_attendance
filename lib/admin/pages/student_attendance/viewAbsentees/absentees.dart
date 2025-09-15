@@ -36,7 +36,7 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -97,7 +97,7 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -107,7 +107,7 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -119,7 +119,24 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Student Absentees'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Student Absentees',
+
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => StudentAbsent(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body: SingleChildScrollView(
           child: Padding(

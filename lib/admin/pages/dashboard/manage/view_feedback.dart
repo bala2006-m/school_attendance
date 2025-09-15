@@ -34,9 +34,30 @@ class _ViewFeedbackState extends State<ViewFeedback> {
   Future<void> init() async {
     try {
       feedbacks = await AdminApiService.fetchFeedback(widget.schoolId);
+      //    print('Feedbacks: $feedbacks');
+
+      final updatedFeedbacks = await Future.wait(
+        feedbacks.map((feedback) async {
+          final classData = await AdminApiService.fetchClassInfo(
+            classId: feedback['class_id'],
+            schoolId: feedback['school_id'],
+          );
+
+          // Add class and section fields to the feedback map
+          return {
+            ...feedback, // Keep existing feedback fields
+            'class': classData['class'], // Add class number
+            'section': classData['section'], // Add section
+          };
+        }),
+      );
+
+      feedbacks = updatedFeedbacks; // Replace feedbacks with enriched data
+
+      // print('Enriched Feedbacks: $feedbacks');
     } catch (e) {
-      // Optional: Handle fetch error
-      //print("Error fetching feedbacks: $e");
+      // print('Error during init: $e');
+      // print(stacktrace);
     } finally {
       setState(() {
         isLoading = false;
@@ -45,10 +66,14 @@ class _ViewFeedbackState extends State<ViewFeedback> {
   }
 
   Widget buildFeedbackCard(Map<String, dynamic> feedback) {
+    final username = (feedback['username'] ?? '').toString().trim();
     final name = (feedback['name'] ?? '').toString().trim();
-    final email = (feedback['email'] ?? '').toString().trim();
+    // final email = (feedback['email'] ?? '').toString().trim();
     final message = feedback['feedback'] ?? 'No feedback provided';
     final createdAt = feedback['created_at'];
+    final className = (feedback['class'] ?? '').toString().trim();
+    final section = (feedback['section'] ?? '').toString().trim();
+
     final formattedDateTime =
         createdAt != null
             ? DateFormat(
@@ -84,6 +109,13 @@ class _ViewFeedbackState extends State<ViewFeedback> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name and timestamp
+                  Text(
+                    username.isNotEmpty ? username : 'Anonymous',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -103,14 +135,23 @@ class _ViewFeedbackState extends State<ViewFeedback> {
                       ),
                     ],
                   ),
-                  if (email.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        email,
-                        style: const TextStyle(color: Colors.grey),
+                  Divider(),
+
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Text(
+                        'Class: $className',
+                        style: const TextStyle(fontSize: 16),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Section: $section',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+
                   const SizedBox(height: 10),
                   Text(message, style: const TextStyle(fontSize: 16)),
                 ],
@@ -124,7 +165,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -145,7 +186,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -156,7 +197,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -168,7 +209,25 @@ class _ViewFeedbackState extends State<ViewFeedback> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'View Feedback'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'View Feedback',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading

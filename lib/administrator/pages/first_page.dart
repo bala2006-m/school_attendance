@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
+import 'package:school_attendance/administrator/services/administrator_api_service.dart';
 import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
@@ -32,6 +33,8 @@ class FirstPageState extends State<FirstPage> {
   List<dynamic> staffs = [];
   List<dynamic> students = [];
   List<dynamic> admins = [];
+  int usageCountStudent = 0;
+  int usageCountStaff = 0;
   bool isLoading = true;
   static int selectedIndex = 0;
 
@@ -43,6 +46,16 @@ class FirstPageState extends State<FirstPage> {
 
   Future<void> init() async {
     try {
+      AdministratorApiService.fetchUsageCountStudent(widget.schoolId).then((
+        class1,
+      ) {
+        if (mounted) setState(() => usageCountStudent = class1);
+      });
+      AdministratorApiService.fetchUsageCountStaff(widget.schoolId).then((
+        class1,
+      ) {
+        if (mounted) setState(() => usageCountStaff = class1);
+      });
       // fetch class data
       TeacherApiServices.fetchClassData(widget.schoolId).then((class1) {
         if (mounted) setState(() => classes = class1);
@@ -88,7 +101,7 @@ class FirstPageState extends State<FirstPage> {
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => AdministratorDashboard(userName: widget.username),
@@ -99,7 +112,7 @@ class FirstPageState extends State<FirstPage> {
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdministratorAppbarMobile(
@@ -109,7 +122,7 @@ class FirstPageState extends State<FirstPage> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -133,6 +146,8 @@ class FirstPageState extends State<FirstPage> {
                   ),
                 )
                 : MobileFirstPage(
+                  usageCountStaff: usageCountStaff,
+                  usageCountStudent: usageCountStudent,
                   selectedIndex: selectedIndex,
                   classes: classes,
                   staffs: staffs,

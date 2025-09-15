@@ -92,7 +92,7 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
 
   void _goBack() {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -318,7 +318,7 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -329,7 +329,13 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
                     enableBack: true,
                     onBack: _goBack,
                   )
-                  : const AdminAppbarDesktop(title: 'View Leave Request'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'View Leave Request',
+
+                    onBack: _goBack,
+                  ),
         ),
         body:
             isLoading

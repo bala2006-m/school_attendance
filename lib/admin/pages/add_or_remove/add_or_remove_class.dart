@@ -27,7 +27,8 @@ class _ClassRegistrationState extends State<ClassRegistration> {
   final TextEditingController _classController = TextEditingController();
   final TextEditingController _sectionController = TextEditingController();
   final FocusNode _classFocus = FocusNode();
-
+  final GlobalKey _formKey1 = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
   bool _isFormValid = false;
   bool _isFetchingClasses = false;
   bool _isSubmitting = false;
@@ -93,8 +94,8 @@ class _ClassRegistrationState extends State<ClassRegistration> {
     setState(() => _isFetchingClasses = true);
     classes = await AdminApiService.fetchAllClasses(widget.schoolId);
 
-    // Custom sorting: Nursery → LKG → UKG → 1–12
-    final classOrder = {'Nursery': 0, 'LKG': 1, 'UKG': 2};
+    // Custom sorting: PRE-KG → LKG → UKG → 1–12
+    final classOrder = {'PRE-KG': 0, 'LKG': 1, 'UKG': 2};
 
     classes.sort((a, b) {
       String classA = a['class'].toString();
@@ -154,11 +155,12 @@ class _ClassRegistrationState extends State<ClassRegistration> {
     _sectionController.dispose();
     _classFocus.dispose();
     super.dispose();
+    _scrollController.dispose();
   }
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -190,7 +192,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -201,7 +203,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -213,13 +215,33 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Add Or Remove Class'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Add/Remove Class',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 2;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body: Center(
           child: SingleChildScrollView(
+            controller: _scrollController,
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
+                SizedBox(key: _formKey1, height: 10),
                 // Form Card
                 if (showForm)
                   Card(
@@ -248,7 +270,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                             controller: _classController,
                             keyboardType: TextInputType.text,
                             decoration: InputDecoration(
-                              labelText: 'Class (Nursery, LKG, UKG, 1–12)',
+                              labelText: 'Class (PRE-KG, LKG, UKG, 1–12)',
                               border: const OutlineInputBorder(),
                               prefixIcon: const Icon(Icons.class_),
                               errorText: fieldErrors['class'],
@@ -256,7 +278,7 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                             inputFormatters: [
                               LengthLimitingTextInputFormatter(10),
                               FilteringTextInputFormatter.allow(
-                                RegExp(r'[A-Za-z0-9 ]'),
+                                RegExp(r'[A-Za-z0-9- ]'),
                               ),
                             ],
                             textCapitalization: TextCapitalization.characters,
@@ -298,9 +320,11 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                                       ? const SizedBox(
                                         height: 20,
                                         width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
+                                        child: Center(
+                                          child: SpinKitFadingCircle(
+                                            color: Colors.blueAccent,
+                                            size: 60.0,
+                                          ),
                                         ),
                                       )
                                       : const Icon(Icons.add),
@@ -447,6 +471,8 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                       );
                     },
                   ),
+                const SizedBox(height: 50),
+                const Divider(),
               ],
             ),
           ),
@@ -460,7 +486,20 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                     setState(() {
                       showForm = !showForm;
                     });
+                    if (showForm) {
+                      // 🔹 Smooth scroll to top when form is shown
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        if (_scrollController.hasClients) {
+                          _scrollController.animateTo(
+                            0,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      });
+                    }
                   },
+
           child:
               showForm
                   ? Icon(Icons.close, size: 30, color: Colors.blue.shade900)

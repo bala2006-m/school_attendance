@@ -46,7 +46,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -145,7 +145,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -154,7 +154,7 @@ class _ViewFeedbackState extends State<ViewFeedback> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

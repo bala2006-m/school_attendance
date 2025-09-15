@@ -123,7 +123,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -131,7 +131,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -235,6 +235,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                     ),
                   ],
                 ),
+                SizedBox(height: 50),
               ],
             ),
           ),

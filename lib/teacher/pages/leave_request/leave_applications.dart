@@ -67,7 +67,7 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? MobileAppbar(
@@ -76,7 +76,7 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
                   enableBack: true,
                   onBack: () {
                     StaffDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:

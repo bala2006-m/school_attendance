@@ -70,6 +70,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
         try {
           Uint8List bytes = base64Decode(photoBase64);
           adminPhoto = MemoryImage(bytes);
+          bytes.length < 5 ? adminPhoto = null : null;
         } catch (e) {
           debugPrint('Failed to decode base64 image: $e');
           adminPhoto = null;
@@ -137,7 +138,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -654,7 +655,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -683,7 +684,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
                             (context) => InkWell(
                               onTap: () async {
                                 AdminDashboardState.selectedIndex = 2;
-                                Navigator.pushReplacement(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder:
@@ -697,7 +698,7 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
                               child: Icon(
                                 size: 40,
                                 Icons.arrow_back,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                       ),

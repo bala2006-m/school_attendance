@@ -128,50 +128,53 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                       BoxShadow(color: Colors.black12, blurRadius: 8),
                     ],
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: buildAnimatedField(
-                              label: widget.isMobile ? 'Code' : 'Country Code',
-                              controller: widget.countryCodeController,
-                              focusNode: widget.countryCodeFocus,
-                              keyboardType: TextInputType.phone,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: buildAnimatedField(
+                                label:
+                                    widget.isMobile ? 'Code' : 'Country Code',
+                                controller: widget.countryCodeController,
+                                focusNode: widget.countryCodeFocus,
+                                keyboardType: TextInputType.phone,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 5,
-                            child: buildAnimatedField(
-                              label: 'Mobile Number',
-                              controller: widget.mobileController,
-                              focusNode: widget.mobileFocus,
-                              keyboardType: TextInputType.phone,
-                              isMobileNumber: true,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 5,
+                              child: buildAnimatedField(
+                                label: 'Mobile Number',
+                                controller: widget.mobileController,
+                                focusNode: widget.mobileFocus,
+                                keyboardType: TextInputType.phone,
+                                isMobileNumber: true,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      buildAnimatedField(
-                        label: 'Password',
-                        hintText: 'At least 6 Characters',
-                        controller: widget.passwordController,
-                        focusNode: widget.passwordFocus,
-                        isPassword: true,
-                        obscureText: obscureText,
-                        toggleObscure: () {
-                          setState(() {
-                            obscureText = !obscureText;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      submitButton(isFiled),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        buildAnimatedField(
+                          label: 'Password',
+                          hintText: 'At least 6 Characters',
+                          controller: widget.passwordController,
+                          focusNode: widget.passwordFocus,
+                          isPassword: true,
+                          obscureText: obscureText,
+                          toggleObscure: () {
+                            setState(() {
+                              obscureText = !obscureText;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        submitButton(isFiled),
+                      ],
+                    ),
                   ),
                 ),
               ),

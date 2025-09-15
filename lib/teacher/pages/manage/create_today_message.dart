@@ -44,7 +44,7 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 2;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -65,7 +65,7 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -74,7 +74,7 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 2;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

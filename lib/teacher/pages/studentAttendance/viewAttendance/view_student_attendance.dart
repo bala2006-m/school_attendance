@@ -172,7 +172,7 @@ class _StudentAttendanceClassesState extends State<StudentAttendanceClasses> {
 
   Future<bool> onWillPop() async {
     StaffDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -193,7 +193,7 @@ class _StudentAttendanceClassesState extends State<StudentAttendanceClasses> {
       onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? MobileAppbar(
@@ -202,7 +202,7 @@ class _StudentAttendanceClassesState extends State<StudentAttendanceClasses> {
                     enableBack: true,
                     onBack: () {
                       StaffDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:

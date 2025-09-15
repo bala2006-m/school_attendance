@@ -146,7 +146,7 @@ class NotificationsState extends State<Notifications> {
 
   void _goBack() {
     AdminDashboardState.selectedIndex = 1;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -177,7 +177,7 @@ class NotificationsState extends State<Notifications> {
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -188,7 +188,13 @@ class NotificationsState extends State<Notifications> {
                     enableBack: true,
                     onBack: _goBack,
                   )
-                  : const AdminAppbarDesktop(title: 'Notifications'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Notifications',
+
+                    onBack: _goBack,
+                  ),
         ),
         body:
             isLoading

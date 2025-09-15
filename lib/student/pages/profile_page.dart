@@ -25,10 +25,11 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
     final userData = widget.userData;
-
+    final dob =
+        DateTime.parse(userData["DOB"]).toLocal().toString().split(' ')[0];
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -36,7 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -84,6 +85,20 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildInfoTile("School Name", userData['schoolName']),
               _buildInfoTile("Email", userData["email"] ?? ''),
               _buildInfoTile("Phone", userData["phone"] ?? ''),
+              _buildInfoTile(
+                "Gender",
+                userData["gender"] == 'M'
+                    ? 'Male'
+                    : userData["gender"] == 'f'
+                    ? 'Female'
+                    : userData["gender"] == 'O'
+                    ? 'Other'
+                    : '',
+              ),
+              _buildInfoTile("Community", userData["community"] ?? ''),
+              _buildInfoTile("Father's Name", userData["father_name"] ?? ''),
+              _buildInfoTile("Date of Birth", dob),
+              _buildInfoTile("Route", userData["route"] ?? ''),
             ],
           ),
         ),
@@ -116,6 +131,14 @@ class _ProfilePageState extends State<ProfilePage> {
         return Icons.class_;
       case "roll number":
         return Icons.badge;
+      case "gender":
+        return Icons.person;
+      case "community":
+        return Icons.people;
+      case "father's name":
+        return Icons.person;
+      case "date of birth":
+        return Icons.calendar_today;
       default:
         return Icons.info_outline;
     }

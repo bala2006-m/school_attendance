@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:school_attendance/administrator/services/administrator_api_service.dart';
 
@@ -239,9 +240,11 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
                           ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                            child: Center(
+                              child: SpinKitFadingCircle(
+                                color: Colors.blueAccent,
+                                size: 60.0,
+                              ),
                             ),
                           )
                           : const Text(

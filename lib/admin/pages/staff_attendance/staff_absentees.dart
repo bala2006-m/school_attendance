@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
@@ -88,7 +89,7 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -107,8 +108,10 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      selectableDayPredicate: (DateTime day) => day.weekday != DateTime.sunday,
+      // Remove the restriction so all days are selectable
+      // selectableDayPredicate: (DateTime day) => day.weekday != DateTime.sunday,
     );
+
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -162,7 +165,20 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
               ],
             ),
             const Divider(height: 20, thickness: 1),
-            if (absentees.isEmpty)
+            if (data.isEmpty)
+              Center(
+                child: Column(
+                  children: const [
+                    Icon(Icons.event_busy, size: 40, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      'No attendance data',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              )
+            else if (absentees.isEmpty)
               Center(
                 child: Column(
                   children: const [
@@ -208,7 +224,7 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F7F7),
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
               isMobile
                   ? AdminAppbarMobile(
@@ -219,7 +235,7 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;
-                      Navigator.pushReplacement(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -231,11 +247,34 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                       );
                     },
                   )
-                  : const AdminAppbarDesktop(title: 'Staff Absentees'),
+                  : AdminAppbarDesktop(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
+                    title: 'Staff Absentees',
+
+                    onBack: () {
+                      AdminDashboardState.selectedIndex = 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AdminDashboard(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body:
             isLoading
-                ? const Center(child: CircularProgressIndicator()) // ✅ Loader
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
+                ) // ✅ Loader
                 : Column(
                   children: [
                     Container(

@@ -3,17 +3,33 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:school_attendance/utils/utils.dart';
 
 class AdminApiService {
-  static const String baseUrl = "http://194.238.23.250:3000";
-  //static const String oldUrl = "http://51.20.189.225";
-  //static const String tempUrl = "https://ghj5w9n1-3000.inc1.devtunnels.ms";
+  static Future<bool> deleteTimetableEntry(String id) async {
+    final url = Uri.parse('$baseUrl/timetable/delete/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<Map<String, dynamic>?> uploadStudentExcelFile(
     File file,
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/excel-upload/students/$schoolId');
+      final uri = Uri.parse(
+        "$baseUrl/auth/excel-upload/students/$schoolId/non",
+      );
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
           await http.MultipartFile.fromPath(
@@ -27,16 +43,17 @@ class AdminApiService {
         );
 
       final response = await request.send();
+      print(response.statusCode);
       if (response.statusCode == 200 || response.statusCode == 201) {
         final respStr = await response.stream.bytesToString();
-        //print(jsonDecode(respStr));
+        print(jsonDecode(respStr));
         return jsonDecode(respStr);
       } else {
-        //print('Upload failed with code: ${response.statusCode}');
+        print('Upload failed with code: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      //print('Upload error: $e');
+      print('Upload error: $e');
       return null;
     }
   }
@@ -44,9 +61,12 @@ class AdminApiService {
   static Future<Map<String, dynamic>?> uploadStaffExcelFile(
     File file,
     String schoolId,
+    String faculty,
   ) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/excel-upload/staff/$schoolId');
+      final uri = Uri.parse(
+        '$baseUrl/auth/excel-upload/staff/$schoolId/$faculty',
+      );
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
           await http.MultipartFile.fromPath(
@@ -79,7 +99,7 @@ class AdminApiService {
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/excel-upload/admin/$schoolId');
+      final uri = Uri.parse("$baseUrl/auth/excel-upload/admin/$schoolId/non");
       final request = http.MultipartRequest('POST', uri)
         ..files.add(
           await http.MultipartFile.fromPath(
@@ -175,6 +195,7 @@ class AdminApiService {
   static Future<List<Map<String, dynamic>>> fetchLeaveRequest(
     String schoolId,
   ) async {
+    // print(schoolId);
     int id = int.parse(schoolId);
     final url = Uri.parse('$baseUrl/leave-request/list?school_id=$id');
 
@@ -492,6 +513,27 @@ class AdminApiService {
       //print("Error fetching admin data: $e");
     }
     return null;
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchAllAdmin({
+    required String schoolId,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/fetch_all_admin?school_id=$schoolId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = json.decode(response.body);
+
+        if (decoded['data'] != null && decoded['data'].isNotEmpty) {
+          return List<Map<String, dynamic>>.from(decoded['data']);
+        }
+      }
+    } catch (e) {
+      // print("Error fetching admin data: $e");
+    }
+    return [];
   }
 
   //Count usernames

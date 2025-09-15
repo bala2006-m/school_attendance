@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/student/Appbar/student_appbar_mobile.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
@@ -66,7 +67,7 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
     int id = int.parse(widget.schoolId);
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 60),
+        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
@@ -75,7 +76,7 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
                   enableBack: true,
                   onBack: () {
                     StudentDashboardState.selectedIndex = 0;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
@@ -91,7 +92,12 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
       ),
       body:
           isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                child: SpinKitFadingCircle(
+                  color: Colors.blueAccent,
+                  size: 60.0,
+                ),
+              )
               : leaveRequest.isEmpty
               ? const Center(child: Text("No leave applications found"))
               : ListView.builder(
