@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../../../../admin/services/admin_api_service.dart';
-import '../../../appbar/desktop_appbar.dart';
 import '../../../appbar/mobile_appbar.dart';
 import '../../../services/teacher_api_service.dart';
 import 'student_report_between_days.dart';
@@ -47,6 +46,29 @@ class _ReportsState extends State<Reports> {
       schoolId: widget.schoolId,
       classId: widget.classId,
     );
+    students.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
 
     // Fetch attendance for all students in parallel
     final futures =
@@ -93,33 +115,37 @@ class _ReportsState extends State<Reports> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Student Report ',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => StudentReportBetweenDays(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'Student Report '),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Student Report ',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => StudentReportBetweenDays(
+                        schoolId: widget.schoolId,
+                        username: widget.username,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body:
             isLoading
@@ -234,18 +260,15 @@ class _ReportsState extends State<Reports> {
                               child: Row(
                                 children: [
                                   CircleAvatar(
-                                    backgroundColor:
-                                        student['gender'] == 'F'
-                                            ? Colors.pink.shade100
-                                            : Colors.blue.shade100,
+                                    backgroundColor: Colors.white,
                                     child: Icon(
                                       student['gender'] == 'F'
                                           ? Icons.female
                                           : Icons.male,
                                       color:
                                           student['gender'] == 'F'
-                                              ? Colors.pink.shade700
-                                              : Colors.blue.shade700,
+                                              ? Colors.red
+                                              : Colors.blue,
                                       size: 24,
                                     ),
                                   ),
@@ -259,7 +282,12 @@ class _ReportsState extends State<Reports> {
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.grey.shade800,
+                                          color:
+                                              student['gender'] == 'M'
+                                                  ? Colors.blue
+                                                  : student['gender'] == 'F'
+                                                  ? Colors.red
+                                                  : Colors.blue,
                                         ),
                                       ),
                                       const SizedBox(height: 4),

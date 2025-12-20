@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
-import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 
 import '../../../services/teacher_api_service.dart';
@@ -42,11 +41,38 @@ class _StudentListState extends State<StudentList> {
   }
 
   Future<void> init() async {
+    // First fetch all students
     students = await TeacherApiServices.fetchStudentData(
       schoolId: widget.schoolId,
       classId: widget.classId,
     );
 
+    // Sort students: males first, then females; within each group sort by username
+    students.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+
+    // For each student, fetch their attendance data
     for (final student in students) {
       final username = student['username'];
       final data = await AdminApiService.fetchStudentMonthlyAttendance(
@@ -102,7 +128,7 @@ class _StudentListState extends State<StudentList> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
     final monthMap = [
       'January',
       'February',
@@ -118,31 +144,35 @@ class _StudentListState extends State<StudentList> {
       'December',
     ];
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Monthly Attendance',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => MonthlyAttendance(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'Monthly Attendance'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Monthly Attendance',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => MonthlyAttendance(
+                        schoolId: widget.schoolId,
+                        username: widget.username,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body:
             isLoading
@@ -261,9 +291,15 @@ class _StudentListState extends State<StudentList> {
                                         children: [
                                           Text(
                                             name,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.w600,
+                                              color:
+                                                  student['gender'] == 'M'
+                                                      ? Colors.blue
+                                                      : student['gender'] == 'F'
+                                                      ? Colors.red
+                                                      : Colors.blue,
                                             ),
                                           ),
                                           const SizedBox(height: 4),

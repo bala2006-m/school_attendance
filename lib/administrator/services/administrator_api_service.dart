@@ -192,7 +192,6 @@ class AdministratorApiService {
         throw Exception("❌ Failed with ${response.statusCode}: $responseBody");
       }
     } catch (e) {
-      // print("❌ Error: $e");
       return responseBody;
     }
   }

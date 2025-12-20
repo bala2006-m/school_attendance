@@ -61,7 +61,6 @@ class _ProfileState extends State<Profile> {
         _isLoading = false;
       });
     } catch (e) {
-      //print('Initial load failed: $e');
       setState(() => _isLoading = false);
     }
   }

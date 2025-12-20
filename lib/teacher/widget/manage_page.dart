@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../components/build_profile_card_mobile.dart';
+import '../pages/exam_marks/exam_marks_classes.dart';
 import '../pages/homework/homework_class_list.dart';
 import '../pages/manage/post_tickets.dart';
-import '../pages/manage/view_leave_request.dart';
 import '../pages/time_table/timetable_class_list.dart';
 
 class ManagePage extends StatelessWidget {
@@ -74,7 +74,7 @@ class ManagePage extends StatelessWidget {
                     ),
 
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         buildButtons(
@@ -92,21 +92,21 @@ class ManagePage extends StatelessWidget {
                           Colors.blue,
                           Colors.white,
                         ),
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'Leave\nRequest',
-                          Icons.remove_from_queue,
-                          ViewLeaveRequest(
-                            schoolId: schoolId,
-                            username: username,
-                          ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
-                        ),
+                        // buildButtons(
+                        //   context,
+                        //   screenWidth,
+                        //   buttonHeight,
+                        //   'Leave\nRequest',
+                        //   Icons.remove_from_queue,
+                        //   ViewLeaveRequest(
+                        //     schoolId: schoolId,
+                        //     username: username,
+                        //   ),
+                        //   Colors.cyan,
+                        //   Colors.black,
+                        //   Colors.blue,
+                        //   Colors.white,
+                        // ),
                         buildButtons(
                           context,
                           screenWidth,
@@ -122,27 +122,28 @@ class ManagePage extends StatelessWidget {
                           Colors.blue,
                           Colors.white,
                         ),
+                        buildButtons(
+                          context,
+                          screenWidth,
+                          buttonHeight,
+                          'Mark\nEntry',
+                          Icons.collections_bookmark_outlined,
+                          ExamMarksClasses(
+                            schoolId: schoolId,
+                            username: username,
+                          ),
+                          Colors.cyan,
+                          Colors.black,
+                          Colors.blue,
+                          Colors.white,
+                        ),
                       ],
                     ),
                     // Row(
-                    //   crossAxisAlignment: CrossAxisAlignment.center,
+                    //   crossAxisAlignment: CrossAxisAlignment.start,
                     //   mainAxisAlignment: MainAxisAlignment.center,
                     //   children: [
-                    //     buildButtons(
-                    //       context,
-                    //       screenWidth,
-                    //       buttonHeight,
-                    //       'Post\nMessage',
-                    //       Icons.message,
-                    //       MessageClassList(
-                    //         schoolId: schoolId,
-                    //         username: username,
-                    //       ),
-                    //       Colors.cyan,
-                    //       Colors.black,
-                    //       Colors.blue,
-                    //       Colors.white,
-                    //     ),
+                    //
                     //   ],
                     // ),
                   ],
@@ -184,7 +185,7 @@ class ManagePage extends StatelessWidget {
                     ),
 
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         buildButtons(

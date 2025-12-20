@@ -36,7 +36,7 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
 
   File? _selectedAdminExcelFile;
 
-  Future<void> onWillPop() async {
+  Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
     Navigator.push(
       context,
@@ -48,6 +48,7 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
             ),
       ),
     );
+    return false;
   }
 
   @override
@@ -306,14 +307,48 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
     );
   }
 
+  List<dynamic> groupAndSortAdmins(
+    List<dynamic> admins,
+    Map<String, dynamic> adminData,
+  ) {
+    // Filter groups
+    List<dynamic> males =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'M';
+        }).toList();
+
+    List<dynamic> females =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'F';
+        }).toList();
+
+    // Sort by name inside each group (case-insensitive)
+    int nameComparator(a, b) {
+      final aName =
+          (adminData[a['username']]?['name'] ?? '').toString().toLowerCase();
+      final bName =
+          (adminData[b['username']]?['name'] ?? '').toString().toLowerCase();
+      return aName.compareTo(bName);
+    }
+
+    males.sort(nameComparator);
+    females.sort(nameComparator);
+
+    // Combine with males on top
+    return [...males, ...females];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    // final adminsToShow = groupAndSortAdmins(admin, adminData);
 
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (pop, val) {
-        if (!pop) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
           onWillPop();
         }
       },
@@ -379,12 +414,13 @@ class _BulkUploadRegisterAdminState extends State<BulkUploadRegisterAdmin> {
   }
 
   Widget _getBody() {
+    final adminsToShow = groupAndSortAdmins(admin, adminData);
     return Uploads.buildAdminUpload(
       context: context,
       downloadTemplateAdmin: downloadTemplateAdmin,
       pickExcelFileAdmin: pickExcelFileAdmin,
       uploadFileAdmin: uploadFileAdmin,
-      admin: admin,
+      admin: adminsToShow,
       adminData: adminData,
       selectedExcelFile: _selectedAdminExcelFile,
     );

@@ -120,7 +120,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
         hasChanges = false;
       });
     } catch (e) {
-      //print(e);
       setState(() {
         error = e.toString();
         isLoading = false;
@@ -205,17 +204,21 @@ class _TimetableScreenState extends State<TimetableScreen> {
     final success = await TeacherApiServices.saveTimetable(timetablePayload);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Timetable saved successfully")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Timetable saved successfully")),
+        );
+      }
       await loadTimetable();
     } else {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Failed to save timetable")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to save timetable")),
+        );
+      }
     }
   }
 
@@ -445,25 +448,29 @@ class _TimetableScreenState extends State<TimetableScreen> {
                                                             controllers.length;
                                                         hasChanges = true;
                                                       });
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        const SnackBar(
-                                                          content: Text(
-                                                            'Timetable period deleted successfully',
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'Timetable period deleted successfully',
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
+                                                        );
+                                                      }
                                                     } else {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        const SnackBar(
-                                                          content: Text(
-                                                            'Failed to delete timetable period',
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              'Failed to delete timetable period',
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
+                                                        );
+                                                      }
                                                     }
                                                   } else {
                                                     ScaffoldMessenger.of(

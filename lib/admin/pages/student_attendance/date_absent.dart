@@ -102,23 +102,6 @@ class _DateAbsentState extends State<DateAbsent> {
     return detailsList;
   }
 
-  void loadStudent(String username, String classId, String schoolId) async {
-    final student = await ApiService.fetchStudentDetails(
-      schoolId,
-      classId,
-      username,
-    );
-
-    if (student.isNotEmpty) {
-      // print("Name: ${student['name']}");
-      // print("Gender: ${student['gender']}");
-      // print("Email: ${student['email']}");
-      // print("Mobile: ${student['mobile']}");
-    } else {
-      //print("Student not found or error occurred.");
-    }
-  }
-
   void _makePhoneCall(String phoneNumber) async {
     final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
     await launchUrl(launchUri);
@@ -154,8 +137,13 @@ class _DateAbsentState extends State<DateAbsent> {
         ),
       );
     }
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),

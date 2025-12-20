@@ -43,7 +43,6 @@ class _StaffProfileState extends State<StaffProfile> {
         username: widget.staffName,
         schoolId: id,
       );
-      //print(data);
 
       if (mounted) {
         setState(() {
@@ -65,7 +64,6 @@ class _StaffProfileState extends State<StaffProfile> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching staff profile: $e");
       if (mounted) {
         setState(() {
           staff = null;
@@ -100,8 +98,13 @@ class _StaffProfileState extends State<StaffProfile> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -214,7 +217,7 @@ class _StaffProfileState extends State<StaffProfile> {
                             // Details
                             buildInfoTile(
                               Icons.badge,
-                              "Username",
+                              "User ID",
                               widget.staffName,
                             ),
                             buildInfoTile(
@@ -226,6 +229,22 @@ class _StaffProfileState extends State<StaffProfile> {
                               Icons.email,
                               "Email",
                               staff?['email'],
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                staff!['gender'] == 'M'
+                                    ? Icons.male
+                                    : staff!['gender'] == 'F'
+                                    ? Icons.female
+                                    : Icons.person,
+                              ),
+                              title: Text(
+                                "Gender: ${staff!['gender'] == 'M'
+                                    ? 'Male'
+                                    : staff!['gender'] == 'F'
+                                    ? 'Female'
+                                    : ''}",
+                              ),
                             ),
                           ],
                         ),

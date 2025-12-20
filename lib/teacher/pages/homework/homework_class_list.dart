@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 import '../../services/teacher_api_service.dart';
 import '../staff_dashboard.dart';
@@ -103,31 +102,30 @@ class _HomeworkClassListState extends State<HomeworkClassList> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Class List',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    StaffDashboardState.selectedIndex = 2;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StaffDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Class List'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Class List',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            StaffDashboardState.selectedIndex = 2;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => StaffDashboard(
+                      username: widget.username,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body:
           isLoading

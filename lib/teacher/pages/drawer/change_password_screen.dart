@@ -3,7 +3,6 @@ import 'package:school_attendance/teacher/color/teacher_custom_color.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -50,13 +49,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         confirmPassword: confirmPassword,
         schoolId: widget.schoolId,
       );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.green,
-          content: Text(result['message']),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(result['message']),
+          ),
+        );
+      }
 
       _studentUsernameController.clear();
       _newPasswordController.clear();
@@ -75,32 +75,31 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     // final isDesktop = MediaQuery.sizeOf(context).width > 600;
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Change Student Password',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    StaffDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StaffDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId.toString(),
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Student Attendance'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Change Student Password',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            StaffDashboardState.selectedIndex = 0;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => StaffDashboard(
+                      username: widget.username,
+                      schoolId: widget.schoolId.toString(),
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

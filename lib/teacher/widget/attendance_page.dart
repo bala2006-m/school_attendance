@@ -78,7 +78,7 @@ class AttendancePage extends StatelessWidget {
                     ),
 
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         buildButtons(
@@ -123,7 +123,7 @@ class AttendancePage extends StatelessWidget {
                       ],
                     ),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         buildButtons(
@@ -197,7 +197,7 @@ class AttendancePage extends StatelessWidget {
                     ),
 
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         buildButtons(

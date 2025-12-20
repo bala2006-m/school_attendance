@@ -2,10 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../components/staff_components.dart';
-import '../pages/drawer/change_password_screen.dart';
-import '../pages/manage/timetable_screen.dart';
-import '../pages/studentAttendance/markAttendance/class_list.dart';
 import 'desktop_drawer.dart';
 
 class StaffDashboardDesktop extends StatelessWidget {
@@ -58,84 +54,84 @@ class StaffDashboardDesktop extends StatelessWidget {
           ),
 
           /// Main dashboard content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(25),
-              child: SingleChildScrollView(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    int crossAxisCount =
-                        constraints.maxWidth > 900
-                            ? 3
-                            : constraints.maxWidth > 600
-                            ? 2
-                            : 1;
-
-                    return GridView.count(
-                      crossAxisCount: crossAxisCount,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      children: [
-                        StaffCompoents.buildDashboardItem(
-                          context,
-                          icon: Icons.check_circle_outline,
-                          label: 'Take Attendance',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => ClassList(
-                                      schoolId: schoolId,
-                                      username: username,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                        StaffCompoents.buildDashboardItem(
-                          context,
-                          icon: Icons.calendar_today,
-                          label: 'Manage Timetable',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => TimetableScreen(
-                                      schoolId: schoolId,
-                                      username: username,
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                        StaffCompoents.buildDashboardItem(
-                          context,
-                          icon: Icons.lock_reset,
-                          label: 'Change Password',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => ChangePasswordScreen(
-                                      username: username,
-                                      schoolId: int.parse(schoolId),
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
+          // Expanded(
+          //   child: Padding(
+          //     padding: const EdgeInsets.all(25),
+          //     child: SingleChildScrollView(
+          //       child: LayoutBuilder(
+          //         builder: (context, constraints) {
+          //           int crossAxisCount =
+          //               constraints.maxWidth > 900
+          //                   ? 3
+          //                   : constraints.maxWidth > 600
+          //                   ? 2
+          //                   : 1;
+          //
+          //           return GridView.count(
+          //             crossAxisCount: crossAxisCount,
+          //             shrinkWrap: true,
+          //             physics: const NeverScrollableScrollPhysics(),
+          //             crossAxisSpacing: 20,
+          //             mainAxisSpacing: 20,
+          //             children: [
+          //               StaffCompoents.buildDashboardItem(
+          //                 context,
+          //                 icon: Icons.check_circle_outline,
+          //                 label: 'Take Attendance',
+          //                 onTap: () {
+          //                   Navigator.push(
+          //                     context,
+          //                     MaterialPageRoute(
+          //                       builder:
+          //                           (_) => ClassList(
+          //                             schoolId: schoolId,
+          //                             username: username,
+          //                           ),
+          //                     ),
+          //                   );
+          //                 },
+          //               ),
+          //               StaffCompoents.buildDashboardItem(
+          //                 context,
+          //                 icon: Icons.calendar_today,
+          //                 label: 'Manage Timetable',
+          //                 onTap: () {
+          //                   Navigator.push(
+          //                     context,
+          //                     MaterialPageRoute(
+          //                       builder:
+          //                           (_) => TimetableScreen(
+          //                             schoolId: schoolId,
+          //                             username: username,
+          //                           ),
+          //                     ),
+          //                   );
+          //                 },
+          //               ),
+          //               StaffCompoents.buildDashboardItem(
+          //                 context,
+          //                 icon: Icons.lock_reset,
+          //                 label: 'Change Password',
+          //                 onTap: () {
+          //                   Navigator.push(
+          //                     context,
+          //                     MaterialPageRoute(
+          //                       builder:
+          //                           (_) => ChangePasswordScreen(
+          //                             username: username,
+          //                             schoolId: int.parse(schoolId),
+          //                           ),
+          //                     ),
+          //                   );
+          //                 },
+          //               ),
+          //             ],
+          //           );
+          //         },
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

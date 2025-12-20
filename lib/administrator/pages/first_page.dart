@@ -88,7 +88,6 @@ class FirstPageState extends State<FirstPage> {
       // hide loader earlier (UI loads while some data may still be coming)
       if (mounted) setState(() => isLoading = false);
     } catch (e) {
-      debugPrint("❌ Error loading data: $e");
       if (mounted) setState(() => isLoading = false);
     }
   }

@@ -56,113 +56,96 @@ class _ClassListState extends State<ClassList> {
         );
       }
     } catch (e) {
-      //print('Image decode error: $e');
+      return;
     }
   }
 
   Future<void> fetchClasses() async {
     final cls = await TeacherApiServices.fetchClassData(widget.schoolId);
     classes = List.from(cls);
-
-    classes.sort((a, b) {
-      int getClassValue(dynamic val) {
-        // Convert roman numerals if needed
-        const romanMap = {
-          'I': 1,
-          'II': 2,
-          'III': 3,
-          'IV': 4,
-          'V': 5,
-          'VI': 6,
-          'VII': 7,
-          'VIII': 8,
-          'IX': 9,
-          'X': 10,
-          'XI': 11,
-          'XII': 12,
-          'XIII': 13,
-        };
-
-        if (val is int) return val;
-        if (val is String) {
-          // Try to parse to int
-          final parsed = int.tryParse(val);
-          if (parsed != null) return parsed;
-          // Check if it's a Roman numeral
-          return romanMap[val] ?? 999; // fallback for unknown
-        }
-
-        return 999; // fallback for null or unknown
-      }
-
-      int classCompare = getClassValue(
-        a['class'],
-      ).compareTo(getClassValue(b['class']));
-      if (classCompare != 0) return classCompare;
-
-      return a['section'].toString().compareTo(b['section'].toString());
-    });
   }
 
-  int? parseClassValue(dynamic val) {
-    const romanMap = {
-      'I': 1,
-      'II': 2,
-      'III': 3,
-      'IV': 4,
-      'V': 5,
-      'VI': 6,
-      'VII': 7,
-      'VIII': 8,
-      'IX': 9,
-      'X': 10,
-      'XI': 11,
-      'XII': 12,
-    };
+  final List<String> kinderGrades = ['PRE-KG', 'LKG', 'UKG', 'KG', 'NURSERY'];
+  final Map<String, int> romanMap = {
+    'I': 1,
+    'II': 2,
+    'III': 3,
+    'IV': 4,
+    'V': 5,
+    'VI': 6,
+    'VII': 7,
+    'VIII': 8,
+    'IX': 9,
+    'X': 10,
+    'XI': 11,
+    'XII': 12,
+  };
 
+  int? parseClassValue(dynamic val) {
     if (val is int) return val;
     if (val is String) {
-      // Try to parse integer
       final parsed = int.tryParse(val);
       if (parsed != null) return parsed;
 
-      // Try Roman numeral
       final upper = val.toUpperCase().trim();
       if (romanMap.containsKey(upper)) return romanMap[upper];
-
-      return null; // KG, PRE-KG, etc.
+      return null; // PRE-KG, LKG, UKG, etc.
     }
     return null;
   }
 
+  int getSortOrder(String className) {
+    final upper = className.toUpperCase().trim();
+    if (kinderGrades.contains(upper)) return kinderGrades.indexOf(upper);
+    final value = parseClassValue(className);
+    if (value != null) return value + kinderGrades.length; // After KG classes
+    return 999; // Unknown class
+  }
+
+  List<Map<String, dynamic>> getSortedClasses() {
+    List<Map<String, dynamic>> sortedList = List<Map<String, dynamic>>.from(
+      classes,
+    );
+
+    // Sort by class first (PRE-KG, LKG, 1-12, I-XII)
+    sortedList.sort(
+      (a, b) => getSortOrder(a['class']).compareTo(getSortOrder(b['class'])),
+    );
+
+    // Then sort by section if present
+    sortedList.sort((a, b) {
+      int classComparison = getSortOrder(
+        a['class'],
+      ).compareTo(getSortOrder(b['class']));
+      if (classComparison != 0) return classComparison;
+
+      // Sort by section alphabetically (nulls last)
+      String sectionA = (a['section'] ?? '').toString();
+      String sectionB = (b['section'] ?? '').toString();
+      return sectionA.compareTo(sectionB);
+    });
+
+    return sortedList;
+  }
+
   List<Map<String, dynamic>> filterKinderGarden() {
-    return classes
-        .where((item) {
-          final value = parseClassValue(item['class']);
-          return value == null; // Nursery, LKG, UKG, PRE-KG etc.
-        })
-        .map((e) => Map<String, dynamic>.from(e))
+    return getSortedClasses()
+        .where((item) => parseClassValue(item['class']) == null)
         .toList();
   }
 
   List<Map<String, dynamic>> filterClasses(int min, int max) {
-    return classes
-        .where((item) {
-          final value = parseClassValue(item['class']);
-          return value != null && value >= min && value <= max;
-        })
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return getSortedClasses().where((item) {
+      final value = parseClassValue(item['class']);
+      return value != null && value >= min && value <= max;
+    }).toList();
   }
 
   List<Map<String, dynamic>> filterClassesFrom(int min) {
-    return classes
-        .where((item) {
-          final value = parseClassValue(item['class']);
-          return value != null && value >= min;
-        })
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return getSortedClasses().where((item) {
+      final value = parseClassValue(item['class']);
+      return value != null && value >= min;
+    }).toList();
   }
 
   Future<bool> onWillPop() async {
@@ -184,8 +167,13 @@ class _ClassListState extends State<ClassList> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),

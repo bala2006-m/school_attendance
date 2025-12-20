@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/teacher/services/teacher_api_service.dart';
+import 'package:school_attendance/admin/services/admin_api_service.dart';
 
 import '../../../services/api_service.dart';
 import '../../appbar/admin_appbar_desktop.dart';
@@ -40,10 +40,8 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
   late FocusNode _mobileFocus;
   late FocusNode _countryCodeFocus;
   static int selectedIndex = 0;
-
-  List<dynamic> staff = [];
   List<dynamic> filteredStaff = [];
-  Map<String, dynamic> staffData = {};
+  List<Map<String, dynamic>> staffData = [];
   bool showForm = false;
   bool isLoading = true;
   final ScrollController _scrollController = ScrollController();
@@ -61,39 +59,13 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
 
   Future<void> init() async {
     setState(() => isLoading = true);
-
-    staff = await ApiService.getUsersByRole(
-      role: 'staff',
-      schoolId: int.parse(widget.schoolId),
-    );
-
-    staff =
-        staff
-            .where((e) => e["school_id"] == int.parse(widget.schoolId))
-            .toList();
-
-    List<Future<void>> futures = [];
-    staffData.clear();
-
-    for (var user in staff) {
-      final username = user['username'];
-      futures.add(
-        TeacherApiServices.fetchStaffDataUsername(
-          username: username,
-          schoolId: int.parse(widget.schoolId),
-        ).then((data) {
-          staffData[username] = data;
-        }),
-      );
-    }
-
-    await Future.wait(futures);
+    staffData = await AdminApiService.fetchStaffData(widget.schoolId);
 
     if (!mounted) return;
 
     setState(() {
       isLoading = false;
-      filteredStaff = List.from(staff);
+      filteredStaff = List.from(staffData);
     });
   }
 
@@ -101,13 +73,11 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       filteredStaff =
-          staff.where((staffUser) {
+          staffData.where((staffUser) {
             final username =
                 staffUser['username']?.toString().toLowerCase() ?? '';
-            final data = staffData[staffUser['username']] ?? {};
-            final name = data['name']?.toString().toLowerCase() ?? '';
-            final mobile = data['mobile']?.toString().toLowerCase() ?? '';
-
+            final name = staffUser['name']?.toString().toLowerCase() ?? '';
+            final mobile = staffUser['mobile']?.toString().toLowerCase() ?? '';
             return username.contains(query) ||
                 name.contains(query) ||
                 mobile.contains(query);
@@ -129,7 +99,7 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     super.dispose();
   }
 
-  Future<void> onWillPop() async {
+  Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
     Navigator.push(
       context,
@@ -141,6 +111,31 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
             ),
       ),
     );
+    return false;
+  }
+
+  // --- Improved function: group and sort by gender and name ---
+  List<Map<String, dynamic>> groupAndSortStaffByGender(
+    List<Map<String, dynamic>> staff,
+  ) {
+    List<Map<String, dynamic>> males =
+        staff
+            .where((data) => (data['gender'] ?? '').toUpperCase() == 'M')
+            .toList();
+    List<Map<String, dynamic>> females =
+        staff
+            .where((data) => (data['gender'] ?? '').toUpperCase() == 'F')
+            .toList();
+
+    int nameComparator(a, b) => (a['name'] ?? '')
+        .toString()
+        .toLowerCase()
+        .compareTo((b['name'] ?? '').toString().toLowerCase());
+
+    males.sort(nameComparator);
+    females.sort(nameComparator);
+
+    return [...males, ...females];
   }
 
   @override
@@ -148,9 +143,11 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) onWillPop();
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
       },
       child: Scaffold(
         appBar: PreferredSize(
@@ -164,36 +161,15 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
+                      onWillPop();
                     },
                   )
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'Add/Remove Staff',
-
                     onBack: () {
-                      AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
+                      onWillPop();
                     },
                   ),
         ),
@@ -244,7 +220,7 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
                     TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search by name, username, or mobile',
+                        hintText: 'Search by name, user Id, or mobile',
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -316,13 +292,15 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
     );
   }
 
+  // --- Improved grouping for each stack ---
+
   Widget teachingStaffStack() {
     final teachingStaff =
-        filteredStaff.where((staffUser) {
-          final username = staffUser['username'];
-          final data = staffData[username] ?? {};
-          return data['faculty'] == 'teaching';
-        }).toList();
+        filteredStaff
+            .where((staffUser) => staffUser['faculty'] == 'teaching')
+            .cast<Map<String, dynamic>>()
+            .toList();
+    final teachingToShow = groupAndSortStaffByGender(teachingStaff);
 
     return Column(
       children: [
@@ -346,10 +324,9 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
           ),
         ),
         const SizedBox(height: 10),
-        ...teachingStaff.map((staffUser) {
+        ...teachingToShow.map((staffUser) {
           final username = staffUser['username'];
-          final data = staffData[username] ?? {};
-          return staffCard(username, data);
+          return staffCard(username, staffUser);
         }),
       ],
     );
@@ -357,11 +334,11 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
 
   Widget nonTeachingStaffStack() {
     final nonTeachingStaff =
-        filteredStaff.where((staffUser) {
-          final username = staffUser['username'];
-          final data = staffData[username] ?? {};
-          return data['faculty'] == 'nonteaching';
-        }).toList();
+        filteredStaff
+            .where((staffUser) => staffUser['faculty'] == 'nonteaching')
+            .cast<Map<String, dynamic>>()
+            .toList();
+    final nonTeachingToShow = groupAndSortStaffByGender(nonTeachingStaff);
 
     return Column(
       children: [
@@ -385,30 +362,50 @@ class AddOrRemoveStaffState extends State<AddOrRemoveStaff> {
           ),
         ),
         const SizedBox(height: 10),
-        ...nonTeachingStaff.map((staffUser) {
+        ...nonTeachingToShow.map((staffUser) {
           final username = staffUser['username'];
-          final data = staffData[username] ?? {};
-          return staffCard(username, data);
+          return staffCard(username, staffUser);
         }),
       ],
     );
   }
 
   Widget staffCard(String username, Map<String, dynamic> data) {
+    final gender = (data['gender'] ?? '').toUpperCase();
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: const Icon(Icons.people, color: Colors.blue),
+        leading: Icon(
+          gender == 'M'
+              ? Icons.male
+              : gender == 'F'
+              ? Icons.female
+              : Icons.person,
+          color:
+              gender == 'M'
+                  ? Colors.blue
+                  : gender == 'F'
+                  ? Colors.red
+                  : Colors.blue,
+        ),
         title: Text(
           data['name'] ?? 'Name not available',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color:
+                gender == 'M'
+                    ? Colors.blue
+                    : gender == 'F'
+                    ? Colors.red
+                    : Colors.blue,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Username: $username'),
+            Text('User ID: $username'),
             Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
             Text('Designation: ${data['designation'] ?? 'N/A'}'),
           ],

@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.demo.ramchin_smart_school"
+    namespace = "com.ramchin_smart_school"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "29.0.13113456"
 

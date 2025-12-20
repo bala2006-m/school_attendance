@@ -128,12 +128,13 @@ class AdminDesktopDrawerSmall extends StatelessWidget {
                   await prefs.remove('role');
                   await prefs.remove('username');
                   await prefs.remove('rememberMe');
-
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
-                  );
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (route) => false,
+                    );
+                  }
                 },
               ),
             ],

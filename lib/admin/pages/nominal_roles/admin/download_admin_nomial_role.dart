@@ -11,6 +11,7 @@ import 'package:school_attendance/admin/services/admin_api_service.dart';
 import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
+import '../../../widget/pdf_preview_custom_page.dart';
 import '../../dashboard/admin_dashboard.dart';
 
 class DownloadAdminNomialRole extends StatefulWidget {
@@ -34,6 +35,7 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
   String? schoolName;
   String? schoolAddress;
   Uint8List? schoolPhotoBytes;
+
   @override
   void initState() {
     init();
@@ -44,10 +46,31 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
     await fetchSchoolInfo();
     try {
       admins = await AdminApiService.fetchAllAdmin(schoolId: widget.schoolId);
+      admins.sort((a, b) {
+        if (a['gender'] == b['gender']) {
+          var aUsername = a['username'].toString();
+          var bUsername = b['username'].toString();
+
+          final numA = int.tryParse(aUsername);
+          final numB = int.tryParse(bUsername);
+
+          if (numA != null && numB != null) {
+            return numA.compareTo(numB);
+          } else {
+            return aUsername.compareTo(bUsername);
+          }
+        } else if (a['gender'] == 'M') {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load Admin data")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load Admin data")),
+        );
+      }
     }
     setState(() {
       isLoading = false;
@@ -57,25 +80,20 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
   Future<void> fetchSchoolInfo() async {
     try {
       final schoolData = await ApiService.fetchSchoolData(widget.schoolId);
-
       if (schoolData.isNotEmpty) {
         schoolName = schoolData[0]['name'];
         schoolAddress = schoolData[0]['address'];
-
         if (schoolData[0]['photo'] != null) {
-          try {
-            Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-            schoolPhotoBytes = imageBytes;
-          } catch (e) {
-            debugPrint('Image decode error: $e');
-          }
+          Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
+          schoolPhotoBytes = imageBytes;
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load school info")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load school info")),
+        );
+      }
     }
   }
 
@@ -94,19 +112,39 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
     return false;
   }
 
-  /// 📄 Build PDF content
-  Future<void> buildPdf() async {
+  /// 📄 Build and return PDF document
+  Future<pw.Document> buildPdf() async {
     final pdf = pw.Document();
 
-    // Sort the admins list by 'username'
+    final ttf = await PdfGoogleFonts.notoSansRegular();
+    final ttfBold = await PdfGoogleFonts.notoSansBold();
+
+    // Sort the admins similarly
     final sortedAdmins = List.from(admins);
-    sortedAdmins.sort(
-      (a, b) => (a['username'] ?? '').compareTo(b['username'] ?? ''),
-    );
+    sortedAdmins.sort((a, b) {
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          return numA.compareTo(numB);
+        } else {
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
 
     if (sortedAdmins.isEmpty) {
       pdf.addPage(
         pw.Page(
+          theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
           build:
               (context) => pw.Center(
                 child: pw.Text(
@@ -120,51 +158,77 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
       pdf.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
+          theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
           build: (pw.Context context) {
             return [
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 children: [
-                  if (schoolPhotoBytes != null)
-                    pw.Image(
-                      pw.MemoryImage(schoolPhotoBytes!),
-                      width: 80,
-                      height: 80,
-                    ),
-                  if (schoolName != null)
-                    pw.Text(
-                      schoolName!,
-                      style: pw.TextStyle(
-                        fontSize: 18,
-                        fontWeight: pw.FontWeight.bold,
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      if (schoolPhotoBytes != null)
+                        pw.Image(
+                          pw.MemoryImage(schoolPhotoBytes!),
+                          width: 80,
+                          height: 80,
+                        ),
+                      if (schoolPhotoBytes != null) pw.SizedBox(width: 10),
+                      pw.Padding(
+                        padding: pw.EdgeInsets.only(top: 10),
+                        child: pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.center,
+                            children: [
+                              if (schoolName?.isNotEmpty == true)
+                                pw.Text(
+                                  schoolName!,
+                                  textAlign: pw.TextAlign.center,
+                                  softWrap: true,
+                                  style: pw.TextStyle(
+                                    color: PdfColors.blue900,
+                                    fontSize: 13,
+                                    fontWeight: pw.FontWeight.bold,
+                                  ),
+                                ),
+                              if (schoolName?.isNotEmpty == true)
+                                pw.SizedBox(height: 5),
+                              if (schoolAddress != null)
+                                pw.Text(
+                                  schoolAddress!,
+                                  textAlign: pw.TextAlign.center,
+                                  style: const pw.TextStyle(
+                                    fontSize: 12,
+                                    color: PdfColors.blue900,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  if (schoolAddress != null)
-                    pw.Text(
-                      schoolAddress!,
-                      style: const pw.TextStyle(fontSize: 12),
-                    ),
-                  pw.SizedBox(height: 10),
+                    ],
+                  ),
+                  pw.Divider(),
+                  //pw.SizedBox(height: 4),
                   pw.Center(
                     child: pw.Text(
                       "Admin List",
                       style: pw.TextStyle(
-                        fontSize: 22,
+                        fontSize: 12,
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
                   ),
-                  pw.SizedBox(height: 20),
-                  pw.Table.fromTextArray(
+                  pw.SizedBox(height: 10),
+                  pw.TableHelper.fromTextArray(
                     headers: [
                       "S.No",
-                      "Admn.No",
                       "Name",
+                      "Designation",
                       "Gender",
                       "Mobile",
                       "Email",
-                      "Designation",
                     ],
                     data:
                         sortedAdmins.asMap().entries.map((entry) {
@@ -172,8 +236,8 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
                           final admin = entry.value;
                           return [
                             index.toString(),
-                            admin['username'] ?? '',
-                            admin['name'] ?? '',
+                            admin['name'].toString().toUpperCase(),
+                            admin['designation'].toString().toUpperCase(),
                             (admin['gender'] == 'M'
                                 ? 'Male'
                                 : admin['gender'] == 'F'
@@ -183,24 +247,25 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
                                 : ""),
                             admin['mobile'] ?? '',
                             admin['email'] ?? '',
-                            admin['designation'] ?? '',
                           ];
                         }).toList(),
+                    headerDecoration: pw.BoxDecoration(color: PdfColors.blue),
                     headerStyle: pw.TextStyle(
                       fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.black,
+                      color: PdfColors.white,
+                      fontSize: 10,
                     ),
                     columnWidths: {
-                      0: pw.FlexColumnWidth(1),
-                      1: pw.FlexColumnWidth(2.5),
+                      0: pw.FixedColumnWidth(23),
+                      1: pw.FlexColumnWidth(4),
                       2: pw.FlexColumnWidth(3),
-                      3: pw.FlexColumnWidth(2),
-                      4: pw.FlexColumnWidth(3.2),
-                      5: pw.FlexColumnWidth(3),
-                      6: pw.FlexColumnWidth(3.2),
+                      3: pw.FixedColumnWidth(46),
+                      4: pw.FixedColumnWidth(77),
+                      5: pw.FlexColumnWidth(4),
                     },
+
                     cellAlignment: pw.Alignment.centerLeft,
-                    cellStyle: const pw.TextStyle(fontSize: 10),
+                    cellStyle: pw.TextStyle(fontSize: 9, font: ttf),
                   ),
                 ],
               ),
@@ -210,90 +275,35 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
       );
     }
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return pdf;
   }
 
-  /// 📥 Handle download & print logic
+  /// Navigate to PDF preview screen on button press
   Future<void> handleDownload() async {
-    await buildPdf();
-    //
-    // if (Platform.isAndroid || Platform.isIOS) {
-    //   var status = await Permission.storage.status;
-    //   if (!status.isGranted) {
-    //     status = await Permission.storage.request();
-    //   }
-    //   if (!status.isGranted) {
-    //     var manageStatus = await Permission.manageExternalStorage.request();
-    //     if (!manageStatus.isGranted) {
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         const SnackBar(content: Text('Storage permission denied')),
-    //       );
-    //       return;
-    //     }
-    //   }
-    //
-    //   // 📂 Save to Downloads folder
-    //   const downloadsPath = "/storage/emulated/0/Download";
-    //   final file = File("$downloadsPath/admin_nominal_role.pdf");
-    //   await file.writeAsBytes(pdfBytes);
-    //
-    //   ScaffoldMessenger.of(
-    //     context,
-    //   ).showSnackBar(SnackBar(content: Text("PDF saved to: ${file.path}")));
-    // } else {
-    //   // 💻 On desktop, ask user for path
-    //   final path = await FilePicker.platform.saveFile(
-    //     dialogTitle: 'Save Admin Nominal Role PDF',
-    //     fileName: 'admin_nominal_role.pdf',
-    //   );
-    //
-    //   if (path != null) {
-    //     final file = File(path);
-    //     await file.writeAsBytes(pdfBytes);
-    //     ScaffoldMessenger.of(
-    //       context,
-    //     ).showSnackBar(SnackBar(content: Text("PDF saved to: $path")));
-    //   }
-    // }
-    //
-    // // 🖨️ Printing option
-    // final printers = await Printing.listPrinters();
-    // if (printers.isNotEmpty) {
-    //   final shouldPrint = await showDialog<bool>(
-    //     context: context,
-    //     builder:
-    //         (context) => AlertDialog(
-    //           title: const Text("Print PDF"),
-    //           content: const Text(
-    //             "A printer is available. Do you want to print?",
-    //           ),
-    //           actions: [
-    //             TextButton(
-    //               onPressed: () => Navigator.pop(context, false),
-    //               child: const Text("No"),
-    //             ),
-    //             TextButton(
-    //               onPressed: () => Navigator.pop(context, true),
-    //               child: const Text("Yes"),
-    //             ),
-    //           ],
-    //         ),
-    //   );
-    //
-    //   if (shouldPrint == true) {
-    //     await Printing.layoutPdf(
-    //       onLayout: (PdfPageFormat format) async => pdfBytes,
-    //     );
-    //   }
-    // }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => PdfPreviewCustomPage(
+              buildPdf: buildPdf,
+              title: 'Admin List',
+              fileName: 'admin_list',
+            ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -323,7 +333,6 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
                     schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'Admin List',
-
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
                       Navigator.push(
@@ -406,7 +415,7 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
                           ),
                           const SizedBox(height: 60),
                           Text(
-                            'Do you want to download the Admin List as a PDF?',
+                            'Do you want to generate the Admin List as a PDF?',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
@@ -417,7 +426,7 @@ class _DownloadAdminNomialRoleState extends State<DownloadAdminNomialRole> {
                           ElevatedButton.icon(
                             onPressed: admins.isEmpty ? null : handleDownload,
                             icon: const Icon(Icons.download_rounded),
-                            label: const Text('Download PDF'),
+                            label: const Text('Generate PDF'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
                               foregroundColor: Colors.white,

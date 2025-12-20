@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
@@ -81,31 +80,30 @@ class _ClassListState extends State<ClassList> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Class List',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    StaffDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StaffDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Class List'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Class List',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            StaffDashboardState.selectedIndex = 0;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => StaffDashboard(
+                      username: widget.username,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body:
           MediaQuery.sizeOf(context).width > 600

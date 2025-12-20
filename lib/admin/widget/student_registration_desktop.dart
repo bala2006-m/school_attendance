@@ -21,7 +21,9 @@ class StudentRegistrationDesktop extends StatefulWidget {
 class _StudentRegistrationDesktopState
     extends State<StudentRegistrationDesktop> {
   final _formKey = GlobalKey<FormState>();
-
+  final _fatherNameController = TextEditingController();
+  final _routeController = TextEditingController();
+  final _communityController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
@@ -30,7 +32,7 @@ class _StudentRegistrationDesktopState
   final _classController = TextEditingController();
   final _sectionController = TextEditingController();
   final _countryCodeController = TextEditingController(text: '+91');
-
+  DateTime? dob;
   String? _selectedGender;
   bool _obscureText = true;
   bool _isSubmitting = false;
@@ -88,6 +90,29 @@ class _StudentRegistrationDesktopState
                     ),
                   ],
                 ),
+                Expanded(
+                  child: _buildField(
+                    label: 'Father Name',
+                    controller: _fatherNameController,
+                    capitalization: TextCapitalization.words,
+                  ),
+                ),
+                Expanded(
+                  child: _buildField(
+                    label: 'Community',
+                    controller: _communityController,
+                    capitalization: TextCapitalization.words,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _buildField(
+                    label: 'Route',
+                    controller: _routeController,
+                    capitalization: TextCapitalization.words,
+                  ),
+                ),
+
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -234,7 +259,9 @@ class _StudentRegistrationDesktopState
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
-
+    final fatherName = _fatherNameController.text.trim();
+    final community = _communityController.text.trim();
+    final route = _routeController.text.trim();
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
     final email = _emailController.text.trim();
@@ -282,6 +309,10 @@ class _StudentRegistrationDesktopState
         username: username,
         classId: '${classIdRes['class_id']}',
         schoolId: widget.schoolId,
+        fatherName: fatherName,
+        community: community,
+        route: route,
+        dob: dob.toString(),
       );
 
       if (regRes['success'] == true) {

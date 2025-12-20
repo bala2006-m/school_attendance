@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/administrator/services/administrator_api_service.dart';
 
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 import '../staff_dashboard.dart';
 
@@ -133,10 +132,10 @@ class _EditPasswordState extends State<EditPassword> {
 
   @override
   Widget build(BuildContext context) {
-    // print('widget.username');
-    final isMobile = MediaQuery.of(context).size.width < 500;
-    return WillPopScope(
-      onWillPop: () async {
+    // final isMobile = MediaQuery.of(context).size.width < 500;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -147,32 +146,30 @@ class _EditPasswordState extends State<EditPassword> {
                 ),
           ),
         );
-        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Change Password',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => StaffDashboard(
-                                username: widget.username,
-                                schoolId: widget.schoolId.toString(),
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : DesktopAppbar(title: 'Change Password'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Change Password',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => StaffDashboard(
+                        username: widget.username,
+                        schoolId: widget.schoolId.toString(),
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),

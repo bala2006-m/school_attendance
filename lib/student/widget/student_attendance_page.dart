@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../components/build_profile_card_mobile.dart';
 import '../pages/attendance_page.dart';
-import '../pages/post_leave_request.dart';
-import '../pages/student_leave_application.dart';
 
 class StudentAttendancePage extends StatelessWidget {
   final String username;
@@ -77,7 +75,7 @@ class StudentAttendancePage extends StatelessWidget {
                     ),
                     SizedBox(height: 10),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         buildElevatedButton(
@@ -97,26 +95,26 @@ class StudentAttendancePage extends StatelessWidget {
                           ),
                           Icons.access_time_outlined,
                         ),
-                        buildElevatedButton(
-                          context,
-                          "Request\nLeave",
-                          PostLeaveRequest(
-                            username: username,
-                            schoolId: schoolId,
-                            classId: classId,
-                          ),
-                          Icons.post_add,
-                        ),
-                        buildElevatedButton(
-                          context,
-                          "Leave\nStatus",
-                          LeaveApplications(
-                            username: username,
-                            schoolId: schoolId,
-                          ),
-                          Icons.settings_applications_sharp,
-                        ),
-                        const SizedBox(height: 30),
+                        // buildElevatedButton(
+                        //   context,
+                        //   "Request\nLeave",
+                        //   PostLeaveRequest(
+                        //     username: username,
+                        //     schoolId: schoolId,
+                        //     classId: classId,
+                        //   ),
+                        //   Icons.post_add,
+                        // ),
+                        // buildElevatedButton(
+                        //   context,
+                        //   "Leave\nStatus",
+                        //   LeaveApplications(
+                        //     username: username,
+                        //     schoolId: schoolId,
+                        //   ),
+                        //   Icons.settings_applications_sharp,
+                        // ),
+                        // const SizedBox(height: 30),
                       ],
                     ),
                     SizedBox(height: 10),

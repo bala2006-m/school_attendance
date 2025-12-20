@@ -22,7 +22,7 @@ class BuildMarkingCard extends StatelessWidget {
     final markingAn = attendanceStatusMapAn.values.where((v) => !v).length;
     return Container(
       width: screenWidth * 0.9,
-      height: screenHeight * 0.25,
+      height: screenHeight * 0.30,
       decoration: BoxDecoration(
         color: Colors.blue.shade50,
         borderRadius: BorderRadius.circular(8),
@@ -84,10 +84,13 @@ class BuildMarkingCard extends StatelessWidget {
                       children: [
                         Padding(
                           padding: EdgeInsets.all(1.0),
-                          child: _TableCellText('SESSION', color: Colors.black),
+                          child: _TableHeaderText(
+                            'SESSION',
+                            color: Colors.black,
+                          ),
                         ),
-                        _TableCellText('M', color: Colors.cyan),
-                        _TableCellText('NM', color: Colors.red),
+                        _TableHeaderText('M', color: Colors.cyan),
+                        _TableHeaderText('NM', color: Colors.red),
                       ],
                     ),
                     TableRow(
@@ -126,6 +129,30 @@ class _TableCellText extends StatelessWidget {
   final Color color;
 
   const _TableCellText(this.text, {required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(6),
+      child: Center(
+        child: Text(
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TableHeaderText extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _TableHeaderText(this.text, {required this.color});
 
   @override
   Widget build(BuildContext context) {

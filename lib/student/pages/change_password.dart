@@ -135,20 +135,23 @@ class _EditPasswordState extends State<EditPassword> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => StudentDashboard(
-                  username: widget.username,
-                  schoolId: widget.schoolId,
-                ),
-          ),
-        );
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => StudentDashboard(
+                    username: widget.username,
+                    schoolId: widget.schoolId,
+                  ),
+            ),
+          );
+        }
       },
+
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
@@ -156,6 +159,8 @@ class _EditPasswordState extends State<EditPassword> {
           child:
               isMobile
                   ? StudentAppbarMobile(
+                    schoolId: widget.schoolId,
+                    username: widget.username,
                     title: 'Change Password',
                     enableDrawer: false,
                     enableBack: true,
@@ -172,7 +177,23 @@ class _EditPasswordState extends State<EditPassword> {
                       );
                     },
                   )
-                  : StudentAppbarDesktop(title: 'Change Password'),
+                  : StudentAppbarDesktop(
+                    title: 'Change Password',
+                    enableDrawer: false,
+                    enableBack: true,
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => StudentDashboard(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),

@@ -4,23 +4,41 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import '../../../../services/api_service.dart';
-import '../../../../teacher/services/teacher_api_service.dart';
-import '../../../components/build_profile_card_mobile.dart';
+import '../../../services/api_service.dart';
+import '../../../teacher/services/teacher_api_service.dart';
+import '../appbar/admin_appbar_desktop.dart';
+import '../appbar/admin_appbar_mobile.dart';
+import './build_profile_card_mobile.dart';
 
-class ExamMarkClasses extends StatefulWidget {
-  const ExamMarkClasses({
+class BuildClasses extends StatefulWidget {
+  const BuildClasses({
     super.key,
     required this.schoolId,
     required this.username,
+    required this.title,
+    required this.onTap,
+    required this.onWillPop,
   });
+
   final String schoolId;
   final String username;
+  final String title;
+  final Widget Function({
+    required String schoolId,
+    required String username,
+    required String className,
+    required String section,
+    required String classId,
+  })
+  onTap;
+
+  final Widget onWillPop;
+
   @override
-  State<ExamMarkClasses> createState() => _ExamMarkClassesState();
+  State<BuildClasses> createState() => _BuildClassesState();
 }
 
-class _ExamMarkClassesState extends State<ExamMarkClasses> {
+class _BuildClassesState extends State<BuildClasses> {
   String? schoolName;
   String? schoolAddress;
   Image? schoolPhoto;
@@ -36,7 +54,9 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
 
   Future<void> init() async {
     await Future.wait([fetchSchoolInfo(), fetchClasses()]);
-    setState(() => isLoading = false);
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -44,18 +64,14 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
     schoolName = schoolData[0]['name'];
     schoolAddress = schoolData[0]['address'];
 
-    try {
-      if (schoolData[0]['photo'] != null) {
-        Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-        schoolPhoto = Image.memory(
-          imageBytes,
-          width: 150,
-          height: 150,
-          fit: BoxFit.cover,
-        );
-      }
-    } catch (e) {
-      //print('Image decode error: $e');
+    if (schoolData[0]['photo'] != null) {
+      Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
+      schoolPhoto = Image.memory(
+        imageBytes,
+        width: 150,
+        height: 150,
+        fit: BoxFit.cover,
+      );
     }
   }
 
@@ -88,7 +104,7 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
 
       final upper = val.toUpperCase().trim();
       if (romanMap.containsKey(upper)) return romanMap[upper];
-      return null; // PRE-KG, LKG, UKG, etc.
+      return null;
     }
     return null;
   }
@@ -97,8 +113,8 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
     final upper = className.toUpperCase().trim();
     if (kinderGrades.contains(upper)) return kinderGrades.indexOf(upper);
     final value = parseClassValue(className);
-    if (value != null) return value + kinderGrades.length; // After KG classes
-    return 999; // Unknown class
+    if (value != null) return value + kinderGrades.length;
+    return 999;
   }
 
   List<Map<String, dynamic>> getSortedClasses() {
@@ -106,19 +122,16 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
       classes,
     );
 
-    // Sort by class first (PRE-KG, LKG, 1-12, I-XII)
     sortedList.sort(
       (a, b) => getSortOrder(a['class']).compareTo(getSortOrder(b['class'])),
     );
 
-    // Then sort by section if present
     sortedList.sort((a, b) {
       int classComparison = getSortOrder(
         a['class'],
       ).compareTo(getSortOrder(b['class']));
       if (classComparison != 0) return classComparison;
 
-      // Sort by section alphabetically (nulls last)
       String sectionA = (a['section'] ?? '').toString();
       String sectionB = (b['section'] ?? '').toString();
       return sectionA.compareTo(sectionB);
@@ -148,17 +161,15 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
   }
 
   Future<bool> onWillPop() async {
-    AdminDashboardState.selectedIndex = 2;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
-      ),
-    );
+    if (!mounted) return false; // prevent using context after dispose
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => widget.onWillPop),
+      );
+    }
+
     return false;
   }
 
@@ -166,8 +177,13 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -176,7 +192,7 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Class List',
+                    title: widget.title,
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -186,8 +202,7 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Class List',
-
+                    title: widget.title,
                     onBack: () {
                       onWillPop();
                     },
@@ -195,9 +210,11 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
         ),
         body:
             isLoading
-                ? const SpinKitFadingCircle(
-                  color: Colors.blueAccent,
-                  size: 60.0,
+                ? const Center(
+                  child: SpinKitFadingCircle(
+                    color: Colors.blueAccent,
+                    size: 60.0,
+                  ),
                 )
                 : SingleChildScrollView(
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
@@ -229,7 +246,6 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
                                   isKinderGarden: true,
                                 ),
                                 const SizedBox(height: 20),
-
                                 _buildClassContainer(
                                   title: "Classes 1 to 5",
                                   classes: filterClasses(1, 5),
@@ -274,7 +290,6 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
     }
 
     return Container(
-      //height: MediaQuery.sizeOf(context).height / 5,
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -304,22 +319,23 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
             childAspectRatio: 1,
             children:
                 classes.map((classItem) {
-                  final classId = classItem['id'].toString();
                   final className = classItem['class'].toString();
                   final section = classItem['section'].toString();
+
                   return InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () {
+                      if (!mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
-                              (_) => ExamMarks(
+                              (_) => widget.onTap(
                                 schoolId: widget.schoolId,
-                                classId: classId,
                                 username: widget.username,
                                 className: className,
                                 section: section,
+                                classId: classItem['id'].toString(),
                               ),
                         ),
                       );
@@ -333,25 +349,20 @@ class _ExamMarkClassesState extends State<ExamMarkClasses> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Split into FN + AN halves
-                          Column(
-                            children: [
-                              Text(
-                                isKinderGarden ? className : 'Class $className',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                'Sec $section',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            isKinderGarden ? className : 'Class $className',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'Sec $section',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
                           ),
                         ],
                       ),

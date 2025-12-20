@@ -9,7 +9,6 @@ import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../student/services/student_api_services.dart';
-import '../../../appbar/desktop_appbar.dart';
 import '../../../appbar/mobile_appbar.dart';
 import 'class_list.dart';
 
@@ -264,6 +263,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             })
             .toList();
 
+    // Sort students: Males on top, females at bottom, then by username
+    students.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+
     originalStudents =
         students.map((s) => Map<String, dynamic>.from(s)).toList();
 
@@ -410,31 +434,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     final formattedDate = DateFormat('dd MMM yyyy').format(selectedDate);
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Attendance',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => ClassList(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Attendance'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Attendance',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => ClassList(
+                      username: widget.username,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body:
           isLoading
@@ -464,6 +487,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                     _buildHeader(formattedDate),
                     _buildStats(),
+                    _buildGenderStats(),
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerRight,
@@ -692,6 +716,47 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
     );
   }
+
+  Widget _buildGenderStats() {
+    // int total = students.length;
+    int male = students.where((s) => s['gender'] == 'M').length;
+    int female = students.where((s) => s['gender'] == 'F').length;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Table(
+        children: [
+          const TableRow(
+            children: [
+              Text(
+                "",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              Text(
+                "Male",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              Text(
+                "Female",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ],
+          ),
+          TableRow(
+            children: [
+              Text("", style: const TextStyle(fontSize: 18)),
+              Text("$male", style: const TextStyle(fontSize: 18)),
+              Text("$female", style: const TextStyle(fontSize: 18)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class StudentCard extends StatelessWidget {
@@ -755,9 +820,15 @@ class StudentCard extends StatelessWidget {
               children: [
                 Text(
                   student['name'] ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
+                    color:
+                        student['gender'] == 'M'
+                            ? Colors.blue
+                            : student['gender'] == 'F'
+                            ? Colors.red
+                            : Colors.blue,
                   ),
                 ),
                 Text(
@@ -789,18 +860,24 @@ class StudentCard extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not launch WhatsApp')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not launch WhatsApp'),
+                      ),
+                    );
+                  }
                 }
               } else {
                 final telUrl = Uri.parse("tel:$phone");
                 if (await canLaunchUrl(telUrl)) {
                   await launchUrl(telUrl);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not make a call')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not make a call')),
+                    );
+                  }
                 }
               }
             },

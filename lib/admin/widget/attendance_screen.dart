@@ -103,7 +103,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   String _getStatus(String time, String formattedSelected) {
-    //print(_attendanceDataMap[formattedSelected]?[time]);
     return _attendanceDataMap[formattedSelected]?[time] == 'P'
         ? 'Present'
         : _attendanceDataMap[formattedSelected]?[time] == 'A'

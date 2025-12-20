@@ -76,6 +76,8 @@ class _HolidayPageState extends State<HolidayPage> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: int.parse(widget.schoolId),
+                  username: widget.username,
                   title: 'Holidays',
                   enableDrawer: false,
                   enableBack: true,
@@ -93,7 +95,24 @@ class _HolidayPageState extends State<HolidayPage> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Holidays'),
+                : StudentAppbarDesktop(
+                  title: 'Holidays',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 0;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),

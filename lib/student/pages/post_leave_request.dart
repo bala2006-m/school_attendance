@@ -70,10 +70,11 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
         gender = data?['gender'] ?? '';
       });
     } catch (e) {
-      debugPrint("Error loading student data: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load student data")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load student data")),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -185,6 +186,8 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: int.parse(widget.schoolId),
+                  username: widget.username,
                   title: 'Apply Leave Request',
                   enableDrawer: false,
                   enableBack: true,
@@ -202,7 +205,24 @@ class _PostLeaveRequestState extends State<PostLeaveRequest> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Apply Leave Request'),
+                : StudentAppbarDesktop(
+                  title: 'Apply Leave Request',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 0;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           _isLoading

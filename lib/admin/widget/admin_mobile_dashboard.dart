@@ -30,6 +30,9 @@ class AdminMobileDashboard extends StatefulWidget {
     required this.message,
     required this.attendanceStatusMapAn,
     this.schoolPhoto,
+    required this.allPendingTermFees,
+    required this.allPendingBusFees,
+    required this.allPendingRteFees,
   });
 
   final String schoolId;
@@ -50,7 +53,9 @@ class AdminMobileDashboard extends StatefulWidget {
   final String message;
   final Map<String, bool> attendanceStatusMapFn;
   final Map<String, bool> attendanceStatusMapAn;
-
+  final Map<String, dynamic> allPendingTermFees;
+  final Map<String, dynamic> allPendingBusFees;
+  final Map<String, dynamic> allPendingRteFees;
   @override
   State<AdminMobileDashboard> createState() => _AdminMobileDashboardState();
 }
@@ -180,6 +185,8 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
             schoolAddress: widget.schoolAddress,
           ),
           BuildHomePage.buildHomePage(
+            allPendingTermFees: widget.allPendingTermFees,
+            allPendingBusFees: widget.allPendingBusFees,
             message: widget.message,
             context: context,
             totalStudents: '${widget.totalStudents}',
@@ -196,6 +203,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
             schoolPhoto: widget.schoolPhoto,
             attendanceStatusMapFn: widget.attendanceStatusMapFn,
             attendanceStatusMapAn: widget.attendanceStatusMapAn,
+            allPendingRteFees: widget.allPendingRteFees,
           ),
           AdminManagementMobile(
             adminUsername: widget.username,

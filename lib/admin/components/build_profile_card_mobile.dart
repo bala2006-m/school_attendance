@@ -44,7 +44,6 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
           adminPhoto = MemoryImage(bytes);
         });
       } catch (e) {
-        //print('Failed to decode base64 image: $e');
         setState(() {
           adminPhoto = null;
         });

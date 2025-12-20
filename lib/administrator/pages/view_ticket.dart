@@ -56,10 +56,10 @@ class _ViewTicketState extends State<ViewTicket> {
             DateTime.tryParse(b['modified_at'] ?? '') ?? DateTime(1970);
         return bDate.compareTo(aDate);
       });
-
-      // print("Filtered + sorted tickets: $feedbacks");
     } catch (e) {
-      // print("Error fetching tickets: $e");
+      setState(() {
+        isLoading = false;
+      });
     } finally {
       setState(() {
         isLoading = false;

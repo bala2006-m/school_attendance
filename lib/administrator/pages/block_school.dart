@@ -43,7 +43,6 @@ class _BlockSchoolState extends State<BlockSchool> {
         isLoading = false;
       });
     } catch (e) {
-      debugPrint("Error fetching blocked schools: $e");
       setState(() => isLoading = false);
     }
   }
@@ -101,7 +100,6 @@ class _BlockSchoolState extends State<BlockSchool> {
           );
         }
       } catch (e) {
-        debugPrint("Error blocking school: $e");
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -151,7 +149,6 @@ class _BlockSchoolState extends State<BlockSchool> {
         );
       }
     } catch (e) {
-      debugPrint("Error unblocking school: $e");
       if (mounted) {
         ScaffoldMessenger.of(
           context,

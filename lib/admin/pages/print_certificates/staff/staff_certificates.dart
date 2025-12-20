@@ -34,9 +34,9 @@
 //         username: widget.staffUsername,
 //         schoolId: int.parse(widget.schoolId),
 //       );
-//       print(staffData);
+//
 //     } catch (e) {
-//       debugPrint('Error fetching staff data: $e');
+//
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         const SnackBar(content: Text("Failed to load staff data")),
 //       );

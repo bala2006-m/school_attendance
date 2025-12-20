@@ -72,7 +72,6 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
           adminPhoto = MemoryImage(bytes);
           bytes.length < 5 ? adminPhoto = null : null;
         } catch (e) {
-          debugPrint('Failed to decode base64 image: $e');
           adminPhoto = null;
         }
       }
@@ -157,55 +156,84 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
     final classes = getClassNames(h['class_ids']).split(", ");
 
     return Card(
+      elevation: 3,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: ListTile(
-        title: Text(
-          h['reason'] ?? '',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_formatDate(h['date'])),
-            Text('FN: $fn | AN: $an'),
-
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Classes:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(
-                  height:
-                      (classes.length / 4).ceil() *
-                      30, // adjust row height as needed
-                  child: GridView.builder(
-                    physics:
-                        const NeverScrollableScrollPhysics(), // prevent scrolling inside
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
-                          mainAxisSpacing: 2,
-                          crossAxisSpacing: 4,
-                          childAspectRatio: 3,
-                        ),
-                    itemCount: classes.length,
-                    itemBuilder: (context, index) {
-                      return Text(
-                        classes[index],
-                        style: const TextStyle(fontSize: 14),
-                      );
-                    },
-                  ),
-                ),
-              ],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            h['reason'] ?? '',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.cyan.shade700,
             ),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () => confirmDelete(h['date']),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.event, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatDate(h['date']),
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    'FN: $fn | AN: $an',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Classes:",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.cyan.shade700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children:
+                    classes.map((cls) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Text(
+                          cls,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ],
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            tooltip: 'Delete Holiday',
+            splashRadius: 24,
+            onPressed: () => confirmDelete(h['date']),
+          ),
         ),
       ),
     );
@@ -239,13 +267,19 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
             !markedDates.contains(formatted);
       },
       builder: (context, child) {
-        return WillPopScope(onWillPop: () async => false, child: child!);
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, res) {},
+          child: child!,
+        );
       },
     ).then((p) {
       if (p != null && p.weekday == DateTime.sunday) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Cannot mark on Sunday")));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Cannot mark on Sunday")),
+          );
+        }
         return null;
       }
       return p != null
@@ -254,14 +288,14 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
     });
   }
 
-  Future<String?> pickReason() async {
+  Future<String?> pickReason(BuildContext context) async {
     String? sel;
     String comment = '';
     final reasons = [
-      'Local Holiday',
-      'Natural Disaster',
-      'Public Holiday',
-      'Custom',
+      {'label': 'Local Holiday', 'icon': Icons.beach_access},
+      {'label': 'Natural Disaster', 'icon': Icons.waves},
+      {'label': 'Public Holiday', 'icon': Icons.celebration},
+      {'label': 'Custom', 'icon': Icons.edit},
     ];
 
     return showDialog<String>(
@@ -271,69 +305,137 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
           (_) => StatefulBuilder(
             builder: (_, st) {
               final size = MediaQuery.of(context).size;
+              bool isOkEnabled =
+                  sel != null && (sel != 'Custom' || comment.trim().isNotEmpty);
+
               return AlertDialog(
-                title: const Text('Select Reason'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                elevation: 10,
+                title: Text(
+                  'Select Reason',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    color: Colors.cyan.shade700,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
                 content: SizedBox(
                   width: size.width * 0.75,
-                  height: size.height / 2.5,
+                  height: size.height / 2.8,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
-                        child: ListView(
-                          children:
-                              reasons.map((r) {
-                                return RadioListTile<String>(
-                                  title: Text(r),
-                                  value: r,
-                                  groupValue: sel,
-                                  onChanged:
-                                      (v) => st(() {
-                                        sel = v;
-                                        comment = '';
-                                      }),
-                                );
-                              }).toList(),
-                        ),
-                      ),
-                      if (sel != null)
-                        TextField(
-                          onChanged: (v) => comment = v,
-                          decoration: InputDecoration(
-                            labelText:
-                                sel == 'Custom'
-                                    ? 'Enter Custom Reason'
-                                    : 'Additional Info (optional)',
+                        child: Scrollbar(
+                          thumbVisibility: true,
+                          child: ListView.separated(
+                            itemCount: reasons.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 10),
+                            itemBuilder: (_, index) {
+                              final reason = reasons[index];
+                              return RadioListTile<String>(
+                                title: Text(reason['label'].toString()),
+                                secondary: Icon(
+                                  reason['icon'] as IconData,
+                                  color:
+                                      sel == reason['label']
+                                          ? Colors.blue
+                                          : null,
+                                ),
+                                value: reason['label'].toString(),
+                                groupValue: sel,
+                                onChanged: (v) {
+                                  st(() {
+                                    sel = v;
+                                    comment = '';
+                                  });
+                                },
+                                selected: sel == reason['label']!,
+                                activeColor: Colors.blue,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                tileColor:
+                                    sel == reason['label']
+                                        ? Colors.blue.shade50
+                                        : null,
+                              );
+                            },
                           ),
                         ),
+                      ),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child:
+                            sel != null
+                                ? Padding(
+                                  key: ValueKey(sel),
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: TextField(
+                                    autofocus: sel == 'Custom',
+                                    maxLines: 2,
+                                    onChanged: (v) => st(() => comment = v),
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          sel == 'Custom'
+                                              ? 'Enter Custom Reason'
+                                              : 'Additional Info (optional)',
+                                      hintText:
+                                          sel == 'Custom'
+                                              ? 'Type your reason here...'
+                                              : 'Any extra details',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                    ),
+                                  ),
+                                )
+                                : const SizedBox.shrink(),
+                      ),
                     ],
                   ),
                 ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      if (sel == null) return;
-                      if (sel == 'Custom' && comment.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a custom reason.'),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.pop(
-                        context,
-                        sel == 'Custom'
-                            ? comment.trim()
-                            : (comment.trim().isEmpty
-                                ? sel!
-                                : '$sel ($comment)'),
-                      );
-                    },
-                    child: const Text('OK'),
+                    onPressed:
+                        isOkEnabled
+                            ? () {
+                              Navigator.pop(
+                                context,
+                                sel == 'Custom'
+                                    ? comment.trim()
+                                    : (comment.trim().isEmpty
+                                        ? sel!
+                                        : '$sel ($comment)'),
+                              );
+                            }
+                            : null,
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        color: isOkEnabled ? Colors.blue : Colors.black,
+                      ),
+                    ),
                   ),
                 ],
               );
@@ -342,196 +444,404 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
     );
   }
 
-  Future<Map<String, String>?> pickSessions() async {
+  Future<Map<String, String>?> pickSessions(BuildContext context) async {
     String fnValue = 'H';
     String anValue = 'H';
+
+    Widget sessionToggle(
+      String label,
+      String groupValue,
+      ValueChanged<String> onChanged,
+    ) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          ToggleButtons(
+            borderRadius: BorderRadius.circular(8),
+            selectedBorderColor: Theme.of(context).colorScheme.primary,
+            selectedColor: Colors.white,
+            fillColor: Colors.blue,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
+            constraints: const BoxConstraints(minHeight: 38, minWidth: 100),
+            isSelected: [groupValue == 'H', groupValue == 'W'],
+            onPressed: (index) {
+              onChanged(index == 0 ? 'H' : 'W');
+            },
+            children: const [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.beach_access, size: 18),
+                  SizedBox(width: 6),
+                  Text('Holiday'),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.work_outline, size: 18),
+                  SizedBox(width: 6),
+                  Text('Working'),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+    }
 
     return showDialog<Map<String, String>>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => StatefulBuilder(
-            builder: (ctx, setState) {
-              return AlertDialog(
-                title: const Text("Select Sessions"),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('FN (Forenoon)'),
-                    Row(
-                      children: [
-                        Radio<String>(
-                          value: 'H',
-                          groupValue: fnValue,
-                          onChanged: (val) => setState(() => fnValue = val!),
-                        ),
-                        const Text('Holiday'),
-                        Radio<String>(
-                          value: 'W',
-                          groupValue: fnValue,
-                          onChanged: (val) => setState(() => fnValue = val!),
-                        ),
-                        const Text('Working'),
-                      ],
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 12,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Select Sessions",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.cyan.shade700,
                     ),
-                    const SizedBox(height: 8),
-                    const Text('AN (Afternoon)'),
-                    Row(
-                      children: [
-                        Radio<String>(
-                          value: 'H',
-                          groupValue: anValue,
-                          onChanged: (val) => setState(() => anValue = val!),
-                        ),
-                        const Text('Holiday'),
-                        Radio<String>(
-                          value: 'W',
-                          groupValue: anValue,
-                          onChanged: (val) => setState(() => anValue = val!),
-                        ),
-                        const Text('Working'),
-                      ],
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.pop(context, null),
                   ),
-                  ElevatedButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      if (fnValue == 'W' && anValue == 'W') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'At least one session must be holiday',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.pop(context, {'fn': fnValue, 'an': anValue});
-                    },
+                  SizedBox(height: 4),
+                  Text(
+                    "At least one session must be a Holiday",
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ],
-              );
-            },
-          ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  sessionToggle(
+                    'FN (Forenoon)',
+                    fnValue,
+                    (val) => setState(() => fnValue = val),
+                  ),
+                  const SizedBox(height: 20),
+                  sessionToggle(
+                    'AN (Afternoon)',
+                    anValue,
+                    (val) => setState(() => anValue = val),
+                  ),
+                ],
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              actions: [
+                TextButton(
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, null),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      fnValue == 'W' && anValue == 'W'
+                          ? () {}
+                          : () {
+                            if (fnValue == 'W' && anValue == 'W') {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'At least one session must be holiday',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            Navigator.pop(ctx, {'fn': fnValue, 'an': anValue});
+                          },
+                  child: Text(
+                    'OK',
+                    style: TextStyle(
+                      color:
+                          fnValue == 'W' && anValue == 'W'
+                              ? Colors.black
+                              : Colors.blue,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
-  Future<List<int>?> pickClasses() async {
-    final classList = await AdminApiService.fetchAllClasses(widget.schoolId);
+  Future<List<int>?> pickClasses({
+    required BuildContext context,
+    required String schoolId,
+  }) async {
+    final classList = await AdminApiService.fetchAllClasses(schoolId);
     final selected = <int>{};
     bool selectAll = false;
+    String searchQuery = '';
 
-    // Step 1: Class selection dialog
-    final result = await showDialog<List<int>>(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (_) => StatefulBuilder(
-            builder: (_, st) {
-              return AlertDialog(
-                title: const Text('Select Classes'),
-                content: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.75,
-                  height: MediaQuery.of(context).size.height * 0.6,
-                  child: SingleChildScrollView(
+    List<Map<String, dynamic>> filterClasses() {
+      if (searchQuery.trim().isEmpty) return classList;
+      return classList.where((c) {
+        final label = "${c['class']}-${c['section']}".toLowerCase();
+        return label.contains(searchQuery.toLowerCase());
+      }).toList();
+    }
+
+    if (context.mounted) {
+      return showDialog<List<int>>(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (_) => StatefulBuilder(
+              builder: (_, st) {
+                final filteredClasses = filterClasses();
+                bool isNextEnabled = selected.isNotEmpty;
+
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  elevation: 10,
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Select Classes',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 20,
+                            color: Colors.cyan.shade700,
+                          ),
+                        ),
+                      ),
+                      if (selected.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${selected.length} selected',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                  content: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.75,
+                    height: MediaQuery.of(context).size.height * 0.6,
                     child: Column(
                       children: [
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search classes...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            isDense: true,
+                          ),
+                          onChanged:
+                              (val) => st(() {
+                                searchQuery = val;
+                              }),
+                        ),
+                        const SizedBox(height: 12),
                         CheckboxListTile(
-                          title: const Text('Select All'),
+                          tileColor: Colors.grey.shade100,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          title: const Text(
+                            'Select All',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                           value: selectAll,
+                          controlAffinity: ListTileControlAffinity.leading,
                           onChanged:
                               (val) => st(() {
                                 selectAll = val ?? false;
                                 selected.clear();
                                 if (selectAll) {
                                   selected.addAll(
-                                    classList.map((c) => c['id'] as int),
+                                    filteredClasses.map((c) => c['id'] as int),
                                   );
                                 }
                               }),
                         ),
                         const Divider(),
-                        ...classList.map((c) {
-                          final id = c['id'] as int;
-                          final label = "${c['class']}-${c['section']}";
-                          return CheckboxListTile(
-                            title: Text(label),
-                            value: selected.contains(id),
-                            onChanged:
-                                (val) => st(() {
-                                  if (val == true) {
-                                    selected.add(id);
-                                  } else {
-                                    selected.remove(id);
-                                  }
-                                  selectAll =
-                                      selected.length == classList.length;
-                                }),
-                          );
-                        }),
+                        Expanded(
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            child:
+                                filteredClasses.isEmpty
+                                    ? const Center(
+                                      child: Text('No classes found.'),
+                                    )
+                                    : ListView.separated(
+                                      itemCount: filteredClasses.length,
+                                      separatorBuilder:
+                                          (_, __) => const SizedBox(height: 6),
+                                      itemBuilder: (_, index) {
+                                        final c = filteredClasses[index];
+                                        final id = c['id'] as int;
+                                        final label =
+                                            "${c['class']}-${c['section']}";
+                                        return CheckboxListTile(
+                                          title: Text(label),
+                                          value: selected.contains(id),
+                                          controlAffinity:
+                                              ListTileControlAffinity.leading,
+                                          onChanged:
+                                              (val) => st(() {
+                                                if (val == true) {
+                                                  selected.add(id);
+                                                } else {
+                                                  selected.remove(id);
+                                                }
+                                                // Update selectAll only for filtered visible items
+                                                final allFilteredIds =
+                                                    filteredClasses
+                                                        .map(
+                                                          (e) => e['id'] as int,
+                                                        )
+                                                        .toSet();
+                                                selectAll =
+                                                    allFilteredIds
+                                                        .difference(selected)
+                                                        .isEmpty &&
+                                                    allFilteredIds.isNotEmpty;
+                                              }),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          tileColor:
+                                              selected.contains(id)
+                                                  ? Colors.blue.shade50
+                                                  : null,
+                                        );
+                                      },
+                                    ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, null), // Cancel
-                    child: const Text('Cancel'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (selected.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Select at least one class'),
-                          ),
-                        );
-                        return;
-                      }
-                      Navigator.pop(context, selected.toList());
-                    },
-                    child: const Text('Next'),
-                  ),
-                ],
-              );
-            },
-          ),
-    );
-
-    if (result == null || result.isEmpty) return null;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        final selectedNames = classList
-            .where((c) => result.contains(c['id']))
-            .map((c) => "${c['class']}-${c['section']}")
-            .join(", ");
-        return AlertDialog(
-          title: const Text('Confirm Selection'),
-          content: Text("Selected Classes:\n$selectedNames"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Back'),
+                  actionsPadding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, null), // Cancel
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed:
+                          isNextEnabled
+                              ? () async {
+                                final result = selected.toList();
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) {
+                                    final selectedNames = classList
+                                        .where((c) => result.contains(c['id']))
+                                        .map(
+                                          (c) =>
+                                              "${c['class']}-${c['section']}",
+                                        )
+                                        .join(", ");
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      elevation: 10,
+                                      title: Text(
+                                        'Confirm Selection',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 20,
+                                          color: Colors.cyan.shade700,
+                                        ),
+                                      ),
+                                      content: SingleChildScrollView(
+                                        child: Text(
+                                          "Selected Classes:\n$selectedNames",
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.pop(context, false),
+                                          child: const Text(
+                                            'Back',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.pop(context, true),
+                                          child: const Text(
+                                            'Confirm',
+                                            style: TextStyle(
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                                if (confirmed == true) {
+                                  if (context.mounted) {
+                                    Navigator.pop(context, result);
+                                  }
+                                }
+                              }
+                              : null,
+                      child: Text(
+                        'Next',
+                        style: TextStyle(
+                          color: isNextEnabled ? Colors.blue : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Confirm'),
-            ),
-          ],
-        );
-      },
-    );
-
-    return confirmed == true ? result : await pickClasses(); // Retry or return
+      );
+    }
+    return null;
   }
 
   Future<void> confirmDelete(String date) async {
@@ -540,7 +850,13 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
       barrierDismissible: false,
       builder:
           (_) => AlertDialog(
-            title: const Text('Confirm Deletion'),
+            title: Text(
+              'Confirm Deletion',
+              style: TextStyle(
+                color: Colors.cyan.shade700,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             content: Text('Remove holiday on ${_formatDate(date)}?'),
             actions: [
               TextButton(
@@ -550,7 +866,10 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Delete'),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -576,18 +895,30 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
       if (date == null) return;
 
       while (true) {
-        final reason = await pickReason();
+        String? reason;
+        if (mounted) {
+          reason = await pickReason(context);
+        }
         if (reason == null) {
           break;
         }
 
         while (true) {
-          final classIds = await pickClasses();
+          List<int>? classIds;
+          if (mounted) {
+            classIds = await pickClasses(
+              context: context,
+              schoolId: widget.schoolId,
+            );
+          }
           if (classIds == null || classIds.isEmpty) {
             break;
           }
 
-          final sessions = await pickSessions();
+          Map<String, String>? sessions;
+          if (mounted) {
+            sessions = await pickSessions(context);
+          }
           if (sessions == null) break;
 
           setState(() => isLoading = true);
@@ -651,8 +982,13 @@ class _MarkLeaveListState extends State<MarkLeaveList> {
       );
     }
     final list = showAll ? allHolidays : allHolidays.take(10).toList();
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),

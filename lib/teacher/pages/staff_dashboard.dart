@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
-import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:school_attendance/teacher/widget/mobile_drawer.dart';
@@ -16,7 +15,6 @@ import '../../admin/services/admin_api_service.dart';
 import '../../administrator/services/administrator_api_service.dart';
 import '../../login_page.dart';
 import '../../services/api_service.dart';
-import '../widget/staff_dashboard_desktop.dart';
 import 'drawer/edit_profile_screen.dart';
 
 class StaffDashboard extends StatefulWidget {
@@ -133,7 +131,6 @@ class StaffDashboardState extends State<StaffDashboard> {
             false; // Hide initial loading spinner now that UI can display cached data
       });
     } catch (e) {
-      debugPrint('Error loading cache: $e');
       if (mounted) {
         setState(() => _isLoading = false); // Hide spinner on error too
       }
@@ -157,7 +154,7 @@ class StaffDashboardState extends State<StaffDashboard> {
 
       setState(() => classes = fetched);
     } catch (e) {
-      debugPrint('Error fetching classes: $e');
+      return;
     }
   }
 
@@ -181,7 +178,6 @@ class StaffDashboardState extends State<StaffDashboard> {
                 canTakeAttendanceFn[classId] = (result == false);
               })
               .catchError((e) {
-                debugPrint("FN error class $classId: $e");
                 canTakeAttendanceFn[classId] = true;
               }),
         );
@@ -197,7 +193,6 @@ class StaffDashboardState extends State<StaffDashboard> {
                 canTakeAttendanceAn[classId] = (result == false);
               })
               .catchError((e) {
-                debugPrint("AN error class $classId: $e");
                 canTakeAttendanceAn[classId] = true;
               }),
         );
@@ -207,7 +202,7 @@ class StaffDashboardState extends State<StaffDashboard> {
       if (!mounted) return;
       setState(() {});
     } catch (e) {
-      debugPrint('Error fetching attendance status: $e');
+      return;
     }
   }
 
@@ -234,13 +229,15 @@ class StaffDashboardState extends State<StaffDashboard> {
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.clear();
                       if (!mounted) return;
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
-                        (route) => false,
-                      );
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                          (route) => false,
+                        );
+                      }
                     },
                     child: const Text('OK'),
                   ),
@@ -249,7 +246,6 @@ class StaffDashboardState extends State<StaffDashboard> {
         );
       }
     } catch (e) {
-      debugPrint("Error in _checkBlocked: $e");
       if (!mounted) return;
       setState(() => isBlocked = false);
     }
@@ -363,8 +359,12 @@ class StaffDashboardState extends State<StaffDashboard> {
       await fetchClasses();
       await fetchAttendanceStatusForAll();
     } catch (e) {
-      debugPrint("Error loading staff data: $e");
+      return;
     }
+  }
+
+  Future<bool> onWillPop() async {
+    return false;
   }
 
   Future<void> fetchSchoolInfo(dynamic staffData) async {
@@ -405,7 +405,7 @@ class StaffDashboardState extends State<StaffDashboard> {
         schoolPhoto = photo;
       });
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      return;
     }
   }
 
@@ -418,9 +418,8 @@ class StaffDashboardState extends State<StaffDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 500;
-
+    // final screenWidth = MediaQuery.of(context).size.width;
+    // final isMobile = screenWidth < 500;
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Colors.white,
@@ -439,89 +438,76 @@ class StaffDashboardState extends State<StaffDashboard> {
 
     final Uint8List photoBytes = _extractPhotoOrEmpty(staff['photo']);
 
-    return Scaffold(
-      backgroundColor: Colors.blue.shade50,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Staff Dashboard',
-                  enableDrawer: true,
-                  enableBack: false,
-                  onBack: () => exit(0),
-                )
-                : const DesktopAppbar(title: 'Staff Dashboard'),
-      ),
-      drawer:
-          screenWidth > 600
-              ? null
-              : MobileDrawer(
-                submit: _loadStaffData,
-                name: name,
-                email: email,
-                classId: '$classId',
-                schoolId: '$schoolId',
-                photo: photoBytes,
-                username: widget.username,
-                mobile: mobile,
-                schoolName: schoolName,
-              ),
-      body:
-          screenWidth > 600
-              ? StaffDashboardDesktop(
-                submit: _loadStaffData,
-                username: widget.username,
-                name: name,
-                email: email,
-                schoolId: schoolId.toString(),
-                classId: classId,
-                gender: gender,
-                photo: photoBytes,
-                mobile: mobile,
-                schoolName: schoolName,
-                message: message,
-                schoolAddress: schoolAddress,
-                schoolPhoto: schoolPhoto,
-              )
-              : StaffDashboardMobile(
-                schoolPhoto: schoolPhoto,
-                username: widget.username,
-                name: name,
-                email: email,
-                schoolId: '$schoolId',
-                classId: '$classId',
-                gender: gender,
-                schoolName: schoolName,
-                selectedIndex: selectedIndex,
-                schoolAddress: schoolAddress,
-                message: message,
-                totalStudents: '$totalStudents',
-                presentStudentFN: '$presentStudentFN',
-                presentStudentAN: '$presentStudentAN',
-                classIds: classIds,
-                attendanceStatusMapFn: canTakeAttendanceFn,
-                attendanceStatusMapAn: canTakeAttendanceAn,
-              ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: selectedIndex,
-        selectedItemColor: Colors.pink,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group, size: 30),
-            label: 'Attendance',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.blue.shade50,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Staff Dashboard',
+            enableDrawer: true,
+            enableBack: false,
+            onBack: () => exit(0),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 30),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics, size: 30),
-            label: 'Manage',
-          ),
-        ],
+        ),
+        drawer: MobileDrawer(
+          submit: _loadStaffData,
+          name: name,
+          email: email,
+          classId: '$classId',
+          schoolId: '$schoolId',
+          photo: photoBytes,
+          username: widget.username,
+          mobile: mobile,
+          schoolName: schoolName,
+        ),
+        body: StaffDashboardMobile(
+          schoolPhoto: schoolPhoto,
+          username: widget.username,
+          name: name,
+          email: email,
+          schoolId: '$schoolId',
+          classId: '$classId',
+          gender: gender,
+          schoolName: schoolName,
+          selectedIndex: selectedIndex,
+          schoolAddress: schoolAddress,
+          message: message,
+          totalStudents: '$totalStudents',
+          presentStudentFN: '$presentStudentFN',
+          presentStudentAN: '$presentStudentAN',
+          classIds: classIds,
+          attendanceStatusMapFn: canTakeAttendanceFn,
+          attendanceStatusMapAn: canTakeAttendanceAn,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          selectedItemColor: Colors.pink,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) => setState(() => selectedIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.group, size: 30),
+              label: 'Attendance',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home, size: 30),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.analytics, size: 30),
+              label: 'Manage',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -7,7 +7,6 @@ import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../student/services/student_api_services.dart';
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 import '../../services/teacher_api_service.dart';
 
@@ -77,11 +76,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
         if (photoField is Map) {
           photoBytes = Uint8List.fromList(List<int>.from(photoField.values));
         } else if (photoField is String && photoField.isNotEmpty) {
-          try {
-            photoBytes = base64Decode(photoField);
-          } catch (e) {
-            debugPrint("Invalid Base64 photo: $e");
-          }
+          photoBytes = base64Decode(photoField);
         }
       }
 
@@ -102,16 +97,14 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
         profilePhoto = photoBytes;
         _isLoading = false;
       });
-      //print(profilePhoto);
     } catch (e) {
-      debugPrint("Error loading school data: $e");
       setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
 
     if (_isLoading) {
       return const Scaffold(
@@ -123,27 +116,26 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Profile',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StaffDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId.toString(),
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Profile'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Profile',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => StaffDashboard(
+                      username: widget.username,
+                      schoolId: widget.schoolId.toString(),
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body: Center(
         child: ConstrainedBox(

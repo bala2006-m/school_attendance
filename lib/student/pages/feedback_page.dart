@@ -65,21 +65,24 @@ class _FeedbackPageState extends State<FeedbackPage> {
           schoolId: widget.schoolId,
           classId: widget.classId,
         );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("✅ Feedback submitted successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("✅ Feedback submitted successfully!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         messageController.clear();
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("❌ Error: ${e.toString()}"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("❌ Error: ${e.toString()}"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } finally {
         setState(() => isLoading = false);
       }
@@ -103,6 +106,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: int.parse(widget.schoolId),
+                  username: widget.username,
                   title: 'Feedback',
                   enableDrawer: false,
                   enableBack: true,
@@ -120,7 +125,24 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Feedback'),
+                : StudentAppbarDesktop(
+                  title: 'Feedback',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 1;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

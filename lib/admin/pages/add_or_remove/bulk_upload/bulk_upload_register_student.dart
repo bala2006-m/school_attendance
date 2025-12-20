@@ -309,14 +309,52 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
     );
   }
 
+  List<dynamic> sortedGroupedStudents(
+    List<dynamic> admins,
+    Map<String, dynamic> adminData,
+  ) {
+    int usernameComparator(a, b) {
+      // Sort numbers as numbers, strings lexicographically
+      final aStr = a['username'].toString();
+      final bStr = b['username'].toString();
+      final aNum = num.tryParse(aStr);
+      final bNum = num.tryParse(bStr);
+      if (aNum != null && bNum != null) {
+        return aNum.compareTo(bNum);
+      } else {
+        return aStr.compareTo(bStr);
+      }
+    }
+
+    // Group by gender
+    List<dynamic> males =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'M';
+        }).toList();
+
+    List<dynamic> females =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'F';
+        }).toList();
+
+    // Sort each group by username
+    males.sort(usernameComparator);
+    females.sort(usernameComparator);
+
+    // Concatenate, males first
+    return [...males, ...females];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (pop, val) {
-        if (!pop) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
           onWillPop();
         }
       },
@@ -332,17 +370,7 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
-                      AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
+                      onWillPop();
                     },
                   )
                   : AdminAppbarDesktop(
@@ -351,17 +379,7 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
                     title: 'Bulk Upload Student',
 
                     onBack: () {
-                      AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
+                      onWillPop();
                     },
                   ),
         ),
@@ -382,12 +400,14 @@ class _BulkUploadRegisterStudentState extends State<BulkUploadRegisterStudent> {
   }
 
   Widget _getBody() {
+    final adminsToShow = sortedGroupedStudents(student, studentData);
+
     return Uploads.buildStudentUpload(
       context: context,
       downloadTemplateStudent: downloadTemplateStudent,
       pickExcelFileStudent: pickExcelFileStudent,
       uploadFileStudent: uploadFileStudent,
-      student: student,
+      student: adminsToShow,
       studentData: studentData,
       selectedExcelFile: _selectedStudentExcelFile,
     );

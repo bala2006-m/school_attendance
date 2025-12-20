@@ -138,11 +138,13 @@ class AdminMobileDrawer extends StatelessWidget {
                   SharedPreferences prefs =
                       await SharedPreferences.getInstance();
                   await prefs.clear();
-                  Navigator.pop(context); // Close drawer
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                  );
+                  if (context.mounted) {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(8.0),
                 child: Container(

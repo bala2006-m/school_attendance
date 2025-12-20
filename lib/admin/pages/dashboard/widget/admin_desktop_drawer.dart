@@ -100,7 +100,11 @@ class AdminDesktopDrawer extends StatelessWidget {
                 ),
               );
             },
-            child: Text('Profile', style: TextStyle(fontSize: 18)),
+            child: Text(
+              'Profile',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 18),
+            ),
           ),
           SizedBox(height: 20),
           ElevatedButton(
@@ -138,7 +142,11 @@ class AdminDesktopDrawer extends StatelessWidget {
                 ),
               );
             },
-            child: Text('Edit Profile', style: TextStyle(fontSize: 18)),
+            child: Text(
+              'Edit Profile',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 18),
+            ),
           ),
           SizedBox(height: 20),
           ElevatedButton(
@@ -156,14 +164,16 @@ class AdminDesktopDrawer extends StatelessWidget {
               await prefs.remove('username');
 
               await prefs.remove('rememberMe');
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
+              if (context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              }
             },
             child: Text(
               'Logout',
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 20, color: Colors.red),
             ),
           ),

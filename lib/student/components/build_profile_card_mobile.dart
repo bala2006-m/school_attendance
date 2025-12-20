@@ -40,7 +40,6 @@ class _BuildProfileCardState extends State<BuildProfileCard> {
           schoolName = name!;
         });
       } catch (e) {
-        //print('Failed to decode base64 image: $e');
         setState(() {
           schoolPhoto = null;
         });

@@ -73,9 +73,8 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
           'name': data['name'] ?? username,
           'mobile': data['mobile'] ?? '',
           'designation': data['designation'] ?? 'Designation',
+          'gender': data['gender'] ?? 'Gender',
         };
-      } else {
-        debugPrint('Missing data for $username: $data');
       }
     }
 
@@ -201,9 +200,21 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
                   final details = userDetails[entry.key] ?? {};
                   final name = details['name'] ?? entry.key;
                   final designation = details['designation'] ?? '';
+                  final gender = details['gender'] ?? '';
+
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(name),
+                    title: Text(
+                      name,
+                      style: TextStyle(
+                        color:
+                            gender == 'M'
+                                ? Colors.blue
+                                : gender == 'F'
+                                ? Colors.red
+                                : Colors.black,
+                      ),
+                    ),
                     subtitle: Text(designation),
                     leading: const Icon(Icons.person_off, color: Colors.red),
                   );
@@ -219,8 +230,13 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F7F7),
         appBar: PreferredSize(

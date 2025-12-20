@@ -36,7 +36,6 @@ class _ViewFeedbackState extends State<ViewFeedback> {
   Future<void> init() async {
     try {
       feedbacks = await AdminApiService.fetchFeedback(widget.schoolId);
-      //    print('Feedbacks: $feedbacks');
 
       final updatedFeedbacks = await Future.wait(
         feedbacks.map((feedback) async {
@@ -55,11 +54,10 @@ class _ViewFeedbackState extends State<ViewFeedback> {
       );
 
       feedbacks = updatedFeedbacks; // Replace feedbacks with enriched data
-
-      // print('Enriched Feedbacks: $feedbacks');
     } catch (e) {
-      // print('Error during init: $e');
-      // print(stacktrace);
+      setState(() {
+        isLoading = false;
+      });
     } finally {
       setState(() {
         isLoading = false;

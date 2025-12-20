@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
@@ -18,6 +19,7 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> main() async {
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   WidgetsFlutterBinding.ensureInitialized();
+  await Geolocator.isLocationServiceEnabled();
   await Permission.manageExternalStorage.isGranted;
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool isLoggedIn = prefs.getBool('rememberMe') ?? false;

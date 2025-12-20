@@ -3,7 +3,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 
 import '../../../admin/services/admin_api_service.dart';
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 import '../staff_dashboard.dart';
 
@@ -52,7 +51,6 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching leave requests: $e");
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -63,32 +61,31 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Leave Status',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    StaffDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StaffDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Leave Approve Status'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Leave Status',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            StaffDashboardState.selectedIndex = 0;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => StaffDashboard(
+                      username: widget.username,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body:
           isLoading

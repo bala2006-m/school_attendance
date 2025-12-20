@@ -61,8 +61,13 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -127,10 +132,11 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
                                 message.text.trim(),
                                 int.parse(widget.schoolId),
                               );
-
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text(result)));
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(SnackBar(content: Text(result)));
+                              }
                               message.text = '';
                               setState(() {
                                 isMessageNotEmpty = false;

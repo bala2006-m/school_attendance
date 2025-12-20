@@ -76,6 +76,8 @@ class _TimeTablePageState extends State<TimeTablePage> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: int.parse(widget.schoolId),
+                  username: widget.username,
                   title: 'Weekly TimeTable',
                   enableDrawer: false,
                   enableBack: true,
@@ -93,7 +95,24 @@ class _TimeTablePageState extends State<TimeTablePage> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Weekly TimeTable'),
+                : StudentAppbarDesktop(
+                  title: 'Weekly TimeTable',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 1;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           isLoading

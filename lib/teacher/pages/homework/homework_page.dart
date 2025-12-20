@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/services/homework_api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 import 'homework_class_list.dart';
 
@@ -30,20 +33,23 @@ class HomeworkPage extends StatefulWidget {
 class _HomeworkPageState extends State<HomeworkPage> {
   Map<String, dynamic>? staffData = {};
   List<Map<String, dynamic>> homeworkList = [];
+  List<Map<String, dynamic>> filteredHomeworkList = [];
   Map<String, dynamic>? selectedHomework;
 
+  // Controllers
   final _titleController = TextEditingController();
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
-  DateTime? _dueDate;
 
   final _formKey = GlobalKey<FormState>();
 
   bool isLoading = true;
   bool _isFormValid = false;
 
+  DateTime? _dueDate;
+  File? _image;
+
   int _selectedIndex = 0;
-  List<Map<String, dynamic>> filteredHomeworkList = [];
 
   @override
   void initState() {
@@ -73,6 +79,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
     super.dispose();
   }
 
+  // ------------------------ INIT ------------------------
   Future<void> init() async {
     staffData = await TeacherApiServices.fetchStaffDataUsername(
       username: widget.username,
@@ -81,7 +88,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
 
     final staff = staffData!['name'];
 
-    final homeworkData = await TeacherApiServices.fetchHomeworkByStaff(
+    final homeworkData = await HomeworkApiService.fetchByStaff(
       staff: staff,
       schoolId: int.parse(widget.schoolId),
       classId: int.parse(widget.classId),
@@ -94,6 +101,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
     });
   }
 
+  // ------------------------ FILTER ------------------------
   void applyFilter(String filter) {
     if (filter == "Upcoming") {
       filteredHomeworkList =
@@ -113,39 +121,49 @@ class _HomeworkPageState extends State<HomeworkPage> {
     setState(() {});
   }
 
-  // Capitalize first letter helper
+  // ------------------------ PICK IMAGE ------------------------
+  Future<void> _pickImage() async {
+    final XFile? picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
+    if (picked != null) {
+      setState(() => _image = File(picked.path));
+    }
+  }
+
+  // ------------------------ CAPITALIZE ------------------------
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
   }
 
+  // ------------------------ BUILD UI ------------------------
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Homework',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => HomeworkClassList(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Homework'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId,
+          title: 'Homework',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => HomeworkClassList(
+                      username: widget.username,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body:
           isLoading
@@ -168,18 +186,19 @@ class _HomeworkPageState extends State<HomeworkPage> {
                         ? _buildHomeworkDetail()
                         : _buildHomeworkList(),
               ),
+
+      // ------------------------ BOTTOM NAV ------------------------
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.pink,
         currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          _selectedIndex = index;
           if (index == 0) {
             applyFilter("All");
           } else if (index == 1) {
             applyFilter("Upcoming");
           }
+          setState(() {});
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'All'),
@@ -189,36 +208,37 @@ class _HomeworkPageState extends State<HomeworkPage> {
           ),
         ],
       ),
+
+      // ------------------------ FAB ------------------------
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateHomeworkDialog,
         backgroundColor: Colors.blueAccent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
           "New Homework",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white),
         ),
       ),
     );
   }
 
-  // 📋 Homework List
+  // ------------------------ HOMEWORK LIST ------------------------
   Widget _buildHomeworkList() {
     if (filteredHomeworkList.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.assignment_outlined, size: 80, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.assignment_outlined, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
               "No homework yet ✏️",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Text(
               "Tap + to assign new homework",
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -242,136 +262,121 @@ class _HomeworkPageState extends State<HomeworkPage> {
                 ),
               );
 
-              return Opacity(
-                opacity: isExpired ? 0.7 : 1, // faded look for expired
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side:
-                        isExpired
-                            ? const BorderSide(
-                              color: Colors.redAccent,
-                              width: 1.5,
-                            )
-                            : BorderSide.none,
-                  ),
-                  color: isExpired ? Colors.grey.shade100 : Colors.white,
-                  elevation: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () => setState(() => selectedHomework = hw),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title + Delete + Expired Badge
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        hw["title"],
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    if (isExpired) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.redAccent,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          "Expired",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => _confirmDelete(hw),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Chip(
-                                label: Text(hw["subject"]),
-                                backgroundColor:
-                                    isExpired
-                                        ? Colors.grey.shade300
-                                        : Colors.blue.shade50,
-                                labelStyle: TextStyle(
-                                  color:
-                                      isExpired
-                                          ? Colors.grey.shade700
-                                          : Colors.blue,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "📄 ${DateFormat('dd/MM/yyyy').format(DateTime.parse(hw["assigned_date"]))}",
-                                style: const TextStyle(color: Colors.green),
-                              ),
-                              Text(
-                                "📅 ${DateFormat('dd/MM/yyyy').format(dueDate)}",
-                                style: TextStyle(
-                                  color:
-                                      isExpired ? Colors.redAccent : Colors.red,
-                                  fontWeight:
-                                      isExpired
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
+              return _homeworkCard(hw, isExpired);
             },
           ),
         ),
-        SizedBox(height: 50),
+        const SizedBox(height: 50),
       ],
     );
   }
 
-  // 📄 Homework Detail
+  // ------------------------ HOMEWORK CARD ------------------------
+  Widget _homeworkCard(Map<String, dynamic> hw, bool isExpired) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: isExpired ? 0.6 : 1,
+      child: Card(
+        elevation: 6,
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => setState(() => selectedHomework = hw),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ------------------------ Title Row ------------------------
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.book_outlined,
+                            color: Colors.blueAccent,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              hw["title"],
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _confirmDelete(hw),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                // ------------------------ Subject Tag ------------------------
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade400,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    hw["subject"],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ------------------------ Date Section ------------------------
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 18,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "Due: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(hw["due_date"]))}",
+                    ),
+                  ],
+                ),
+
+                if (hw.containsKey('attachments') && hw['attachments'] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Image.network(
+                      hw['attachments'][0],
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ------------------------ DETAILS PAGE ------------------------
   Widget _buildHomeworkDetail() {
     final hw = selectedHomework!;
     return SingleChildScrollView(
@@ -384,41 +389,33 @@ class _HomeworkPageState extends State<HomeworkPage> {
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
+
           Row(
             children: [
               const Icon(Icons.assignment, color: Colors.green),
               const SizedBox(width: 6),
               Text(
-                "Assigned : ${DateFormat('dd/MM/yyyy').format(DateTime.parse(hw["assigned_date"]))}",
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                "Assigned: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(hw["assigned_date"]))}",
               ),
             ],
           ),
           const SizedBox(height: 8),
+
           Row(
             children: [
               const Icon(Icons.calendar_today, color: Colors.red),
               const SizedBox(width: 6),
               Text(
-                "Due : ${DateFormat('dd/MM/yyyy').format(DateTime.parse(hw["due_date"]))}",
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                "Due: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(hw["due_date"]))}",
               ),
             ],
           ),
           const SizedBox(height: 20),
+
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            elevation: 2,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -426,7 +423,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.book, color: Colors.blueAccent),
+                      const Icon(Icons.book, color: Colors.blue),
                       const SizedBox(width: 8),
                       Text(
                         hw["subject"],
@@ -438,50 +435,47 @@ class _HomeworkPageState extends State<HomeworkPage> {
                     ],
                   ),
                   const Divider(),
+
                   const Text(
                     "📖 Description",
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    hw["description"],
-                    style: const TextStyle(fontSize: 14, height: 1.4),
-                  ),
+                  Text(hw["description"]),
+
+                  if (hw['attachments'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Image.network(
+                        hw['attachments'][0],
+                        height: 150,
+                        width: 150,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
+
           const SizedBox(height: 30),
+
           Row(
             children: [
               ElevatedButton.icon(
                 onPressed: () => setState(() => selectedHomework = null),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                label: const Text(
-                  "Back",
-                  style: TextStyle(color: Colors.white),
-                ),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text("Back"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                 ),
               ),
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () => _confirmDelete(hw),
-                icon: const Icon(Icons.delete, color: Colors.white),
-                label: const Text(
-                  "Delete",
-                  style: TextStyle(color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                icon: const Icon(Icons.delete),
+                label: const Text("Delete"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               ),
             ],
           ),
@@ -490,37 +484,31 @@ class _HomeworkPageState extends State<HomeworkPage> {
     );
   }
 
-  // Confirm Delete
+  // ------------------------ DELETE CONFIRMATION ------------------------
   void _confirmDelete(Map<String, dynamic> hw) {
     showDialog(
       context: context,
       builder:
           (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
             title: const Text("Delete Homework ❌"),
-            content: Text("Are you sure you want to delete '${hw["title"]}'?"),
+            content: Text("Delete '${hw["title"]}'?"),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text("Cancel"),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 onPressed: () async {
-                  await TeacherApiServices.deleteHomeworkById(hw["id"]);
+                  await HomeworkApiService.deleteHomework(hw["id"]);
                   setState(() {
                     homeworkList.remove(hw);
                     selectedHomework = null;
                   });
-                  Navigator.pop(context);
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
                 },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 child: const Text("Delete"),
               ),
             ],
@@ -528,7 +516,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
     );
   }
 
-  // ➕ Create Homework
+  // ------------------------ CREATE HOMEWORK DIALOG ------------------------
   void _showCreateHomeworkDialog() {
     _clearForm();
 
@@ -537,7 +525,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            void validateFormDialog() {
+            void validate() {
               setStateDialog(() {
                 _isFormValid =
                     _titleController.text.isNotEmpty &&
@@ -548,109 +536,73 @@ class _HomeworkPageState extends State<HomeworkPage> {
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               title: const Text("✏️ Assign Homework"),
               content: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      TextFormField(
-                        controller: _titleController,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          hintText: "Enter homework title",
-                          labelText: "Title",
-                          prefixIcon: Icon(Icons.title),
-                          border: OutlineInputBorder(),
-                        ),
-                        validator:
-                            (value) =>
-                                value == null || value.isEmpty
-                                    ? "Title required"
-                                    : null,
-                      ),
+                      _inputField(_titleController, "Title", Icons.title),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _subjectController,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          hintText: "Enter subject name",
-                          labelText: "Subject",
-                          prefixIcon: Icon(Icons.book),
-                          border: OutlineInputBorder(),
-                        ),
-                        validator:
-                            (value) =>
-                                value == null || value.isEmpty
-                                    ? "Subject required"
-                                    : null,
-                      ),
+                      _inputField(_subjectController, "Subject", Icons.book),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _descriptionController,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          hintText: "Enter homework description",
-                          labelText: "Description below 500 words",
-                          prefixIcon: Icon(Icons.description),
-                          border: OutlineInputBorder(),
-                        ),
+                      _inputField(
+                        _descriptionController,
+                        "Description",
+                        Icons.description,
                         maxLines: 3,
-                        validator:
-                            (value) =>
-                                value == null || value.isEmpty
-                                    ? "Description required"
-                                    : null,
                       ),
+
                       const SizedBox(height: 12),
+
                       ElevatedButton.icon(
-                        icon: const Icon(Icons.date_range),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
                         onPressed: () async {
                           final picked = await showDatePicker(
                             context: context,
+                            initialDate: DateTime.now(),
                             firstDate: DateTime.now(),
                             lastDate: DateTime(2100),
-                            initialDate: DateTime.now(),
                           );
                           if (picked != null) {
-                            setStateDialog(() {
-                              _dueDate = picked;
-                            });
-                            validateFormDialog();
+                            setStateDialog(() => _dueDate = picked);
+                            validate();
                           }
                         },
+                        icon: const Icon(Icons.date_range),
                         label: Text(
                           _dueDate == null
                               ? "Pick Due Date"
                               : "Due: ${DateFormat('dd/MM/yyyy').format(_dueDate!)}",
                         ),
                       ),
+
+                      const SizedBox(height: 12),
+
+                      ElevatedButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.image),
+                        label: Text(
+                          _image == null ? "Pick Image" : "Change Image",
+                        ),
+                      ),
+
+                      if (_image != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Image.file(_image!, height: 100, width: 100),
+                        ),
                     ],
                   ),
                 ),
               ),
+
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text("Cancel"),
                 ),
+
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   onPressed:
                       _isFormValid
                           ? () async {
@@ -669,38 +621,43 @@ class _HomeworkPageState extends State<HomeworkPage> {
                               "assigned_date": DateTime.now().toIso8601String(),
                               "due_date": _dueDate!.toIso8601String(),
                               "assigned_by":
-                                  staffData?['name'].toString().toLowerCase() ??
+                                  staffData?['name']
+                                      ?.toString()
+                                      .toLowerCase() ??
                                   widget.username,
-                              "attachments": null,
                             };
 
-                            final success =
-                                await TeacherApiServices.createHomework(
-                                  newHomework,
-                                );
+                            await HomeworkApiService.createHomeworkWithFile(
+                              newHomework,
+                              _image!,
+                              widget.schoolId,
+                              widget.classId,
+                            );
 
-                            if (success) {
-                              Navigator.pop(context);
-                              _clearForm();
+                            if (mounted) {
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                              }
                               init();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("✅ Homework created"),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("✅ Homework created"),
+                                  ),
+                                );
+                              }
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("❌ Failed to create homework"),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("❌ Failed to create"),
+                                  ),
+                                );
+                              }
                             }
                           }
                           : null,
-                  child: const Text(
-                    "Save",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: const Text("Save"),
                 ),
               ],
             );
@@ -710,10 +667,31 @@ class _HomeworkPageState extends State<HomeworkPage> {
     );
   }
 
+  // ------------------------ FORM INPUT FIELD ------------------------
+  Widget _inputField(
+    TextEditingController c,
+    String label,
+    IconData icon, {
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: c,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) => value!.isEmpty ? "$label required" : null,
+    );
+  }
+
+  // ------------------------ CLEAR FORM ------------------------
   void _clearForm() {
     _titleController.clear();
     _subjectController.clear();
     _descriptionController.clear();
     _dueDate = null;
+    _image = null;
   }
 }

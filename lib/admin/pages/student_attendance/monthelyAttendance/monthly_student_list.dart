@@ -48,6 +48,29 @@ class _StudentListState extends State<StudentList> {
         schoolId: widget.schoolId,
         classId: widget.classId,
       );
+      students.sort((a, b) {
+        // Gender: Males ('M') first, then Females
+        if (a['gender'] == b['gender']) {
+          var aUsername = a['username'].toString();
+          var bUsername = b['username'].toString();
+
+          // Check if both usernames are numeric
+          final numA = int.tryParse(aUsername);
+          final numB = int.tryParse(bUsername);
+
+          if (numA != null && numB != null) {
+            // Both numeric: compare numerically
+            return numA.compareTo(numB);
+          } else {
+            // Otherwise: compare as strings
+            return aUsername.compareTo(bUsername);
+          }
+        } else if (a['gender'] == 'M') {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
 
       for (final student in students) {
         final uname = student['username'];
@@ -60,7 +83,7 @@ class _StudentListState extends State<StudentList> {
         attendanceData[uname] = data;
       }
     } catch (e) {
-      debugPrint('Error fetching student list or attendance: $e');
+      setState(() => isLoading = false);
     }
 
     if (mounted) {
@@ -135,8 +158,13 @@ class _StudentListState extends State<StudentList> {
       'November',
       'December',
     ];
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -284,7 +312,7 @@ class _StudentListState extends State<StudentList> {
                                         : Icons.male,
                                     color:
                                         student['gender'] == 'F'
-                                            ? Colors.pink
+                                            ? Colors.red
                                             : Colors.blue,
                                     size: 30,
                                   ),
@@ -296,9 +324,15 @@ class _StudentListState extends State<StudentList> {
                                       children: [
                                         Text(
                                           name,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w600,
+                                            color:
+                                                student['gender'] == 'M'
+                                                    ? Colors.blue
+                                                    : student['gender'] == 'F'
+                                                    ? Colors.red
+                                                    : Colors.blue,
                                           ),
                                         ),
                                         const SizedBox(height: 4),

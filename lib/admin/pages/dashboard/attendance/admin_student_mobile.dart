@@ -8,6 +8,7 @@ import 'package:school_attendance/admin/pages/student_attendance/viewAttendance/
 
 import '../../../components/build_profile_card_desktop.dart';
 import '../../../components/build_profile_card_mobile.dart';
+import '../../student_attendance/mark_old_attendance/mark_old_attendance.dart';
 import '../../student_attendance/monthelyAttendance/monthly_attendance.dart';
 import '../../student_attendance/update_attendance/modify_student_attendance.dart';
 
@@ -113,41 +114,44 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
     return buildSectionContainer(
       title: 'Staff',
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            buildElevatedButton(
-              buttonIndex: 0,
-              context,
-              'Mark Attendance',
-              StaffAttendance(
-                schoolId: widget.schoolId,
-                username: widget.adminUsername,
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              buildElevatedButton(
+                buttonIndex: 0,
+                context,
+                'Mark Attendance',
+                StaffAttendance(
+                  schoolId: widget.schoolId,
+                  username: widget.adminUsername,
+                ),
+                Icons.people,
               ),
-              Icons.people,
-            ),
-            buildElevatedButton(
-              buttonIndex: 1,
-              context,
-              'View Absentees',
-              StaffAbsentees(
-                schoolId: widget.schoolId,
-                username: widget.adminUsername,
+              buildElevatedButton(
+                buttonIndex: 1,
+                context,
+                'View Absentees',
+                StaffAbsentees(
+                  schoolId: widget.schoolId,
+                  username: widget.adminUsername,
+                ),
+                Icons.people_outline,
               ),
-              Icons.people_outline,
-            ),
-            buildElevatedButton(
-              buttonIndex: 2,
-              context,
-              'View Attendance',
-              ViewStaffAttendance(
-                schoolId: widget.schoolId,
-                username: widget.adminUsername,
+              buildElevatedButton(
+                buttonIndex: 2,
+                context,
+                'View Attendance',
+                ViewStaffAttendance(
+                  schoolId: widget.schoolId,
+                  username: widget.adminUsername,
+                ),
+                Icons.people_outline_outlined,
               ),
-              Icons.people_outline_outlined,
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -158,7 +162,7 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       title: 'Student',
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             buildElevatedButton(
@@ -194,7 +198,7 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
           ],
         ),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             buildElevatedButton(
@@ -216,6 +220,16 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
                 username: widget.adminUsername,
               ),
               Icons.report,
+            ),
+            buildElevatedButton(
+              buttonIndex: 8,
+              context,
+              'Mark Old Attendance',
+              MarkOldAttendance(
+                schoolId: widget.schoolId,
+                username: widget.adminUsername,
+              ),
+              Icons.mode_edit_outlined,
             ),
           ],
         ),

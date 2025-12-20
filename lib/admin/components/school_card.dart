@@ -43,7 +43,7 @@ class _SchoolCardState extends State<SchoolCard> {
         );
       }
     } catch (e) {
-      //print('Image decode error: $e');
+      return;
     }
   }
 

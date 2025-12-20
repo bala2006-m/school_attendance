@@ -55,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
         reason = result['reason'];
       });
 
-      if (isBlocked) {
+      if (isBlocked && mounted) {
         showDialog(
           context: context,
           builder:
@@ -72,7 +72,6 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      debugPrint("Error: $e");
       setState(() {
         isBlocked = false;
       });
@@ -147,49 +146,57 @@ class _LoginPageState extends State<LoginPage> {
       // Navigate by role
       switch (foundRole) {
         case 'student':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => StudentDashboard(
-                    username: user?['username'],
-                    schoolId: schoolId,
-                  ),
-            ),
-          );
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => StudentDashboard(
+                      username: user?['username'],
+                      schoolId: schoolId,
+                    ),
+              ),
+            );
+          }
           break;
         case 'staff':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => StaffDashboard(
-                    username: user!['username'].toString(),
-                    schoolId: '$schoolId',
-                  ),
-            ),
-          );
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => StaffDashboard(
+                      username: user!['username'].toString(),
+                      schoolId: '$schoolId',
+                    ),
+              ),
+            );
+          }
           break;
         case 'admin':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => AdminDashboard(
-                    username: user?['username'],
-                    schoolId: '${user?['school_id']}',
-                  ),
-            ),
-          );
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => AdminDashboard(
+                      username: user?['username'],
+                      schoolId: '${user?['school_id']}',
+                    ),
+              ),
+            );
+          }
           break;
         case 'administrator':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => AdministratorDashboard(userName: user?['username']),
-            ),
-          );
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => AdministratorDashboard(userName: user?['username']),
+              ),
+            );
+          }
           break;
       }
     } catch (e) {
@@ -208,134 +215,195 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2B7CA8),
-      body: SafeArea(
-        child: Center(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF2B7CA8), Color(0xFF4FAFD6)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/logo.png', height: 120, width: 120),
-                const SizedBox(height: 50),
-
-                // School ID
-                _buildInputField(
-                  controller: _schoolIdController,
-                  hint: "School ID",
-                  icon: Icons.school,
-                  inputType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-
-                // Username
-                _buildInputField(
-                  controller: _usernameController,
-                  hint: "User Id",
-                  icon: Icons.person,
-                ),
-                const SizedBox(height: 16),
-
-                // Password
-                _buildInputField(
-                  controller: _passwordController,
-                  hint: "Password",
-                  icon: Icons.lock,
-                  obscure: _obscurePassword,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Remember Me
-                Row(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top -
+                    MediaQuery.of(context).padding.bottom,
+              ),
+              child: IntrinsicHeight(
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center, // 👈 Centers vertically
                   children: [
-                    Checkbox(
-                      value: rememberMe,
-                      activeColor: Colors.white,
-                      checkColor: const Color(0xFF2B7CA8),
-                      onChanged: (value) {
-                        setState(() {
-                          rememberMe = value ?? true;
-                        });
-                      },
+                    // 🏫 Logo
+                    AnimatedOpacity(
+                      duration: const Duration(seconds: 1),
+                      opacity: 1.0,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                textAlign: TextAlign.center,
+                                softWrap: true,
+                                'Smart School App',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Good Times',
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
-                    const Text(
-                      "Remember Me",
-                      style: TextStyle(color: Colors.white),
+                    const SizedBox(height: 20),
+
+                    // 👇 Centered Login Box
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.lock_outline,
+                            size: 80,
+                            color: Color(0xFF2B7CA8),
+                          ),
+                          SizedBox(height: 10),
+                          const Text(
+                            "Welcome",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          _buildInputField(
+                            controller: _schoolIdController,
+                            hint: "School ID",
+                            icon: Icons.school,
+                            inputType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _usernameController,
+                            hint: "User ID",
+                            icon: Icons.person,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInputField(
+                            controller: _passwordController,
+                            hint: "Password",
+                            icon: Icons.lock,
+                            obscure: _obscurePassword,
+                            suffix: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: const Color(0xFF2B7CA8),
+                              ),
+                              onPressed:
+                                  () => setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  }),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          Row(
+                            children: [
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => const ForgotPasswordPage(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Forgot Password?",
+                                  style: TextStyle(color: Color(0xFF2B7CA8)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    _isFormValid
+                                        ? const Color(0xFF2B7CA8)
+                                        : Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed:
+                                  (_isFormValid && !isLoading) ? login : null,
+                              child:
+                                  isLoading
+                                      ? const SpinKitThreeBounce(
+                                        color: Colors.white,
+                                        size: 20,
+                                      )
+                                      : Text(
+                                        'Login',
+                                        style: TextStyle(
+                                          color:
+                                              _isFormValid
+                                                  ? Colors.white
+                                                  : Colors.grey,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    Text(
+                      '© ${DateTime.now().year.toString()} Ramchin Technologies Pvt. Ltd.',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-
-                // Login Button
-                Container(
-                  width: double.infinity,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    color:
-                        _isFormValid
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                  ),
-                  child: TextButton(
-                    onPressed: (_isFormValid && !isLoading) ? login : null,
-                    child:
-                        isLoading
-                            ? const SpinKitFadingCircle(
-                              color: Colors.blueAccent,
-                              size: 40.0,
-                            )
-                            : Text(
-                              'Login',
-                              style: TextStyle(
-                                color:
-                                    _isFormValid
-                                        ? const Color(0xFF2B7CA8)
-                                        : Colors.grey.shade600,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                const Text("Or", style: TextStyle(color: Colors.white70)),
-                const SizedBox(height: 8),
-
-                // Forgot Password
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ForgotPasswordPage(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                const Text(
-                  'Copyright © 2025 Ramchin Technologies Private Limited',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -353,8 +421,8 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white),
-        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.black),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: TextField(
         onChanged: (val) async {
@@ -369,11 +437,11 @@ class _LoginPageState extends State<LoginPage> {
         controller: controller,
         obscureText: obscure,
         keyboardType: inputType,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.black),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.white),
+          prefixIcon: Icon(icon, color: const Color(0xFF2B7CA8)),
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white70),
+          hintStyle: const TextStyle(color: Colors.black),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,

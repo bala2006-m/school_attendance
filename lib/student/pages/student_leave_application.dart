@@ -52,7 +52,6 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching leave requests: $e");
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -71,6 +70,8 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: int.parse(widget.schoolId),
+                  username: widget.username,
                   title: 'Leave Status',
                   enableDrawer: false,
                   enableBack: true,
@@ -88,7 +89,24 @@ class _LeaveApplicationsState extends State<LeaveApplications> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Leave Approve Status'),
+                : StudentAppbarDesktop(
+                  title: 'Leave Status',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 0;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: id,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           isLoading

@@ -3,16 +3,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:school_attendance/admin/components/build_profile_card_mobile.dart';
 
 import '../../../../../services/api_service.dart';
 import '../../../../../teacher/services/teacher_api_service.dart';
 import '../../../../appbar/admin_appbar_desktop.dart';
 import '../../../../appbar/admin_appbar_mobile.dart';
+import '../../../../widget/pdf_preview_custom_page.dart';
 import '../download_student_nomial_role.dart';
+import 'build_student_list_class.dart';
 
 class DownloadStudentNomialRoleClasses extends StatefulWidget {
   const DownloadStudentNomialRoleClasses({
@@ -57,78 +56,37 @@ class _DownloadStudentNomialRoleClassesState
         schoolAddress = schoolData[0]['address'];
 
         if (schoolData[0]['photo'] != null) {
-          try {
-            Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-            schoolPhotoBytes = imageBytes;
-          } catch (e) {
-            debugPrint('Image decode error: $e');
-          }
+          Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
+          schoolPhotoBytes = imageBytes;
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      return;
     }
   }
 
   Future<void> fetchClasses() async {
-    try {
-      final cls = await TeacherApiServices.fetchClassData(widget.schoolId);
-      classes = List<Map<String, dynamic>>.from(cls);
-
-      classes.sort((a, b) {
-        int getClassValue(dynamic val) {
-          const romanMap = {
-            'I': 1,
-            'II': 2,
-            'III': 3,
-            'IV': 4,
-            'V': 5,
-            'VI': 6,
-            'VII': 7,
-            'VIII': 8,
-            'IX': 9,
-            'X': 10,
-            'XI': 11,
-            'XII': 12,
-            'XIII': 13,
-          };
-
-          if (val is int) return val;
-          if (val is String) {
-            final parsed = int.tryParse(val);
-            if (parsed != null) return parsed;
-            return romanMap[val] ?? 999;
-          }
-          return 999;
-        }
-
-        int classCompare = getClassValue(
-          a['class'],
-        ).compareTo(getClassValue(b['class']));
-        if (classCompare != 0) return classCompare;
-        return a['section'].toString().compareTo(b['section'].toString());
-      });
-    } catch (e) {
-      debugPrint('Error fetching classes: $e');
-    }
+    final cls = await TeacherApiServices.fetchClassData(widget.schoolId);
+    classes = List<Map<String, dynamic>>.from(cls);
   }
 
-  int? parseClassValue(dynamic val) {
-    const romanMap = {
-      'I': 1,
-      'II': 2,
-      'III': 3,
-      'IV': 4,
-      'V': 5,
-      'VI': 6,
-      'VII': 7,
-      'VIII': 8,
-      'IX': 9,
-      'X': 10,
-      'XI': 11,
-      'XII': 12,
-    };
+  final List<String> kinderGrades = ['PRE-KG', 'LKG', 'UKG', 'KG', 'NURSERY'];
+  final Map<String, int> romanMap = {
+    'I': 1,
+    'II': 2,
+    'III': 3,
+    'IV': 4,
+    'V': 5,
+    'VI': 6,
+    'VII': 7,
+    'VIII': 8,
+    'IX': 9,
+    'X': 10,
+    'XI': 11,
+    'XII': 12,
+  };
 
+  int? parseClassValue(dynamic val) {
     if (val is int) return val;
     if (val is String) {
       final parsed = int.tryParse(val);
@@ -136,40 +94,65 @@ class _DownloadStudentNomialRoleClassesState
 
       final upper = val.toUpperCase().trim();
       if (romanMap.containsKey(upper)) return romanMap[upper];
-
-      return null; // KG, PRE-KG, etc.
+      return null; // PRE-KG, LKG, UKG, etc.
     }
     return null;
   }
 
+  int getSortOrder(String className) {
+    final upper = className.toUpperCase().trim();
+    if (kinderGrades.contains(upper)) return kinderGrades.indexOf(upper);
+    final value = parseClassValue(className);
+    if (value != null) return value + kinderGrades.length; // After KG classes
+    return 999; // Unknown class
+  }
+
+  List<Map<String, dynamic>> getSortedClasses() {
+    List<Map<String, dynamic>> sortedList = List<Map<String, dynamic>>.from(
+      classes,
+    );
+
+    // Sort by class first (PRE-KG, LKG, 1-12, I-XII)
+    sortedList.sort(
+      (a, b) => getSortOrder(a['class']).compareTo(getSortOrder(b['class'])),
+    );
+
+    // Then sort by section if present
+    sortedList.sort((a, b) {
+      int classOrderA = getSortOrder(a['class']);
+      int classOrderB = getSortOrder(b['class']);
+      int classComparison = classOrderA.compareTo(classOrderB);
+
+      if (classComparison != 0) return classComparison;
+
+      String sectionA = (a['section'] ?? '').toString();
+      String sectionB = (b['section'] ?? '').toString();
+      if (sectionA.isEmpty && sectionB.isNotEmpty) return 1;
+      if (sectionB.isEmpty && sectionA.isNotEmpty) return -1;
+      return sectionA.compareTo(sectionB);
+    });
+
+    return sortedList;
+  }
+
   List<Map<String, dynamic>> filterKinderGarden() {
-    return classes
-        .where((item) {
-          final value = parseClassValue(item['class']);
-          return value == null;
-        })
-        .map((e) => Map<String, dynamic>.from(e))
+    return getSortedClasses()
+        .where((item) => parseClassValue(item['class']) == null)
         .toList();
   }
 
   List<Map<String, dynamic>> filterClasses(int min, int max) {
-    return classes
-        .where((item) {
-          final value = parseClassValue(item['class']);
-          return value != null && value >= min && value <= max;
-        })
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return getSortedClasses().where((item) {
+      final value = parseClassValue(item['class']);
+      return value != null && value >= min && value <= max;
+    }).toList();
   }
 
   List<Map<String, dynamic>> filterClassesFrom(int min) {
-    return classes
-        .where((item) {
-          final value = parseClassValue(item['class']);
-          return value != null && value >= min;
-        })
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return getSortedClasses().where((item) {
+      final value = parseClassValue(item['class']);
+      return value != null && value >= min;
+    }).toList();
   }
 
   Future<bool> onWillPop() async {
@@ -186,250 +169,30 @@ class _DownloadStudentNomialRoleClassesState
     return false;
   }
 
-  /// 📄 Build PDF content
-  Future<void> buildPdf({
-    required List<Map<String, dynamic>> students,
-    required String cls,
-    required String section,
-  }) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          // Header Section
-          final header = pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            mainAxisAlignment: pw.MainAxisAlignment.center,
-            children: [
-              if (schoolPhotoBytes != null)
-                pw.Image(
-                  pw.MemoryImage(schoolPhotoBytes!),
-                  width: 80,
-                  height: 80,
-                ),
-              if (schoolName != null)
-                pw.Text(
-                  schoolName!,
-                  style: pw.TextStyle(
-                    fontSize: 18,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              if (schoolAddress != null)
-                pw.Text(
-                  schoolAddress!,
-                  style: const pw.TextStyle(fontSize: 12),
-                ),
-              pw.SizedBox(height: 10),
-              pw.Center(
-                child: pw.Text(
-                  "Student List",
-                  style: pw.TextStyle(
-                    fontSize: 22,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Center(
-                child: pw.Text(
-                  "Class: $cls   Section: $section",
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 20),
-            ],
-          );
-
-          if (students.isEmpty) {
-            return [
-              header,
-              pw.Center(
-                child: pw.Text(
-                  "No Students Found",
-                  style: pw.TextStyle(fontSize: 18),
-                ),
-              ),
-            ];
-          }
-
-          // Separate by gender and sort
-          final maleStudents =
-              students.where((s) => s['gender'] == 'M').toList()..sort(
-                (a, b) => (a['username'] ?? '').compareTo(b['username'] ?? ''),
-              );
-
-          final femaleStudents =
-              students.where((s) => s['gender'] == 'F').toList()..sort(
-                (a, b) => (a['username'] ?? '').compareTo(b['username'] ?? ''),
-              );
-
-          final otherStudents =
-              students
-                  .where((s) => s['gender'] != 'M' && s['gender'] != 'F')
-                  .toList();
-
-          // Combine all students with blank row between male & female
-          final combinedList = [
-            ...maleStudents,
-            if (maleStudents.isNotEmpty && femaleStudents.isNotEmpty)
-              {}, // blank row
-            ...femaleStudents,
-            ...otherStudents,
-          ];
-
-          int serialNo = 1;
-
-          final data =
-              combinedList.map((s) {
-                if (s.isEmpty) {
-                  return ["", "", "", "", "", "", ""]; // blank row
-                }
-                return [
-                  (serialNo++).toString(),
-                  s['username'] ?? '',
-                  s['name'] ?? '',
-                  s['gender'] == 'M'
-                      ? 'Male'
-                      : s['gender'] == 'F'
-                      ? 'Female'
-                      : 'Others',
-                  s['mobile'] ?? '',
-                  s['email'] ?? '',
-                  "",
-                ];
-              }).toList();
-
-          // Table with proportional column widths
-          return [
-            header,
-            pw.Table.fromTextArray(
-              headers: [
-                "S.No",
-                "Admn.No",
-                "Name",
-                "Gender",
-                "Mobile",
-                "Email",
-                "Remark",
-              ],
-              data: data,
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.black,
-              ),
-              cellStyle: const pw.TextStyle(fontSize: 10),
-              cellAlignment: pw.Alignment.centerLeft,
-              columnWidths: {
-                0: pw.FlexColumnWidth(1), // S.No
-                1: pw.FlexColumnWidth(3), // Admn.No
-                2: pw.FlexColumnWidth(3), // Name
-                3: pw.FlexColumnWidth(2), // Gender
-                4: pw.FlexColumnWidth(3), // Mobile
-                5: pw.FlexColumnWidth(3), // Email
-                6: pw.FlexColumnWidth(2), // Remark
-              },
-              border: pw.TableBorder.all(width: 0.5, color: PdfColors.black),
-            ),
-          ];
-        },
-      ),
-    );
-
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
-  }
-
-  /// 📥 Handle download & print logic
   Future<void> handleDownload({
     required List<Map<String, dynamic>> students,
     required String cls,
     required String section,
   }) async {
-    await buildPdf(students: students, cls: cls, section: section);
-    // final pdfBytes = await buildPdf(
-    //   students: students,
-    //   cls: cls,
-    //   section: section,
-    // );
-    //
-    // final fileName = "student_nominal_role_${cls}_$section.pdf";
-    //
-    // if (Platform.isAndroid || Platform.isIOS) {
-    //   var status = await Permission.storage.status;
-    //   if (!status.isGranted) {
-    //     status = await Permission.storage.request();
-    //   }
-    //   if (!status.isGranted) {
-    //     var manageStatus = await Permission.manageExternalStorage.request();
-    //     if (!manageStatus.isGranted) {
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         const SnackBar(content: Text('Storage permission denied')),
-    //       );
-    //       return;
-    //     }
-    //   }
-    //
-    //   final downloadsDir = Directory("/storage/emulated/0/Download");
-    //   if (!downloadsDir.existsSync()) {
-    //     downloadsDir.createSync(recursive: true);
-    //   }
-    //
-    //   final file = File("${downloadsDir.path}/$fileName");
-    //   await file.writeAsBytes(pdfBytes);
-    //
-    //   ScaffoldMessenger.of(
-    //     context,
-    //   ).showSnackBar(SnackBar(content: Text("✅ PDF saved to: ${file.path}")));
-    // } else {
-    //   final path = await FilePicker.platform.saveFile(
-    //     dialogTitle: 'Save Student Nominal Role PDF',
-    //     fileName: fileName,
-    //   );
-    //
-    //   if (path != null) {
-    //     final file = File(path);
-    //     await file.writeAsBytes(pdfBytes);
-    //     ScaffoldMessenger.of(
-    //       context,
-    //     ).showSnackBar(SnackBar(content: Text("PDF saved to: $path")));
-    //   }
-    // }
-    //
-    // // 🖨️ Optional Printing
-    // final printers = await Printing.listPrinters();
-    // if (printers.isNotEmpty) {
-    //   final shouldPrint = await showDialog<bool>(
-    //     context: context,
-    //     builder:
-    //         (context) => AlertDialog(
-    //           title: const Text("Print PDF"),
-    //           content: const Text(
-    //             "Printer detected. Do you want to print now?",
-    //           ),
-    //           actions: [
-    //             TextButton(
-    //               onPressed: () => Navigator.pop(context, false),
-    //               child: const Text("No"),
-    //             ),
-    //             TextButton(
-    //               onPressed: () => Navigator.pop(context, true),
-    //               child: const Text("Yes"),
-    //             ),
-    //           ],
-    //         ),
-    //   );
-    //
-    //   if (shouldPrint == true) {
-    //     await Printing.layoutPdf(
-    //       onLayout: (PdfPageFormat format) async => pdfBytes,
-    //     );
-    //   }
-    // }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => PdfPreviewCustomPage(
+              buildPdf:
+                  () => buildPdf(
+                    students: students,
+                    cls: cls,
+                    section: section,
+                    schoolName: '$schoolName',
+                    schoolAddress: '$schoolAddress',
+                    schoolPhotoBytes: schoolPhotoBytes,
+                  ),
+              title: 'Student List',
+              fileName: 'student_list_${cls}_$section',
+            ),
+      ),
+    );
   }
 
   Future<void> downloadPdf({
@@ -441,6 +204,29 @@ class _DownloadStudentNomialRoleClassesState
       schoolId: widget.schoolId,
       classId: classId,
     );
+    students.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
     handleDownload(students: students, cls: cls, section: section);
   }
 
@@ -448,8 +234,13 @@ class _DownloadStudentNomialRoleClassesState
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),

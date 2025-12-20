@@ -67,7 +67,7 @@ class _StudentState extends State<Student> {
         );
       }
     } catch (e) {
-      //print('Image decode error: $e');
+      return;
     }
   }
 
@@ -379,7 +379,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
             return {...student, sessionKey: status};
           }).toList();
     } catch (e) {
-      debugPrint("Data loading error: $e");
+      setState(() => isLoading = false);
     }
 
     if (mounted) setState(() => isLoading = false);
@@ -570,19 +570,20 @@ class _StudentAttendanceState extends State<StudentAttendance> {
           }
 
           if (!mounted) return;
-
-          showDialog(
-            context: context,
-            builder:
-                (_) => StatusDialog(
-                  message1:
-                      success
-                          ? 'Attendance submitted successfully'
-                          : 'Failed to submit attendance',
-                  isSuccess: success,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-          );
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder:
+                  (_) => StatusDialog(
+                    message1:
+                        success
+                            ? 'Attendance submitted successfully'
+                            : 'Failed to submit attendance',
+                    isSuccess: success,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+            );
+          }
         },
         label: const Text(
           "Attendance Submited",
@@ -776,18 +777,23 @@ class StudentCard extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not launch WhatsApp')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not launch WhatsApp'),
+                      ),
+                    );
+                  }
                 }
               } else {
                 final telUrl = Uri.parse("tel:$phone");
                 if (await canLaunchUrl(telUrl)) {
                   await launchUrl(telUrl);
-                } else {
+                } else {if(context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Could not make a call')),
                   );
+                }
                 }
               }
             },

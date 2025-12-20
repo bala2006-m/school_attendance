@@ -34,7 +34,6 @@ class _ViewFeedbackState extends State<ViewFeedback> {
   Future<void> init() async {
     try {
       feedbacks = await AdminApiService.fetchFeedback(widget.schoolId);
-      //    print('Feedbacks: $feedbacks');
 
       final updatedFeedbacks = await Future.wait(
         feedbacks.map((feedback) async {
@@ -53,11 +52,10 @@ class _ViewFeedbackState extends State<ViewFeedback> {
       );
 
       feedbacks = updatedFeedbacks; // Replace feedbacks with enriched data
-
-      // print('Enriched Feedbacks: $feedbacks');
     } catch (e) {
-      // print('Error during init: $e');
-      // print(stacktrace);
+      setState(() {
+        isLoading = false;
+      });
     } finally {
       setState(() {
         isLoading = false;
@@ -182,8 +180,13 @@ class _ViewFeedbackState extends State<ViewFeedback> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),

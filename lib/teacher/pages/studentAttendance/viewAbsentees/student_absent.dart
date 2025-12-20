@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../services/api_service.dart';
-import '../../../appbar/desktop_appbar.dart';
 import '../../../appbar/mobile_appbar.dart';
 import 'student_absentees.dart';
 
@@ -125,33 +124,37 @@ class _StudentAbsenteesState extends State<StudentAbsentees> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Student Absentees',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => StudentAbsent(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'Student Absentees'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Student Absentees',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => StudentAbsent(
+                        schoolId: widget.schoolId,
+                        username: widget.username,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body: SingleChildScrollView(
           child: Padding(

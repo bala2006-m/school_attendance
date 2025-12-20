@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
-import 'package:school_attendance/student/widget/student_desktop_dashboard.dart';
 import 'package:school_attendance/student/widget/student_mobile_dashboard.dart';
 import 'package:school_attendance/student/widget/student_mobile_drawer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,7 +42,7 @@ class StudentDashboardState extends State<StudentDashboard> {
   String? reason;
 
   // Track if data loaded from cache to avoid repeated fetches
-  bool _dataLoadedFromCache = false;
+  // bool _dataLoadedFromCache = false;
 
   @override
   void initState() {
@@ -53,10 +52,8 @@ class StudentDashboardState extends State<StudentDashboard> {
 
   Future<void> _initializeDashboard() async {
     await _checkBlocked(widget.schoolId);
-    await _loadCachedData();
-    if (!_dataLoadedFromCache) {
-      await _loadStudentData();
-    }
+
+    await _loadStudentData();
   }
 
   Future<void> _checkBlocked(int schoolId) async {
@@ -69,81 +66,84 @@ class StudentDashboardState extends State<StudentDashboard> {
       });
 
       if (isBlocked) {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('School Blocked'),
-                content: Text(reason ?? "This school is blocked."),
-                actions: [
-                  TextButton(
-                    onPressed: () async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      await prefs.clear();
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-          barrierDismissible: false,
-        );
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('School Blocked'),
+                  content: Text(reason ?? "This school is blocked."),
+                  actions: [
+                    TextButton(
+                      onPressed: () async {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        await prefs.clear();
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+            barrierDismissible: false,
+          );
+        }
       }
     } catch (e) {
-      debugPrint("Error checking block status: $e");
       setState(() {
         isBlocked = false;
       });
     }
   }
 
-  Future<void> _loadCachedData() async {
-    final prefs = await SharedPreferences.getInstance();
+  // Future<void> _loadCachedData() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //
+  //   final cachedStudentName = prefs.getString('studentName');
+  //   final cachedSchoolName = prefs.getString('schoolName');
+  //
+  //   // If critical data found in cache, load it and set state
+  //   if (cachedStudentName != null && cachedSchoolName != null) {
+  //     setState(() {
+  //       _dataLoadedFromCache = true;
+  //
+  //       studentData = {
+  //         'name': cachedStudentName,
+  //         'school_id': prefs.getString('schoolId'),
+  //         'photo': null, // Photo can be loaded async if needed
+  //         // Could add more fields if cached
+  //       };
+  //
+  //       schoolName = cachedSchoolName;
+  //       schoolAddress = prefs.getString('schoolAddress') ?? '';
+  //       message = prefs.getString('latestMessage') ?? '';
+  //       _isLoading = false;
+  //     });
+  //
+  //     // Also load cached school photo in background (optional)
+  //     _loadCachedSchoolPhoto(prefs);
+  //   }
+  // }
 
-    final cachedStudentName = prefs.getString('studentName');
-    final cachedSchoolName = prefs.getString('schoolName');
-
-    // If critical data found in cache, load it and set state
-    if (cachedStudentName != null && cachedSchoolName != null) {
-      setState(() {
-        _dataLoadedFromCache = true;
-
-        studentData = {
-          'name': cachedStudentName,
-          'school_id': prefs.getString('schoolId'),
-          'photo': null, // Photo can be loaded async if needed
-          // Could add more fields if cached
-        };
-
-        schoolName = cachedSchoolName;
-        schoolAddress = prefs.getString('schoolAddress') ?? '';
-        message = prefs.getString('latestMessage') ?? '';
-        _isLoading = false;
-      });
-
-      // Also load cached school photo in background (optional)
-      _loadCachedSchoolPhoto(prefs);
-    }
-  }
-
-  Future<void> _loadCachedSchoolPhoto(SharedPreferences prefs) async {
-    final schoolPhotoString = prefs.getString('schoolPhoto');
-    if (schoolPhotoString != null && schoolPhotoString.isNotEmpty) {
-      try {
-        // Assuming you store photo bytes as base64 string, convert here if needed
-        // For now, skipping complex photo cache decode
-      } catch (_) {
-        // Ignore photo errors
-      }
-    }
-  }
+  // Future<void> _loadCachedSchoolPhoto(SharedPreferences prefs) async {
+  //   final schoolPhotoString = prefs.getString('schoolPhoto');
+  //   if (schoolPhotoString != null && schoolPhotoString.isNotEmpty) {
+  //     try {
+  //       // Assuming you store photo bytes as base64 string, convert here if needed
+  //       // For now, skipping complex photo cache decode
+  //     } catch (_) {
+  //       // Ignore photo errors
+  //     }
+  //   }
+  // }
 
   Future<void> _loadStudentData() async {
     setState(() {
@@ -186,7 +186,6 @@ class StudentDashboardState extends State<StudentDashboard> {
 
       await _loadSchoolAndClassData();
     } catch (e) {
-      debugPrint("Error loading student data: $e");
       setState(() {
         _isLoading = false;
       });
@@ -254,7 +253,6 @@ class StudentDashboardState extends State<StudentDashboard> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint("Error loading school/class data: $e");
       setState(() {
         _isLoading = false;
       });
@@ -267,40 +265,56 @@ class StudentDashboardState extends State<StudentDashboard> {
     final isMobile = screenWidth < 500;
 
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Colors.blue.shade50,
-        body: Center(
-          child: SpinKitFadingCircle(color: Colors.blueAccent, size: 60.0),
-        ),
-      );
-    }
-
-    if (studentData == null) {
-      return Scaffold(
-        backgroundColor: Colors.blue.shade50,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? StudentAppbarMobile(
-                    title: 'Student Dashboard',
-                    enableDrawer: true,
-                    enableBack: false,
-                    onBack: () {
-                      exit(0);
-                    },
-                  )
-                  : const StudentAppbarDesktop(title: 'Student Dashboard'),
-        ),
-        body: const Center(
-          child: Text(
-            'Failed to load student data.',
-            style: TextStyle(fontSize: 18, color: Colors.red),
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, res) {},
+        child: Scaffold(
+          backgroundColor: Colors.blue.shade50,
+          body: Center(
+            child: SpinKitFadingCircle(color: Colors.blueAccent, size: 60.0),
           ),
         ),
       );
     }
 
+    if (studentData == null) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, res) {},
+        child: Scaffold(
+          backgroundColor: Colors.blue.shade50,
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(isMobile ? 190 : 150),
+            child:
+                isMobile
+                    ? StudentAppbarMobile(
+                      schoolId: widget.schoolId,
+                      username: widget.username,
+                      title: 'Student Dashboard',
+                      enableDrawer: true,
+                      enableBack: false,
+                      onBack: () {
+                        exit(0);
+                      },
+                    )
+                    : StudentAppbarDesktop(
+                      title: 'Student Dashboard',
+                      enableDrawer: true,
+                      enableBack: false,
+                      onBack: () {
+                        exit(0);
+                      },
+                    ),
+          ),
+          body: const Center(
+            child: Text(
+              'Failed to load student data.',
+              style: TextStyle(fontSize: 18, color: Colors.red),
+            ),
+          ),
+        ),
+      );
+    }
     final name = studentData?['name'] ?? '';
     final email = studentData?['email'] ?? '';
     final schoolId = '${studentData?['school_id'] ?? ''}';
@@ -310,8 +324,10 @@ class StudentDashboardState extends State<StudentDashboard> {
     final photoData = studentData?['photo'];
     final String community = studentData?['community'] ?? '';
     final String fatherName = studentData?['father_name'] ?? '';
-    final String DOB = studentData?['DOB'] ?? '';
+    final String dob = studentData?['DOB'] ?? '';
     final String route = studentData?['route'] ?? '';
+    final String address = studentData?['address'] ?? '';
+    final String joinDate = studentData?['date_of_join'] ?? '';
     final Uint8List photoBytes =
         (photoData != null && photoData is Map)
             ? Uint8List.fromList(List<int>.from(photoData.values.toList()))
@@ -328,95 +344,91 @@ class StudentDashboardState extends State<StudentDashboard> {
             : Uint8List(0);
     final schoolPhoto1 = Image.memory(photoBytes1);
 
-    return Scaffold(
-      backgroundColor: Colors.blue.shade50,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? StudentAppbarMobile(
-                  title: 'Student Dashboard',
-                  enableDrawer: true,
-                  enableBack: false,
-                  onBack: () {
-                    exit(0);
-                  },
-                )
-                : const StudentAppbarDesktop(title: 'Student Dashboard'),
-      ),
-      drawer:
-          screenWidth > 600
-              ? null
-              : Drawer(
-                child: StudentMobileDrawer(
-                  onSave: _loadStudentData,
-                  name: name,
-                  email: email,
-                  classId: classId,
-                  schoolId: schoolId,
-                  photo: photoBytes,
-                  username: widget.username,
-                  mobile: mobile,
-                  schoolName: schoolNameLocal,
-                  className: className,
-                  community: community,
-                  father_name: fatherName,
-                  DOB: DOB,
-                  route: route,
-                  gender: gender,
-                ),
-              ),
-      body:
-          screenWidth > 600
-              ? StudentDesktopDashboard(
-                username: widget.username,
-                name: name,
-                email: email,
-                schoolId: schoolId,
-                classId: classId,
-                gender: gender,
-                photo: photoBytes,
-                mobile: mobile,
-                schoolName: schoolNameLocal,
-                className: className,
-                message: message,
-                schoolAddress: schoolAddressLocal,
-                schoolPhoto: schoolPhoto1,
-              )
-              : StudentMobileDashboard(
-                schoolPhoto: schoolPhoto1,
-                timetable: timetable,
-                username: widget.username,
-                name: name,
-                email: email,
-                schoolId: schoolId,
-                classId: classId,
-                gender: gender,
-                schoolName: schoolNameLocal,
-                className: className,
-                selectedIndex: selectedIndex,
-                schoolAddress: schoolAddressLocal,
-                message: message,
-              ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: selectedIndex,
-        selectedItemColor: Colors.pink,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group, size: 30),
-            label: 'Attendance',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {},
+      child: Scaffold(
+        backgroundColor: Colors.blue.shade50,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
+          child:
+              isMobile
+                  ? StudentAppbarMobile(
+                    schoolId: (widget.schoolId),
+                    username: widget.username,
+                    title: 'Student Dashboard',
+                    enableDrawer: true,
+                    enableBack: false,
+                    onBack: () {
+                      exit(0);
+                    },
+                  )
+                  : StudentAppbarDesktop(
+                    title: 'Student Dashboard',
+                    enableDrawer: false,
+                    enableBack: false,
+                    onBack: () {
+                      exit(0);
+                    },
+                  ),
+        ),
+        drawer: Drawer(
+          child: StudentMobileDrawer(
+            onSave: _loadStudentData,
+            name: name,
+            email: email,
+            classId: classId,
+            schoolId: schoolId,
+            photo: photoBytes,
+            username: widget.username,
+            mobile: mobile,
+            schoolName: schoolNameLocal,
+            className: className,
+            community: community,
+            fatherName: fatherName,
+            dob: dob,
+            route: route,
+            gender: gender,
+            address: address,
+            joinDate: joinDate,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 30),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_work_outlined, size: 30),
-            label: 'Homework',
-          ),
-        ],
+        ),
+        body: StudentMobileDashboard(
+          schoolPhoto: schoolPhoto1,
+          timetable: timetable,
+          username: widget.username,
+          name: name,
+          email: email,
+          schoolId: schoolId,
+          classId: classId,
+          gender: gender,
+          schoolName: schoolNameLocal,
+          className: className,
+          selectedIndex: selectedIndex,
+          schoolAddress: schoolAddressLocal,
+          message: message,
+          studentRoute: route,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedIndex,
+          selectedItemColor: Colors.pink,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) => setState(() => selectedIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.group, size: 30),
+              label: 'Attendance',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home, size: 30),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.analytics, size: 30),
+              label: 'Manage',
+            ),
+          ],
+        ),
       ),
     );
   }

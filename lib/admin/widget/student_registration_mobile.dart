@@ -12,12 +12,13 @@ class StudentRegistrationMobile extends StatefulWidget {
   final String schoolId;
   final String username;
   final VoidCallback onRegistered;
-
+  final String classId;
   const StudentRegistrationMobile({
     super.key,
     required this.schoolId,
     required this.username,
     required this.onRegistered,
+    required this.classId,
   });
 
   @override
@@ -27,6 +28,9 @@ class StudentRegistrationMobile extends StatefulWidget {
 
 class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
   final _nameController = TextEditingController();
+  final _fatherNameController = TextEditingController();
+  final _routeController = TextEditingController();
+  final _communityController = TextEditingController();
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
   final _usernameController = TextEditingController();
@@ -34,15 +38,17 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
   final _countryCodeController = TextEditingController(text: '+91');
 
   final _nameFocus = FocusNode();
+  final _fatherNameFocus = FocusNode();
+  final _communityFocus = FocusNode();
+  final _routeFocus = FocusNode();
   final _emailFocus = FocusNode();
   final _mobileFocus = FocusNode();
   final _usernameFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _countryCodeFocus = FocusNode();
 
+  DateTime? dob;
   String? _selectedGender;
-  String? _selectedClass;
-  String? _selectedSection;
   bool _obscureText = true;
   bool _isRegisterButtonEnabled = false;
   bool _isLoading = false;
@@ -53,14 +59,13 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
   List<dynamic> students = [];
   List<dynamic> administrators = [];
   List<String> existingUsernames = [];
-  List<String> existingMobiles = [];
-  List<String> existingEmails = [];
+  // List<String> existingMobiles = [];
+  // List<String> existingEmails = [];
 
-  // for class/section
   List<Map<String, dynamic>> availableClasses = [];
   List<String> classList = [];
   List<String> sectionList = [];
-  Map<String, String?> fieldErrors = {}; // add in state
+  Map<String, String?> fieldErrors = {};
 
   Widget buildTextField({
     required String label,
@@ -97,7 +102,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
           hintText: hintText,
           counterText: '',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          errorText: fieldErrors[label], // <-- shows error below text box
+          errorText: fieldErrors[label],
           suffixIcon:
               isPassword
                   ? IconButton(
@@ -114,28 +119,30 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
           _debounce = Timer(const Duration(milliseconds: 500), () {
             String? error;
 
-            if (label == 'Roll Number' &&
+            if (label == 'Admn. No' &&
                 (existingUsernames.contains(val.trim()) ||
                     admins.any((u) => u['username'] == val.trim()) ||
                     staffs.any((u) => u['username'] == val.trim()) ||
                     students.any((u) => u['username'] == val.trim()) ||
                     administrators.any((u) => u['username'] == val.trim()))) {
-              error = 'Roll Number already exists';
+              error = 'Admission Number already exists';
             }
 
             if (label == 'Mobile') {
-              String full = _countryCodeController.text.trim() + val.trim();
-              if (existingMobiles.contains(full)) {
-                error = 'Mobile number already exists';
-              } else if (!RegExp(r'^[6-9]\d{9}$').hasMatch(val.trim())) {
+              // String full = _countryCodeController.text.trim() + val.trim();
+              // if (existingMobiles.contains(full)) {
+              //   error = 'Mobile number already exists';
+              // } else
+              if (!RegExp(r'^[6-9]\d{9}$').hasMatch(val.trim())) {
                 error = 'Enter valid 10-digit mobile number';
               }
             }
 
             if (label == 'Email') {
-              if (existingEmails.contains(val.trim())) {
-                error = 'Email already exists';
-              } else if (!RegExp(
+              // if (existingEmails.contains(val.trim())) {
+              //   error = 'Email already exists';
+              // } else
+              if (!RegExp(
                 r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
               ).hasMatch(val.trim())) {
                 error = 'Enter a valid email address';
@@ -185,21 +192,21 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
   }
 
   void _validateForm() {
-    final fullMobile =
-        _countryCodeController.text + _mobileController.text.trim();
+    // final fullMobile =
+    _countryCodeController.text + _mobileController.text.trim();
 
     setState(() {
       _isRegisterButtonEnabled =
+          _fatherNameController.text.isNotEmpty &&
+          _communityController.text.isNotEmpty &&
+          _routeController.text.isNotEmpty &&
           _nameController.text.isNotEmpty &&
           _emailController.text.isNotEmpty &&
           _mobileController.text.isNotEmpty &&
           _usernameController.text.isNotEmpty &&
           _passwordController.text.length >= 6 &&
-          _selectedClass != null &&
-          _selectedSection != null &&
           _selectedGender != null &&
-          !existingEmails.contains(_emailController.text.trim()) &&
-          !existingMobiles.contains(fullMobile) &&
+          dob != null &&
           !existingUsernames.contains(_usernameController.text.trim());
     });
   }
@@ -226,11 +233,8 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
       final users = await AdminApiService.fetchAllStudentData(widget.schoolId);
       for (var user in users) {
         if (user['username'] != null) existingUsernames.add(user['username']);
-        if (user['mobile'] != null) existingMobiles.add(user['mobile']);
-        if (user['email'] != null) existingEmails.add(user['email']);
       }
     } catch (e) {
-      debugPrint('Error fetching students: $e');
       _showError('Error fetching existing students');
     }
   }
@@ -243,25 +247,22 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
       classList =
           availableClasses.map((e) => e['class'].toString()).toSet().toList();
 
-      // Custom sort: numbers first, then alphabetic
       classList.sort((a, b) {
         final aNum = int.tryParse(a);
         final bNum = int.tryParse(b);
-
         if (aNum != null && bNum != null) {
           return aNum.compareTo(bNum);
         } else if (aNum != null) {
-          return -1; // numbers before text
+          return -1;
         } else if (bNum != null) {
-          return 1; // text after numbers
+          return 1;
         } else {
-          return a.compareTo(b); // both text → alphabetic
+          return a.compareTo(b);
         }
       });
 
       setState(() {});
     } catch (e) {
-      debugPrint('Error fetching classes: $e');
       _showError('Error fetching classes');
     }
   }
@@ -271,18 +272,18 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
       _showError('Please select gender');
       return;
     }
-
-    if (_selectedClass == null || _selectedSection == null) {
-      _showError('Please select class & section');
+    if (dob == null) {
+      _showError('Please select Date of Birth');
       return;
     }
 
+    final fatherName = _fatherNameController.text.trim();
+    final community = _communityController.text.trim();
+    final route = _routeController.text.trim();
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
     final email = _emailController.text.trim();
     final name = _nameController.text.trim();
-    final className = _selectedClass!;
-    final section = _selectedSection!;
     final mobile =
         _countryCodeController.text.trim() + _mobileController.text.trim();
 
@@ -311,32 +312,27 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
         return;
       }
 
-      final classIdRes = await ApiService.fetchClassId(
-        schoolId: widget.schoolId,
-        className: className,
-        section: section,
-      );
-
-      if (classIdRes['status'] != 'success') {
-        _showError(classIdRes['message'] ?? 'Error fetching class ID');
-        return;
-      }
-
       final regRes = await ApiService.registerStudent(
         email: email,
-        name: name[0].toUpperCase() + name.substring(1),
+        name: name.toUpperCase(),
         gender: _selectedGender!,
         mobile: mobile,
         username: username,
-        classId: '${classIdRes['class_id']}',
+        classId: widget.classId,
         schoolId: widget.schoolId,
+        fatherName: fatherName.toUpperCase(),
+        community: community.toUpperCase(),
+        route: route.toUpperCase(),
+        dob: dob!.toIso8601String(),
       );
 
       if (regRes['success'] == true) {
         showSnackBar(regRes['message'] ?? 'Student registered successfully');
         _clearForm();
         widget.onRegistered();
-        FocusScope.of(context).requestFocus(_usernameFocus);
+        if (mounted) {
+          FocusScope.of(context).requestFocus(_usernameFocus);
+        }
       } else {
         _showError(regRes['message'] ?? 'Student registration failed');
       }
@@ -354,10 +350,9 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
     _usernameController.clear();
     _passwordController.clear();
     _countryCodeController.text = '+91';
+    dob = null;
     setState(() {
       _selectedGender = null;
-      _selectedClass = null;
-      _selectedSection = null;
     });
   }
 
@@ -376,6 +371,28 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
     );
   }
 
+  Future<void> _pickDateOfBirth() async {
+    DateTime initialDate = DateTime.now().subtract(
+      const Duration(days: 365 * 10),
+    );
+    DateTime firstDate = DateTime(1990);
+    DateTime lastDate = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: dob ?? initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        dob = pickedDate;
+      });
+      _validateForm();
+    }
+  }
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -387,6 +404,9 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
     _countryCodeController.dispose();
 
     _nameFocus.dispose();
+    _fatherNameFocus.dispose();
+    _communityFocus.dispose();
+    _routeFocus.dispose();
     _emailFocus.dispose();
     _mobileFocus.dispose();
     _usernameFocus.dispose();
@@ -404,7 +424,7 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           buildTextField(
-            label: 'Roll Number',
+            label: 'Admn. No',
             controller: _usernameController,
             focusNode: _usernameFocus,
           ),
@@ -418,6 +438,11 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
             label: 'Full Name',
             controller: _nameController,
             focusNode: _nameFocus,
+          ),
+          buildTextField(
+            label: 'Father Name',
+            controller: _fatherNameController,
+            focusNode: _fatherNameFocus,
           ),
           buildTextField(
             label: 'Password',
@@ -454,73 +479,67 @@ class _StudentRegistrationMobileState extends State<StudentRegistrationMobile> {
             ],
           ),
 
-          /// CLASS DROPDOWN
-          DropdownButtonFormField<String>(
-            value: _selectedClass,
-            decoration: InputDecoration(
-              labelText: 'Class',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            items:
-                classList
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-            onChanged: (val) {
-              setState(() {
-                _selectedClass = val;
-                _selectedSection = null;
-                sectionList =
-                    availableClasses
-                        .where((e) => e['class'].toString() == val)
-                        .map((e) => e['section'].toString())
-                        .toSet()
-                        .toList();
-              });
-              _validateForm();
-            },
-          ),
           const SizedBox(height: 12),
 
-          /// SECTION DROPDOWN
-          DropdownButtonFormField<String>(
-            value: _selectedSection,
-            decoration: InputDecoration(
-              labelText: 'Section',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          /// ✅ DOB Picker
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: InkWell(
+              onTap: _pickDateOfBirth,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Date of Birth',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  errorText: dob == null ? 'Please select DOB' : null,
+                ),
+                child: Text(
+                  dob != null
+                      ? "${dob!.day}/${dob!.month}/${dob!.year}"
+                      : 'Select Date',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: dob != null ? Colors.black : Colors.grey[600],
+                  ),
+                ),
               ),
             ),
-            items:
-                sectionList
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-            onChanged: (val) {
-              setState(() => _selectedSection = val);
-              _validateForm();
-            },
           ),
+
           const SizedBox(height: 12),
 
-          /// GENDER DROPDOWN
-          DropdownButtonFormField<String>(
-            value: _selectedGender,
-            decoration: InputDecoration(
-              labelText: 'Gender',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButtonFormField<String>(
+              value: _selectedGender,
+              decoration: InputDecoration(
+                labelText: 'Gender',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              items: const [
+                DropdownMenuItem(value: 'M', child: Text('Male')),
+                DropdownMenuItem(value: 'F', child: Text('Female')),
+                DropdownMenuItem(value: 'O', child: Text('Other')),
+              ],
+              onChanged: (value) {
+                setState(() => _selectedGender = value);
+                _validateForm();
+              },
             ),
-            items: const [
-              DropdownMenuItem(value: 'M', child: Text('Male')),
-              DropdownMenuItem(value: 'F', child: Text('Female')),
-              DropdownMenuItem(value: 'O', child: Text('Other')),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedGender = value);
-              _validateForm();
-            },
+          ),
+          const SizedBox(height: 12),
+          buildTextField(
+            label: 'Community',
+            controller: _communityController,
+            focusNode: _communityFocus,
+          ),
+          buildTextField(
+            label: 'Bus Route',
+            controller: _routeController,
+            focusNode: _routeFocus,
           ),
           const SizedBox(height: 16),
 

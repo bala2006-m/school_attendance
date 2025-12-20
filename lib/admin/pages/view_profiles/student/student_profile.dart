@@ -51,6 +51,29 @@ class _StudentProfileState extends State<StudentProfile> {
       schoolId: widget.schoolId,
       classId: widget.classId,
     );
+    studentData.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
     if (!mounted) return;
     setState(() {
       students = studentData;
@@ -121,12 +144,52 @@ class _StudentProfileState extends State<StudentProfile> {
     }
   }
 
+  List<Map<String, dynamic>> sortedGroupedStudents(
+    List<Map<String, dynamic>> students,
+  ) {
+    int usernameComparator(a, b) {
+      // Sort numbers as numbers, strings lexicographically
+      final aStr = a['username'].toString();
+      final bStr = b['username'].toString();
+      final aNum = num.tryParse(aStr);
+      final bNum = num.tryParse(bStr);
+      if (aNum != null && bNum != null) {
+        return aNum.compareTo(bNum);
+      } else {
+        return aStr.compareTo(bStr);
+      }
+    }
+
+    // Group by gender
+    final males =
+        students
+            .where((s) => (s['gender'] ?? '').toUpperCase() == 'M')
+            .toList();
+    final females =
+        students
+            .where((s) => (s['gender'] ?? '').toUpperCase() == 'F')
+            .toList();
+
+    // Sort each group by username
+    males.sort(usernameComparator);
+    females.sort(usernameComparator);
+
+    // Concatenate, males first
+    return [...males, ...females];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final studentsToShow = sortedGroupedStudents(filteredStudents);
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -208,7 +271,7 @@ class _StudentProfileState extends State<StudentProfile> {
                                 controller: searchController,
                                 onChanged: filterSearch,
                                 decoration: InputDecoration(
-                                  hintText: "Search by name or username",
+                                  hintText: "Search by name or admn. no",
                                   prefixIcon: const Icon(Icons.search),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -228,7 +291,7 @@ class _StudentProfileState extends State<StudentProfile> {
                                       shrinkWrap: true,
                                       physics: const BouncingScrollPhysics(),
                                       children:
-                                          filteredStudents.isEmpty
+                                          studentsToShow.isEmpty
                                               ? [
                                                 Center(
                                                   child: Text(
@@ -241,7 +304,7 @@ class _StudentProfileState extends State<StudentProfile> {
                                                   ),
                                                 ),
                                               ]
-                                              : filteredStudents.map((s) {
+                                              : studentsToShow.map((s) {
                                                 return InkWell(
                                                   onTap: () {
                                                     fetchStudentData(
@@ -251,6 +314,10 @@ class _StudentProfileState extends State<StudentProfile> {
                                                     );
                                                   },
                                                   child: Card(
+                                                    color:
+                                                        s['gender'] == 'F'
+                                                            ? Colors.red[50]
+                                                            : Colors.blue[50],
                                                     elevation: 3,
                                                     shape: RoundedRectangleBorder(
                                                       borderRadius:
@@ -265,28 +332,17 @@ class _StudentProfileState extends State<StudentProfile> {
                                                           ),
                                                       child: Row(
                                                         children: [
-                                                          CircleAvatar(
-                                                            radius: 24,
-                                                            backgroundColor:
-                                                                Colors
-                                                                    .blue
-                                                                    .shade100,
-                                                            child: Text(
-                                                              (s['name']?.substring(
-                                                                        0,
-                                                                        1,
-                                                                      ) ??
-                                                                      "?")
-                                                                  .toUpperCase(),
-                                                              style: const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 18,
-                                                                color:
-                                                                    Colors.blue,
-                                                              ),
-                                                            ),
+                                                          Icon(
+                                                            s['gender'] == 'F'
+                                                                ? Icons.female
+                                                                : Icons.male,
+                                                            color:
+                                                                s['gender'] ==
+                                                                        'F'
+                                                                    ? Colors.red
+                                                                    : Colors
+                                                                        .blue,
+                                                            size: 30,
                                                           ),
                                                           const SizedBox(
                                                             width: 12,
@@ -303,12 +359,17 @@ class _StudentProfileState extends State<StudentProfile> {
                                                                 Text(
                                                                   s['name'] ??
                                                                       '',
-                                                                  style: const TextStyle(
+                                                                  style: TextStyle(
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .bold,
                                                                     fontSize:
                                                                         16,
+                                                                    color:
+                                                                        s['gender'] ==
+                                                                                'F'
+                                                                            ? Colors.red
+                                                                            : Colors.blue,
                                                                   ),
                                                                 ),
                                                                 const SizedBox(
@@ -364,7 +425,8 @@ class _StudentProfileState extends State<StudentProfile> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              selectedStudent!['photoBytes'] != null
+              selectedStudent!['photoBytes'] != null &&
+                      selectedStudent!['photoBytes'].length > 5
                   ? ClipRRect(
                     borderRadius: BorderRadius.circular(60),
                     child: Image.memory(
@@ -390,7 +452,7 @@ class _StudentProfileState extends State<StudentProfile> {
               Divider(color: Colors.grey.shade300),
               const SizedBox(height: 8),
 
-              _infoRow("Username", studentUsername),
+              _infoRow("Admn. No", studentUsername),
               _infoRow("Email", selectedStudent!['email'] ?? ''),
               _infoRow("Mobile", selectedStudent!['mobile'] ?? ''),
               _infoRow("Gender", selectedStudent!['gender'] ?? ''),
@@ -427,12 +489,12 @@ class _StudentProfileState extends State<StudentProfile> {
         children: [
           Text(
             "$title : ",
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
 
           Text(
             value,
-            style: const TextStyle(color: Colors.black87),
+            style: const TextStyle(color: Colors.black87, fontSize: 16),
             //textAlign: TextAlign.right,
           ),
         ],

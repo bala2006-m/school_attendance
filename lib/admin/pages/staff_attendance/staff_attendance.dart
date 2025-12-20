@@ -92,26 +92,27 @@ class _StaffAttendanceState extends State<StaffAttendance> {
         });
         if (isHolidayFn && isHolidayAn) {
           Future.delayed(Duration.zero, () {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder:
-                  (_) => AlertDialog(
-                    title: const Text("Holiday"),
-                    content: Text(
-                      "Today is a holiday.\nReason: $holidayReason",
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                        },
-                        child: const Text("OK"),
+            if (mounted) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder:
+                    (_) => AlertDialog(
+                      title: const Text("Holiday"),
+                      content: Text(
+                        "Today is a holiday.\nReason: $holidayReason",
                       ),
-                    ],
-                  ),
-            );
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            onWillPop();
+                          },
+                          child: const Text("OK"),
+                        ),
+                      ],
+                    ),
+              );
+            }
           });
         }
         break;
@@ -142,16 +143,43 @@ class _StaffAttendanceState extends State<StaffAttendance> {
           );
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      setState(() {});
+    }
+  }
+
+  // Group staff by gender and sort each group alphabetically by name
+  List<Map<String, dynamic>> groupAndSortStaffByGender(
+    List<Map<String, dynamic>> staff,
+  ) {
+    List<Map<String, dynamic>> males =
+        staff
+            .where((data) => (data['gender'] ?? '').toUpperCase() == 'M')
+            .toList();
+    List<Map<String, dynamic>> females =
+        staff
+            .where((data) => (data['gender'] ?? '').toUpperCase() == 'F')
+            .toList();
+
+    int nameComparator(a, b) => (a['name'] ?? '')
+        .toString()
+        .toLowerCase()
+        .compareTo((b['name'] ?? '').toString().toLowerCase());
+
+    males.sort(nameComparator);
+    females.sort(nameComparator);
+
+    return [...males, ...females];
   }
 
   Future<void> fetchStaff() async {
     if (!mounted) return;
     setState(() => isLoading = true);
     try {
-      final fetchedStaff = await AdminApiService.fetchStaffData(
+      final fetchedStaffs = await AdminApiService.fetchStaffData(
         widget.schoolId,
       );
+      final fetchedStaff = groupAndSortStaffByGender(fetchedStaffs);
       if (!mounted) return;
       final cacheKey = '${currentDate}_$sessionKey';
       Map<String, String> currentAttendance;
@@ -206,8 +234,8 @@ class _StaffAttendanceState extends State<StaffAttendance> {
           );
         });
       }
-    } catch (e, s) {
-      debugPrint("fetchStaff error: $e\n$s");
+    } catch (e) {
+      setState(() => isLoading = false);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -235,8 +263,13 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -351,6 +384,20 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   Widget teaching() {
     final teachingStaff =
         staffList.where((s) => s['faculty'] == 'teaching').toList();
+    teachingStaff.sort((a, b) {
+      final genderA = a['gender'] ?? '';
+      final genderB = b['gender'] ?? '';
+
+      // Put males first
+      if (genderA == 'M' && genderB != 'M') return -1;
+      if (genderA != 'M' && genderB == 'M') return 1;
+
+      // Same gender, sort by username alphabetically
+      final userA = (a['username'] ?? '').toString();
+      final userB = (b['username'] ?? '').toString();
+      return userA.compareTo(userB);
+    });
+
     return Column(
       children: [
         Row(
@@ -400,7 +447,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
           ),
         ),
         const SizedBox(height: 8),
-        ...teachingStaff.map(_buildStaffCard).toList(),
+        ...teachingStaff.map(_buildStaffCard),
       ],
     );
   }
@@ -408,6 +455,20 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   Widget nonTeaching() {
     final nonTeachingStaff =
         staffList.where((s) => s['faculty'] == 'nonteaching').toList();
+    nonTeachingStaff.sort((a, b) {
+      final genderA = a['gender'] ?? '';
+      final genderB = b['gender'] ?? '';
+
+      // Put males first
+      if (genderA == 'M' && genderB != 'M') return -1;
+      if (genderA != 'M' && genderB == 'M') return 1;
+
+      // Same gender, sort by username alphabetically
+      final userA = (a['username'] ?? '').toString();
+      final userB = (b['username'] ?? '').toString();
+      return userA.compareTo(userB);
+    });
+
     return Column(
       children: [
         SizedBox(height: 20),
@@ -475,9 +536,11 @@ class _StaffAttendanceState extends State<StaffAttendance> {
                 if (await canLaunchUrl(url)) {
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not launch link')),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not launch link')),
+                    );
+                  }
                 }
               },
             ),
@@ -545,7 +608,6 @@ class _StaffAttendanceState extends State<StaffAttendance> {
     );
   }
 
-  // Unified Attendance Submission
   Future<void> _submitAttendance() async {
     final now = DateTime.now();
     final isValidTime =
@@ -572,7 +634,6 @@ class _StaffAttendanceState extends State<StaffAttendance> {
     }
     final failedUsernames = <String>[];
 
-    // Unified: submit attendance for all staff
     final targetUsernames = staffList.map((s) => s['username']).toSet();
 
     await Future.wait(
@@ -599,24 +660,27 @@ class _StaffAttendanceState extends State<StaffAttendance> {
             : submit == 'Update'
             ? 'Failed to update attendance'
             : 'Failed to submit attendance';
-    showDialog(
-      context: context,
-      builder:
-          (_) => StatusDialog(
-            message1: message,
-            isSuccess: success,
-            onPressed: () {
-              Navigator.of(context).pop();
-              if (success) {
-                setState(() {
-                  submit = 'Update';
-                  originalAttendance = Map<String, String>.from(attendanceMap);
-                });
-                // fetchStaff();
-                onWillPop();
-              }
-            },
-          ),
-    );
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder:
+            (_) => StatusDialog(
+              message1: message,
+              isSuccess: success,
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (success) {
+                  setState(() {
+                    submit = 'Update';
+                    originalAttendance = Map<String, String>.from(
+                      attendanceMap,
+                    );
+                  });
+                  onWillPop();
+                }
+              },
+            ),
+      );
+    }
   }
 }

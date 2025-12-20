@@ -4,7 +4,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../../../admin/widget/attendance_screen.dart';
 import '../../../../services/api_service.dart';
 import '../../../../student/services/student_api_services.dart';
-import '../../../appbar/desktop_appbar.dart';
 import '../../../appbar/mobile_appbar.dart';
 import '../../../services/teacher_api_service.dart';
 import 'view_student_attendance.dart';
@@ -56,11 +55,69 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
         classId: widget.classId,
         schoolId: widget.schoolId,
       );
-      filteredStudents = students;
+
+      // Separate males and females
+      List<Map<String, dynamic>> males =
+          students.where((s) => s['gender'] == 'M').toList();
+      List<Map<String, dynamic>> females =
+          students.where((s) => s['gender'] == 'F').toList();
+
+      // Sort each group by username alphabetically
+      males.sort((a, b) {
+        // Gender: Males ('M') first, then Females
+        if (a['gender'] == b['gender']) {
+          var aUsername = a['username'].toString();
+          var bUsername = b['username'].toString();
+
+          // Check if both usernames are numeric
+          final numA = int.tryParse(aUsername);
+          final numB = int.tryParse(bUsername);
+
+          if (numA != null && numB != null) {
+            // Both numeric: compare numerically
+            return numA.compareTo(numB);
+          } else {
+            // Otherwise: compare as strings
+            return aUsername.compareTo(bUsername);
+          }
+        } else if (a['gender'] == 'M') {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
+      females.sort((a, b) {
+        // Gender: Males ('M') first, then Females
+        if (a['gender'] == b['gender']) {
+          var aUsername = a['username'].toString();
+          var bUsername = b['username'].toString();
+
+          // Check if both usernames are numeric
+          final numA = int.tryParse(aUsername);
+          final numB = int.tryParse(bUsername);
+
+          if (numA != null && numB != null) {
+            // Both numeric: compare numerically
+            return numA.compareTo(numB);
+          } else {
+            // Otherwise: compare as strings
+            return aUsername.compareTo(bUsername);
+          }
+        } else if (a['gender'] == 'M') {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
+
+      // Concatenate males first, then females
+      filteredStudents = [...males, ...females];
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Failed to load students")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load students")),
+        );
+      }
     } finally {
       setState(() {
         isLoadingStudents = false;
@@ -107,18 +164,21 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
       Future.delayed(const Duration(milliseconds: 300), () {
         final ctx = _attendanceKey.currentContext;
         if (ctx != null) {
-          Scrollable.ensureVisible(
-            ctx,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
+          if (ctx.mounted) {
+            Scrollable.ensureVisible(
+              ctx,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+          }
         }
       });
     } catch (e) {
-      //print('Error fetching attendance: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch attendance')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to fetch attendance')),
+        );
+      }
     } finally {
       setState(() {
         isLoadingAttendance = false;
@@ -151,33 +211,37 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Student Attendance',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => StudentAttendanceClasses(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'View Student Attendance'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Student Attendance',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => StudentAttendanceClasses(
+                        schoolId: widget.schoolId,
+                        username: widget.username,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body:
             isLoadingStudents
@@ -236,8 +300,27 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                               itemBuilder: (context, index) {
                                 final student = filteredStudents[index];
                                 return ListTile(
-                                  leading: const Icon(Icons.person),
-                                  title: Text(student['name']),
+                                  leading: Icon(
+                                    student['gender'] == 'M'
+                                        ? Icons.male
+                                        : Icons.female,
+                                    color:
+                                        student['gender'] == 'M'
+                                            ? Colors.blue
+                                            : Colors.pink,
+                                  ),
+
+                                  title: Text(
+                                    student['name'],
+                                    style: TextStyle(
+                                      color:
+                                          student['gender'] == 'M'
+                                              ? Colors.blue
+                                              : student['gender'] == 'F'
+                                              ? Colors.red
+                                              : Colors.blue,
+                                    ),
+                                  ),
                                   subtitle: Text(student['username']),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap:

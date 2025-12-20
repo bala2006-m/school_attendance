@@ -23,10 +23,12 @@ class StudentMobileDrawer extends StatelessWidget {
     required this.className,
     required this.onSave,
     required this.community,
-    required this.father_name,
-    required this.DOB,
+    required this.fatherName,
+    required this.dob,
     required this.route,
     required this.gender,
+    required this.address,
+    required this.joinDate,
   });
   final VoidCallback onSave;
   final String schoolId;
@@ -39,10 +41,12 @@ class StudentMobileDrawer extends StatelessWidget {
   final String schoolName;
   final String className;
   final String community;
-  final String father_name;
-  final String DOB;
+  final String fatherName;
+  final String dob;
   final String route;
   final String gender;
+  final String address;
+  final String joinDate;
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -123,10 +127,12 @@ class StudentMobileDrawer extends StatelessWidget {
                       "className": className,
                       "photo": photo,
                       "community": community,
-                      "father_name": father_name,
-                      "DOB": DOB,
+                      "father_name": fatherName,
+                      "DOB": dob,
                       "route": route,
                       "gender": gender,
+                      "address": address,
+                      "date_of_join": joinDate,
                     },
                     username: username,
                     schoolId: int.parse(schoolId),
@@ -186,11 +192,15 @@ class StudentMobileDrawer extends StatelessWidget {
                   await prefs.remove('username');
                   await prefs.remove('rememberMe');
                   await prefs.clear();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
-                  );
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                      (route) => false,
+                    );
+                  }
                 },
               ),
             ),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MobileAppbar extends StatefulWidget {
@@ -12,8 +13,11 @@ class MobileAppbar extends StatefulWidget {
     required this.enableDrawer,
     required this.enableBack,
     required this.onBack,
+    required this.username,
+    required this.schoolId,
   });
-
+  final String username;
+  final String schoolId;
   final String title;
   final bool enableDrawer;
   final bool enableBack;
@@ -51,7 +55,6 @@ class _MobileAppbarState extends State<MobileAppbar> {
           Uint8List bytes = base64Decode(photoBase64);
           staffPhoto = MemoryImage(bytes);
         } catch (e) {
-          debugPrint('Failed to decode base64 image: $e');
           staffPhoto = null;
         }
       }
@@ -137,6 +140,24 @@ class _MobileAppbarState extends State<MobileAppbar> {
                 ),
               ),
               const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StaffDashboard(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.home, color: Colors.white),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -155,7 +176,9 @@ class _MobileAppbarState extends State<MobileAppbar> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    username,
+                    username.length < 10
+                        ? username
+                        : '${username.substring(0, 10)}...',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 19,

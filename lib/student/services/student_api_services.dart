@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:school_attendance/utils/utils.dart';
 
@@ -118,6 +117,7 @@ class StudentApiServices {
       final uri = Uri.parse(
         '$baseUrl/students/by-username?username=$username&school_id=$schoolId',
       );
+
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -131,11 +131,9 @@ class StudentApiServices {
             return null;
           }
         }
-      } else {
-        //print("Server responded with status: ${response.statusCode}");
       }
     } catch (e) {
-      //print("Error fetching student data: $e");
+      return null;
     }
 
     return null;
@@ -179,6 +177,7 @@ class StudentApiServices {
           '$baseUrl/class/get_class_data?school_id=$schoolId&class_id=$classId',
         ),
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -187,7 +186,7 @@ class StudentApiServices {
         }
       }
     } catch (e) {
-      // print("Error fetching class data: $e");
+      return null;
     }
     return null;
   }
@@ -215,14 +214,10 @@ class StudentApiServices {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['student'] is List) {
           return List<Map<String, dynamic>>.from(data['student']);
-        } else {
-          debugPrint("Unexpected data format or status: ${data['status']}");
         }
-      } else {
-        debugPrint("Error response: ${response.statusCode}");
       }
-    } catch (e, stack) {
-      debugPrint("Fetch attendance error: $e\n$stack");
+    } catch (e) {
+      return [];
     }
 
     return [];
@@ -259,7 +254,6 @@ class StudentApiServices {
         throw Exception('HTTP error ${response.statusCode}');
       }
     } catch (e) {
-      //print('Exception occurred: $e');
       throw Exception('Failed to load holidays: $e');
     }
   }
@@ -272,7 +266,7 @@ class StudentApiServices {
       '$baseUrl/timetable?schoolId=$schoolId&classId=$classId',
     );
     final response = await http.get(uri);
-    //print(response.body);
+
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
@@ -301,7 +295,7 @@ class StudentApiServices {
       '$baseUrl/timetable?schoolId=$schoolId&classId=$classId',
     );
     final response = await http.get(uri);
-    //print(response.body);
+
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 

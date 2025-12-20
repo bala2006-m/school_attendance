@@ -34,8 +34,13 @@ class _MarkingStatusState extends State<MarkingStatus> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text('Marking Status'),

@@ -10,7 +10,9 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../administrator/services/administrator_api_service.dart';
 import '../../../services/api_service.dart';
-import '../../../teacher/services/teacher_api_service.dart';
+import '../../../services/bus_fee_payment_api.dart';
+import '../../../services/rte_fees_service.dart';
+import '../../../services/term_fee_structure_api.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../../widget/admin_mobile_dashboard.dart';
@@ -49,7 +51,9 @@ class AdminDashboardState extends State<AdminDashboard> {
   final String formattedCurrentDate = DateFormat(
     'yyyy-MM-dd',
   ).format(DateTime.now());
-
+  Map<String, dynamic> allPendingTermFees = {};
+  Map<String, dynamic> allPendingBusFees = {};
+  Map<String, dynamic> allPendingRteFees = {};
   int totalStudents = 0;
   int totalStaff = 0;
   int presentStaffFN = 0;
@@ -102,44 +106,47 @@ class AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> fetchFreshData() async {
+    setState(() => _isLoading = true);
     try {
-      final List responses = await Future.wait([
-        AdminApiService.fetchAdminData(
-          username: widget.username,
-          schoolId: widget.schoolId,
-        ),
-        ApiService.fetchSchoolData(widget.schoolId),
-      ]);
+      final response = await ApiService.fetchAdminAndSchoolData(
+        username: widget.username,
+        schoolId: widget.schoolId,
+      );
 
-      adminData = responses[0] as Map<String, dynamic>?;
-      schoolData = responses[1] as List<Map<String, dynamic>>?;
+      if (response['status'] != 'success') {
+        throw Exception('API returned failure status');
+      }
+
+      final data = response['data'] as Map<String, dynamic>?;
+
+      final adminData = data?['adminData'] as Map<String, dynamic>?;
+      final schoolData = data?['schoolData'] as Map<String, dynamic>?;
 
       adminName = adminData?['name'] ?? '';
       adminDesignation = adminData?['designation'] ?? '';
-      mobile = adminData?['mobile'];
-      schoolName = schoolData?[0]['name'];
-      schoolAddress = schoolData?[0]['address'];
+      mobile = adminData?['mobile'] ?? '';
+      schoolName = schoolData?['name'] ?? '';
+      schoolAddress = schoolData?['address'] ?? '';
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('adminName', adminName);
       await prefs.setString('adminDesignation', adminDesignation);
-      await prefs.setString('schoolName', '$schoolName');
-      await prefs.setString('schoolAddress', '$schoolAddress');
-      await prefs.setString('adminPhoto', '${adminData!['photo']}');
-      await prefs.setString('schoolPhoto', '${schoolData?[0]['photo']}');
+      await prefs.setString('schoolName', schoolName!);
+      await prefs.setString('schoolAddress', schoolAddress!);
+      await prefs.setString('adminPhoto', adminData?['photo'] ?? '');
+      await prefs.setString('schoolPhoto', schoolData?['photo'] ?? '');
 
-      // decode images
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
-          if (adminData?['photo'] != null) {
+          if (adminData?['photo'] != null && adminData!['photo'].isNotEmpty) {
             adminPhoto = Image.memory(
-              base64Decode(adminData!['photo']),
+              base64Decode(adminData['photo']),
               gaplessPlayback: true,
             );
           }
-          if (schoolData?[0]['photo'] != null) {
+          if (schoolData?['photo'] != null && schoolData!['photo'].isNotEmpty) {
             schoolPhoto = Image.memory(
-              base64Decode(schoolData![0]['photo']),
+              base64Decode(schoolData['photo']),
               gaplessPlayback: true,
             );
           }
@@ -149,7 +156,7 @@ class AdminDashboardState extends State<AdminDashboard> {
       await fetchSecondaryData();
       _hasLoadedOnce = true;
     } catch (e) {
-      debugPrint("Fresh data fetch failed: $e");
+      setState(() => _isLoading = false);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -204,34 +211,37 @@ class AdminDashboardState extends State<AdminDashboard> {
       });
 
       if (isBlocked) {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('School Blocked'),
-                content: Text(reason ?? "This school is blocked."),
-                actions: [
-                  TextButton(
-                    onPressed: () async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      await prefs.clear();
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-        );
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('School Blocked'),
+                  content: Text(reason ?? "This school is blocked."),
+                  actions: [
+                    TextButton(
+                      onPressed: () async {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        await prefs.clear();
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+          );
+        }
       }
     } catch (e) {
-      debugPrint("Error: $e");
       setState(() => isBlocked = false);
     }
   }
@@ -245,64 +255,70 @@ class AdminDashboardState extends State<AdminDashboard> {
     await prefs.setString('schoolId', widget.schoolId);
 
     try {
-      final List responses = await Future.wait([
-        AdminApiService.fetchAdminData(
-          username: widget.username,
-          schoolId: widget.schoolId,
-        ),
-        ApiService.fetchSchoolData(widget.schoolId),
-      ]);
+      // Call unified combined API endpoint
+      final Map<String, dynamic> response =
+          await ApiService.fetchAdminAndSchoolData(
+            username: widget.username,
+            schoolId: widget.schoolId,
+          );
 
-      adminData = responses[0] as Map<String, dynamic>?;
-      schoolData = responses[1] as List<Map<String, dynamic>>?;
+      if (response['status'] != 'success') {
+        throw Exception('Failed to load data');
+      }
+
+      final data = response['data'] as Map<String, dynamic>?;
+      final adminData = data?['adminData'] as Map<String, dynamic>?;
+      final schoolData = data?['schoolData'] as Map<String, dynamic>?;
 
       adminName = adminData?['name'] ?? '';
       if (adminName.isEmpty || adminName == 'null') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (_) => EditProfile(
-                  username: widget.username,
-                  schoolName: schoolData?[0]['name'],
-                  schoolAddress: schoolData?[0]['address'],
-                  schoolId: widget.schoolId,
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                    );
-                  },
-                ),
-          ),
-        );
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => EditProfile(
+                    username: widget.username,
+                    schoolName: schoolData?['name'],
+                    schoolAddress: schoolData?['address'],
+                    schoolId: widget.schoolId,
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                      );
+                    },
+                  ),
+            ),
+          );
+        }
         return;
       }
 
       adminDesignation = adminData?['designation'] ?? '';
       mobile = adminData?['mobile'];
-      schoolName = schoolData?[0]['name'];
-      schoolAddress = schoolData?[0]['address'];
+      schoolName = schoolData?['name'];
+      schoolAddress = schoolData?['address'];
 
-      // Save to cache
+      // Save to cache for offline use
       await prefs.setString('adminName', adminName);
       await prefs.setString('adminDesignation', adminDesignation);
-      await prefs.setString('schoolAddress', '$schoolAddress');
-      await prefs.setString('adminPhoto', '${adminData!['photo']}');
-      await prefs.setString('schoolPhoto', '${schoolData?[0]['photo']}');
+      await prefs.setString('schoolName', schoolName ?? '');
+      await prefs.setString('schoolAddress', schoolAddress ?? '');
+      await prefs.setString('adminPhoto', adminData?['photo'] ?? '');
+      await prefs.setString('schoolPhoto', schoolData?['photo'] ?? '');
 
-      // Decode photos after UI
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
-          if (adminData?['photo'] != null) {
+          if (adminData?['photo'] != null && adminData!['photo'].isNotEmpty) {
             adminPhoto = Image.memory(
-              base64Decode(adminData!['photo']),
+              base64Decode(adminData['photo']),
               gaplessPlayback: true,
             );
           }
-          if (schoolData?[0]['photo'] != null) {
+          if (schoolData?['photo'] != null && schoolData!['photo'].isNotEmpty) {
             schoolPhoto = Image.memory(
-              base64Decode(schoolData![0]['photo']),
+              base64Decode(schoolData['photo']),
               gaplessPlayback: true,
             );
           }
@@ -313,7 +329,7 @@ class AdminDashboardState extends State<AdminDashboard> {
 
       _hasLoadedOnce = true;
     } catch (e) {
-      debugPrint('Initial load failed: $e');
+      setState(() => _isLoading = false);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -321,35 +337,100 @@ class AdminDashboardState extends State<AdminDashboard> {
 
   Future<void> fetchSecondaryData() async {
     try {
-      final results = await Future.wait([
-        AdminApiService.countStudentUsernames(widget.schoolId),
-        ApiService.countStaffUsernames(widget.schoolId),
-        AdminApiService.fetchLatestMessage(widget.schoolId),
-        fetchClasses(),
-      ]);
+      final RteFeesService service = RteFeesService();
+      // Call the combined API endpoint once and get all data together
+      final combinedData = await ApiService.fetchCombinedData(widget.schoolId);
+      final allPendingTermFee =
+          await TermFeeStructureApi.countAllPendingTermFees(
+            int.parse(widget.schoolId),
+          );
+      final allPendingBusFee = await BusFeePaymentApi.getPaidPendingBySchoolId(
+        int.parse(widget.schoolId),
+      );
+      final pendingPaid = await service.countRtePaidStudents(
+        int.parse(widget.schoolId),
+      );
+      setState(() {
+        allPendingTermFees = allPendingTermFee;
+        allPendingBusFees = allPendingBusFee!;
+        allPendingRteFees = pendingPaid;
+      });
+      totalStudents = combinedData['totalStudents'] as int;
+      totalStaff = combinedData['totalStaff'] as int;
+      message = combinedData['lastMessage']['messages'] as String;
 
-      totalStudents = results[0] as int;
-      totalStaff = results[1] as int;
-      message = results[2] as String;
+      classes = List.from(combinedData['classes']);
 
-      await fetchAttendanceStatusForAll();
-      await fetchAttendanceData();
-    } catch (e) {
-      debugPrint('Secondary data fetch failed: $e');
-    }
-  }
-
-  Future<void> fetchClasses() async {
-    try {
-      classes = await TeacherApiServices.fetchClassData(widget.schoolId);
       classes.sort((a, b) {
         int classCompare = a['class'].compareTo(b['class']);
         return classCompare != 0
             ? classCompare
             : a['section'].compareTo(b['section']);
       });
+
+      await fetchAttendanceStatusForAll();
+      await fetchAttendanceData();
+      await makeSundayHoliday(classes);
     } catch (e) {
-      debugPrint('Error fetching classes: $e');
+      return;
+    }
+  }
+
+  Future<void> makeSundayHoliday(List<Map<String, dynamic>> classes) async {
+    // Dynamically build classIds list from classes parameter as int list
+    final List<int> classIds =
+        classes.map((c) => int.parse(c['id'].toString())).toList();
+
+    // Get current date info and first/last day of current month
+    final now = DateTime.now();
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+
+    // Collect all Sundays in the current month
+    List<DateTime> sundays = [];
+    for (int day = 1; day <= lastDayOfMonth.day; day++) {
+      final date = DateTime(now.year, now.month, day);
+      if (date.weekday == DateTime.sunday) {
+        sundays.add(date);
+      }
+    }
+
+    // Fetch existing holidays from your API
+    final holidays = await ApiService.fetchHolidays(widget.schoolId);
+
+    for (final sunday in sundays) {
+      final sundayStr = DateFormat('yyyy-MM-dd').format(sunday);
+
+      // Find existing holiday entry for sunday
+      final existingHoliday = holidays.firstWhere((h) {
+        final holidayDate = DateFormat(
+          'yyyy-MM-dd',
+        ).format(DateTime.parse(h['date']));
+        return holidayDate == sundayStr;
+      }, orElse: () => {});
+
+      bool needsAddOrUpdate = false;
+      // Check if all classIds are included in existing holiday's class_ids
+      List<dynamic> existingClassIdsDynamic =
+          existingHoliday['class_ids'] ?? [];
+      List<int> existingClassIds =
+          existingClassIdsDynamic.map((e) => int.parse(e.toString())).toList();
+
+      final missingClassIds =
+          classIds.where((id) => !existingClassIds.contains(id)).toList();
+      if (missingClassIds.isNotEmpty) {
+        needsAddOrUpdate = true;
+      }
+
+      if (needsAddOrUpdate) {
+        await ApiService.addHoliday(
+          date: sundayStr,
+          reason: 'Sunday',
+          schoolId: widget.schoolId,
+          classIds: classIds,
+          fn: 'H',
+          an: 'H',
+        );
+      }
     }
   }
 
@@ -442,8 +523,9 @@ class AdminDashboardState extends State<AdminDashboard> {
       );
     }
 
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {},
       child: Scaffold(
         backgroundColor: Colors.blue.shade50,
         appBar: PreferredSize(
@@ -503,6 +585,9 @@ class AdminDashboardState extends State<AdminDashboard> {
                     selectedIndex: selectedIndex,
                     attendanceStatusMapFn: attendanceStatusMapFn,
                     attendanceStatusMapAn: attendanceStatusMapAn,
+                    allPendingTermFees: allPendingTermFees,
+                    allPendingBusFees: allPendingBusFees,
+                    allPendingRteFees: allPendingRteFees,
                   )
                   : AdminDesktopDashboard(
                     message: message,
@@ -523,6 +608,9 @@ class AdminDashboardState extends State<AdminDashboard> {
                     mobile: '$mobile',
                     attendanceStatusMapFn: attendanceStatusMapFn,
                     attendanceStatusMapAn: attendanceStatusMapAn,
+                    allPendingTermFees: allPendingTermFees,
+                    allPendingBusFees: allPendingBusFees,
+                    allPendingRteFees: allPendingRteFees,
                   ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.startTop,

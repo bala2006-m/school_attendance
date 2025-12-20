@@ -74,7 +74,6 @@ class _AdminAppbarDesktopState extends State<AdminAppbarDesktop> {
         photoBytes!.length < 5 ? photoBytes = null : null;
       } catch (e) {
         photoBytes = null;
-        debugPrint('Error decoding admin photo: $e');
       }
     }
 
@@ -88,7 +87,7 @@ class _AdminAppbarDesktopState extends State<AdminAppbarDesktop> {
       //     Uint8List bytes = base64Decode(photoBase64);
       //     adminPhoto = MemoryImage(bytes);
       //   } catch (e) {
-      //     debugPrint('Failed to decode base64 image: $e');
+      //
       //     adminPhoto = null;
       //   }
       // }

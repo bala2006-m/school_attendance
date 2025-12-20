@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
@@ -65,7 +64,7 @@ class _PostTicketsState extends State<PostTickets> {
         username: widget.username,
         schoolId: int.parse(widget.schoolId),
       );
-      //print(data);
+
       if (!mounted) return;
 
       setState(() {
@@ -73,7 +72,9 @@ class _PostTicketsState extends State<PostTickets> {
         _isLoading = false;
       });
     } catch (e) {
-      //print("Error loading staff data: $e");
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -134,34 +135,38 @@ class _PostTicketsState extends State<PostTickets> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Post Ticket',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      StaffDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => StaffDashboard(
-                                username: widget.username,
-                                schoolId: widget.schoolId,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'Post Ticket'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Post Ticket',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              StaffDashboardState.selectedIndex = 2;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => StaffDashboard(
+                        username: widget.username,
+                        schoolId: widget.schoolId,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body:
             _isLoading

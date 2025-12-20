@@ -19,9 +19,11 @@ Future<void> exportAttendanceToExcel(
       if (!status.isGranted) {
         var manageStatus = await Permission.manageExternalStorage.request();
         if (!manageStatus.isGranted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Storage permission denied')),
-          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Storage permission denied')),
+            );
+          }
           return;
         }
       }
@@ -45,13 +47,16 @@ Future<void> exportAttendanceToExcel(
     }
     final file = File('$path/${staffUsername}_Attendance.xlsx');
     await file.writeAsBytes(excel.encode()!);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('✅ Excel saved to: ${file.path}')));
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('✅ Excel saved to: ${file.path}')));
+    }
   } catch (e) {
-    debugPrint('❌ Failed to export Excel: $e');
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Failed to export Excel')));
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to export Excel')));
+    }
   }
 }

@@ -6,54 +6,53 @@ import 'package:school_attendance/utils/utils.dart';
 import '../models/staff_models.dart';
 
 class TeacherApiServices {
-  static Future<bool> createHomework(Map<String, dynamic> data) async {
-    final url = Uri.parse("$baseUrl/homework/create");
-
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(data),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      return true;
-    } else {
-      // print("Error: ${response.statusCode} - ${response.body}");
-      return false;
-    }
-  }
-
-  static Future<void> deleteHomeworkById(int id) async {
-    final url = Uri.parse("$baseUrl/homework/delete_homework_by_id/$id");
-    final response = await http.delete(url);
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to delete homework");
-    }
-  }
-
-  static Future<List<dynamic>> fetchHomeworkByStaff({
-    required String staff,
-    required int schoolId,
-    required int classId,
-  }) async {
-    final String st = staff.toLowerCase();
-    final url = Uri.parse(
-      '$baseUrl/homework/fetch_homework_by_staff/$schoolId/$classId/$st',
-    );
-
-    final response = await http.get(url);
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      if (data != []) {
-        return data;
-      } else {
-        throw Exception('Invalid response structure');
-      }
-    } else {
-      throw Exception('Failed to fetch homework');
-    }
-  }
+  // static Future<bool> createHomework(Map<String, dynamic> data) async {
+  //   final url = Uri.parse("$baseUrl/homework/create");
+  //
+  //   final response = await http.post(
+  //     url,
+  //     headers: {"Content-Type": "application/json"},
+  //     body: jsonEncode(data),
+  //   );
+  //
+  //   if (response.statusCode == 201 || response.statusCode == 200) {
+  //     return true;
+  //   } else {
+  //     return false;
+  //   }
+  // }
+  //
+  // static Future<void> deleteHomeworkById(int id) async {
+  //   final url = Uri.parse("$baseUrl/homework/delete_homework_by_id/$id");
+  //   final response = await http.delete(url);
+  //
+  //   if (response.statusCode != 200) {
+  //     throw Exception("Failed to delete homework");
+  //   }
+  // }
+  //
+  // static Future<List<dynamic>> fetchHomeworkByStaff({
+  //   required String staff,
+  //   required int schoolId,
+  //   required int classId,
+  // }) async {
+  //   final String st = staff.toLowerCase();
+  //   final url = Uri.parse(
+  //     '$baseUrl/homework/fetch_homework_by_staff/$schoolId/$classId/$st',
+  //   );
+  //
+  //   final response = await http.get(url);
+  //   if (response.statusCode == 200 || response.statusCode == 201) {
+  //     final data = jsonDecode(response.body);
+  //     if (data != []) {
+  //       return data;
+  //     } else {
+  //       throw Exception('Invalid response structure');
+  //     }
+  //   } else {
+  //     throw Exception('Failed to fetch homework');
+  //   }
+  // }
 
   static Future<Map<String, dynamic>> createLeaveRequest({
     required String username,
@@ -119,6 +118,7 @@ class TeacherApiServices {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
+
     if (response.statusCode != 200) {
       throw Exception('Failed to update profile');
     }
@@ -192,11 +192,9 @@ class TeacherApiServices {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       } else {
-        //print('Failed to save: ${response.body}');
         return false;
       }
     } catch (e) {
-      // print('Error saving timetable: $e');
       return false;
     }
   }
@@ -235,14 +233,10 @@ class TeacherApiServices {
           if (staff != null || staff is Map<String, dynamic>) {
             return staff;
           }
-        } else {
-          //  print("API responded with error: ${data['message']}");
         }
-      } else {
-        // print("Server error: HTTP ${response.statusCode}");
       }
     } catch (e) {
-      //print("Exception caught while fetching staff data: $e");
+      return null;
     }
 
     return null;
@@ -261,16 +255,41 @@ class TeacherApiServices {
       final response = await http.get(uri);
       final res = jsonDecode(response.body);
 
-      // print(res);
-      // List students = res['students'];
-      // print(students);
       if (response.statusCode == 200 || res['status'] == 'success') {
         final data = jsonDecode(response.body);
 
         if (data['status'] == 'success') {
-          // print(data['students']);
           final List<dynamic> students = data['students'];
-          //print(students);
+
+          return students.cast<Map<String, dynamic>>();
+        } else {
+          throw Exception("❌ Server error: ${data['message']}");
+        }
+      } else {
+        throw Exception("❌ HTTP error: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("❌ Failed to load students: $e");
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchNonRteStudentData({
+    String? schoolId,
+    String? classId,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/students/fetch-non_rte_student-data?school_id=$schoolId&class_id=$classId',
+    );
+
+    try {
+      final response = await http.get(uri);
+      final res = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || res['status'] == 'success') {
+        final data = jsonDecode(response.body);
+
+        if (data['status'] == 'success') {
+          final List<dynamic> students = data['students'];
 
           return students.cast<Map<String, dynamic>>();
         } else {
@@ -292,6 +311,7 @@ class TeacherApiServices {
       final response = await http.get(
         Uri.parse('$baseUrl/class/fetch_class_data?school_id=$schoolId'),
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data.containsKey('classes')) {
@@ -299,7 +319,7 @@ class TeacherApiServices {
         }
       }
     } catch (e) {
-      // print("Error fetching class data: $e");
+      return [];
     }
     return [];
   }
@@ -332,11 +352,9 @@ class TeacherApiServices {
       if (response.statusCode == 200 || res['status'] == 'success') {
         return true;
       } else {
-        //print('Attendance post failed: ${res['message'] ?? 'Unknown error'}');
         return false;
       }
     } catch (e) {
-      //print('Error posting attendance: $e');
       return false;
     }
   }

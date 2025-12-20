@@ -295,12 +295,50 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
     await _initStaff();
   }
 
+  List<dynamic> groupAndSortAdmins(
+    List<dynamic> admins,
+    Map<String, dynamic> adminData,
+  ) {
+    // Filter groups
+    List<dynamic> males =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'M';
+        }).toList();
+
+    List<dynamic> females =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'F';
+        }).toList();
+
+    // Sort by name inside each group (case-insensitive)
+    int nameComparator(a, b) {
+      final aName =
+          (adminData[a['username']]?['name'] ?? '').toString().toLowerCase();
+      final bName =
+          (adminData[b['username']]?['name'] ?? '').toString().toLowerCase();
+      return aName.compareTo(bName);
+    }
+
+    males.sort(nameComparator);
+    females.sort(nameComparator);
+
+    // Combine with males on top
+    return [...males, ...females];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    final adminsToShow = groupAndSortAdmins(filteredStaff, staffData);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          _onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -338,7 +376,7 @@ class _BulkUploadRegisterStaffState extends State<BulkUploadRegisterStaff> {
                         () => _downloadTemplate('Staff.xlsx'),
                     pickExcelFileStaff: _pickStaffFile,
                     uploadFileStaff: _uploadFileStaff,
-                    staff: filteredStaff, // Filtered staff list
+                    staff: adminsToShow, // Filtered staff list
                     staffData: staffData,
                     selectedExcelFile: _selectedStaffExcelFile,
                   ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/admin/pages/leave_request/staff_leave_request.dart';
-import 'package:school_attendance/admin/pages/leave_request/student_leave_request.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
 import '../../../teacher/services/teacher_api_service.dart';
@@ -68,13 +67,14 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
             } catch (e) {
               request['class_name'] = '';
               request['section'] = '';
-              debugPrint('Error fetching class for ${request['username']}: $e');
             }
           }
         }),
       );
     } catch (e) {
-      debugPrint("Error fetching leave requests: $e");
+      _instance?.setState(() {
+        isLoading = false;
+      });
     } finally {
       if (_instance?.mounted ?? false) {
         _instance?.setState(() {
@@ -296,15 +296,19 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
       await TeacherApiServices.updateLeaveStatus(leaveId, newStatus);
 
       if (_instance?.mounted ?? false) {
-        ScaffoldMessenger.of(_instance!.context).showSnackBar(
-          SnackBar(content: Text('Leave status updated to $newStatus')),
-        );
+        if (_instance!.mounted) {
+          ScaffoldMessenger.of(_instance!.context).showSnackBar(
+            SnackBar(content: Text('Leave status updated to $newStatus')),
+          );
+        }
       }
     } catch (e) {
       if (_instance?.mounted ?? false) {
-        ScaffoldMessenger.of(
-          _instance!.context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+        if (_instance!.mounted) {
+          ScaffoldMessenger.of(
+            _instance!.context,
+          ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+        }
       }
       await _instance?.init(); // rollback
     }
@@ -313,8 +317,13 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
         appBar: PreferredSize(
@@ -355,7 +364,7 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
                 //   },
                 // ),
                 : IndexedStack(
-                  index: selectedIndex,
+                  // index: selectedIndex,
                   children: [
                     StaffLeaveRequest(
                       leaveRequests:
@@ -363,30 +372,30 @@ class ViewLeaveRequestState extends State<ViewLeaveRequest> {
                               .where((r) => r['role'] == 'staff')
                               .toList(),
                     ),
-                    StudentLeaveRequest(
-                      leaveRequests:
-                          leaveRequest
-                              .where((r) => r['role'] == 'student')
-                              .toList(),
-                    ),
+                    // StudentLeaveRequest(
+                    //   leaveRequests:
+                    //       leaveRequest
+                    //           .where((r) => r['role'] == 'student')
+                    //           .toList(),
+                    // ),
                   ],
                 ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          selectedItemColor: Colors.pink,
-          unselectedItemColor: Colors.grey,
-          onTap: (index) => setState(() => selectedIndex = index),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: 30),
-              label: 'Staff',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people, size: 30),
-              label: 'Student',
-            ),
-          ],
-        ),
+        // bottomNavigationBar: BottomNavigationBar(
+        //   currentIndex: selectedIndex,
+        //   selectedItemColor: Colors.pink,
+        //   unselectedItemColor: Colors.grey,
+        //   onTap: (index) => setState(() => selectedIndex = index),
+        //   items: const [
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.person, size: 30),
+        //       label: 'Staff',
+        //     ),
+        //     BottomNavigationBarItem(
+        //       icon: Icon(Icons.people, size: 30),
+        //       label: 'Student',
+        //     ),
+        //   ],
+        // ),
       ),
     );
   }

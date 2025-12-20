@@ -74,8 +74,8 @@ class _MobileStatsState extends State<MobileStats> {
       width: widget.screenWidth * 0.9,
       height:
           widget.isClassShown
-              ? widget.screenHeight * 0.41
-              : widget.screenHeight * 0.26,
+              ? widget.screenHeight * 0.50
+              : widget.screenHeight * 0.30,
       decoration: BoxDecoration(
         color: Colors.blue.shade50,
         borderRadius: BorderRadius.circular(8),
@@ -259,7 +259,7 @@ class _TableCellText extends StatelessWidget {
           text,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 16,
             color: color ?? Colors.black,
           ),
         ),

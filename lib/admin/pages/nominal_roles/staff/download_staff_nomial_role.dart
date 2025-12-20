@@ -1,3 +1,5 @@
+// download_staff_nominal_role.dart
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -11,6 +13,7 @@ import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../services/admin_api_service.dart';
+import '../../../widget/pdf_preview_custom_page.dart';
 import '../../dashboard/admin_dashboard.dart';
 
 class DownloadStaffNominalRole extends StatefulWidget {
@@ -48,9 +51,11 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
     try {
       staffs = await AdminApiService.fetchStaffData(widget.schoolId);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load staff data")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load staff data")),
+        );
+      }
     }
     setState(() {
       isLoading = false;
@@ -70,21 +75,22 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
             Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
             schoolPhotoBytes = imageBytes;
           } catch (e) {
-            debugPrint('Image decode error: $e');
+            return;
           }
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load school info")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load school info")),
+        );
+      }
     }
   }
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder:
@@ -97,11 +103,12 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
     return false;
   }
 
-  /// 📄 Build PDF content for a specific faculty type
-  Future<void> buildPdf({required String facultyType}) async {
+  Future<pw.Document> buildPdfAsync({required String facultyType}) async {
+    final ttf = await PdfGoogleFonts.notoSansRegular();
+    final ttfBold = await PdfGoogleFonts.notoSansBold();
+
     final pdf = pw.Document();
 
-    // Filter and sort the staff by 'username' (admn.no)
     final filteredStaffs =
         staffs.where((s) => s['faculty'] == facultyType).toList()..sort(
           (a, b) => (a['username'] ?? '').compareTo(b['username'] ?? ''),
@@ -120,104 +127,354 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
         ),
       );
     } else {
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          build:
-              (context) => [
-                pw.Column(
+      const rowsPerPage = 25;
+      final chunks = <List<Map<String, dynamic>>>[];
+
+      for (var i = 0; i < filteredStaffs.length; i += rowsPerPage) {
+        chunks.add(
+          filteredStaffs.sublist(
+            i,
+            i + rowsPerPage > filteredStaffs.length
+                ? filteredStaffs.length
+                : i + rowsPerPage,
+          ),
+        );
+      }
+
+      for (var chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        final chunk = chunks[chunkIndex];
+
+        pdf.addPage(
+          pw.MultiPage(
+            theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
+            pageFormat: PdfPageFormat.a4,
+            header:
+                (context) => pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    if (schoolPhotoBytes != null)
-                      pw.Image(
-                        pw.MemoryImage(schoolPhotoBytes!),
-                        width: 80,
-                        height: 80,
+                    if (chunkIndex == 0) ...[
+                      pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          if (schoolPhotoBytes != null)
+                            pw.Image(
+                              pw.MemoryImage(schoolPhotoBytes!),
+                              width: 80,
+                              height: 80,
+                            ),
+                          if (schoolPhotoBytes != null) pw.SizedBox(width: 10),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.only(top: 10),
+                            child: pw.Expanded(
+                              child: pw.Column(
+                                crossAxisAlignment:
+                                    pw.CrossAxisAlignment.center,
+                                children: [
+                                  if (schoolName?.isNotEmpty == true)
+                                    pw.Text(
+                                      schoolName!,
+                                      textAlign: pw.TextAlign.center,
+                                      softWrap: true,
+                                      style: pw.TextStyle(
+                                        color: PdfColors.blue900,
+                                        fontSize: 16,
+                                        fontWeight: pw.FontWeight.bold,
+                                      ),
+                                    ),
+                                  if (schoolName?.isNotEmpty == true)
+                                    pw.SizedBox(height: 5),
+                                  if (schoolAddress != null)
+                                    pw.Text(
+                                      schoolAddress!,
+                                      textAlign: pw.TextAlign.center,
+                                      style: const pw.TextStyle(
+                                        fontSize: 12,
+                                        color: PdfColors.blue900,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    if (schoolName != null)
-                      pw.Text(
-                        schoolName!,
-                        style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
+                      pw.Divider(),
+                      // pw.SizedBox(height: 10),
+                      pw.Center(
+                        child: pw.Text(
+                          "${facultyType[0].toUpperCase()}${facultyType.substring(1)} Staff List",
+                          style: pw.TextStyle(
+                            fontSize: 12,
+                            fontWeight: pw.FontWeight.bold,
+                            font: ttfBold,
+                          ),
                         ),
                       ),
-                    if (schoolAddress != null)
-                      pw.Text(
-                        schoolAddress!,
-                        style: const pw.TextStyle(fontSize: 12),
-                      ),
-                    pw.SizedBox(height: 10),
-                    pw.Center(
-                      child: pw.Text(
-                        "${facultyType[0].toUpperCase()}${facultyType.substring(1)} Staff List",
-                        style: pw.TextStyle(
-                          fontSize: 22,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    pw.SizedBox(height: 20),
-                    pw.Table.fromTextArray(
-                      headers: [
-                        "S.No",
-                        "Admn.No",
-                        "Name",
-                        "Gender",
-                        "Mobile",
-                        "Email",
-                        "Designation",
-                      ],
-                      data:
-                          filteredStaffs.asMap().entries.map((entry) {
-                            final index = entry.key + 1;
-                            final staff = entry.value;
-                            return [
-                              index.toString(),
-                              staff['username'] ?? '',
-                              staff['name'] ?? '',
-                              (staff['gender'] == 'M'
-                                  ? 'Male'
-                                  : staff['gender'] == 'F'
-                                  ? 'Female'
-                                  : staff['gender'] == 'O'
-                                  ? 'Others'
-                                  : ""),
-                              staff['mobile'] ?? '',
-                              staff['email'] ?? '',
-                              staff['designation'] ?? '',
-                            ];
-                          }).toList(),
-                      headerStyle: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
-                      ),
-                      columnWidths: {
-                        0: pw.FlexColumnWidth(1),
-                        1: pw.FlexColumnWidth(2.5),
-                        2: pw.FlexColumnWidth(3),
-                        3: pw.FlexColumnWidth(2),
-                        4: pw.FlexColumnWidth(3.2),
-                        5: pw.FlexColumnWidth(3),
-                        6: pw.FlexColumnWidth(3.2),
-                      },
-                      cellAlignment: pw.Alignment.centerLeft,
-                      cellStyle: const pw.TextStyle(fontSize: 10),
-                    ),
+                      pw.SizedBox(height: 10),
+                    ] else
+                      pw.SizedBox(height: 10),
                   ],
                 ),
-              ],
-        ),
-      );
+            build:
+                (context) => [
+                  pw.TableHelper.fromTextArray(
+                    headers: [
+                      "S.No",
+                      "Name",
+                      "Designation",
+                      "Gender",
+                      "Mobile",
+                      "Email",
+                    ],
+                    data:
+                        chunk.asMap().entries.map((entry) {
+                          final index =
+                              chunkIndex * rowsPerPage + entry.key + 1;
+                          final staff = entry.value;
+                          return [
+                            index.toString(),
+                            staff['name'].toString().toUpperCase(),
+                            staff['designation'].toString().toUpperCase(),
+                            (staff['gender'] == 'M'
+                                ? 'Male'
+                                : staff['gender'] == 'F'
+                                ? 'Female'
+                                : staff['gender'] == 'O'
+                                ? 'Others'
+                                : ""),
+                            staff['mobile'] ?? '',
+                            staff['email'] ?? '',
+                          ];
+                        }).toList(),
+                    headerDecoration: pw.BoxDecoration(color: PdfColors.blue),
+                    headerStyle: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      fontSize: 10,
+                    ),
+                    cellStyle: pw.TextStyle(fontSize: 9, font: ttf),
+                    columnWidths: {
+                      0: pw.FixedColumnWidth(23),
+                      1: pw.FlexColumnWidth(4),
+                      2: pw.FlexColumnWidth(3),
+                      3: pw.FixedColumnWidth(46),
+                      4: pw.FixedColumnWidth(77),
+                      5: pw.FlexColumnWidth(4),
+                    },
+                    cellAlignment: pw.Alignment.centerLeft,
+                  ),
+                ],
+          ),
+        );
+      }
     }
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return pdf;
   }
 
-  /// 📥 Handle download based on selected faculty
+  Future<pw.Document> buildPdfAsync1({required String facultyType}) async {
+    final ttf = await PdfGoogleFonts.notoSansRegular();
+    final ttfBold = await PdfGoogleFonts.notoSansBold();
+
+    final pdf = pw.Document();
+
+    final filteredStaffs =
+        staffs.where((s) => s['faculty'] == facultyType).toList()..sort(
+          (a, b) => (a['username'] ?? '').compareTo(b['username'] ?? ''),
+        );
+
+    if (filteredStaffs.isEmpty) {
+      pdf.addPage(
+        pw.Page(
+          build:
+              (context) => pw.Center(
+                child: pw.Text(
+                  "No $facultyType staffs found",
+                  style: const pw.TextStyle(fontSize: 18),
+                ),
+              ),
+        ),
+      );
+    } else {
+      const rowsPerPage = 25;
+      final chunks = <List<Map<String, dynamic>>>[];
+
+      for (var i = 0; i < filteredStaffs.length; i += rowsPerPage) {
+        chunks.add(
+          filteredStaffs.sublist(
+            i,
+            i + rowsPerPage > filteredStaffs.length
+                ? filteredStaffs.length
+                : i + rowsPerPage,
+          ),
+        );
+      }
+
+      for (var chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        final chunk = chunks[chunkIndex];
+
+        pdf.addPage(
+          pw.MultiPage(
+            theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
+            pageFormat: PdfPageFormat.a4,
+            header:
+                (context) => pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    if (chunkIndex == 0) ...[
+                      pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          if (schoolPhotoBytes != null)
+                            pw.Image(
+                              pw.MemoryImage(schoolPhotoBytes!),
+                              width: 80,
+                              height: 80,
+                            ),
+                          if (schoolPhotoBytes != null) pw.SizedBox(width: 10),
+                          pw.Padding(
+                            padding: pw.EdgeInsets.only(top: 10),
+                            child: pw.Expanded(
+                              child: pw.Column(
+                                crossAxisAlignment:
+                                    pw.CrossAxisAlignment.center,
+                                children: [
+                                  if (schoolName?.isNotEmpty == true)
+                                    pw.Text(
+                                      schoolName!,
+                                      textAlign: pw.TextAlign.center,
+                                      softWrap: true,
+                                      style: pw.TextStyle(
+                                        color: PdfColors.blue900,
+                                        fontSize: 16,
+                                        fontWeight: pw.FontWeight.bold,
+                                      ),
+                                    ),
+                                  if (schoolName?.isNotEmpty == true)
+                                    pw.SizedBox(height: 5),
+                                  if (schoolAddress != null)
+                                    pw.Text(
+                                      schoolAddress!,
+                                      textAlign: pw.TextAlign.center,
+                                      style: const pw.TextStyle(
+                                        fontSize: 12,
+                                        color: PdfColors.blue900,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Divider(),
+                      // pw.SizedBox(height: 10),
+                      pw.Center(
+                        child: pw.Text(
+                          "${facultyType[0].toUpperCase()}${facultyType.substring(1)} Staff List",
+                          style: pw.TextStyle(
+                            fontSize: 12,
+                            fontWeight: pw.FontWeight.bold,
+                            font: ttfBold,
+                          ),
+                        ),
+                      ),
+                      pw.SizedBox(height: 10),
+                    ] else
+                      pw.SizedBox(height: 10),
+                  ],
+                ),
+            build:
+                (context) => [
+                  pw.TableHelper.fromTextArray(
+                    headers: [
+                      "S.No",
+                      "User Id",
+                      "Name",
+                      // "Designation",
+                      // "Gender",
+                      "Mobile",
+                      "Email",
+                    ],
+                    data:
+                        chunk.asMap().entries.map((entry) {
+                          final index =
+                              chunkIndex * rowsPerPage + entry.key + 1;
+                          final staff = entry.value;
+                          return [
+                            index.toString(),
+                            staff['username'].toString().toUpperCase(),
+
+                            staff['name'].toString().toUpperCase(),
+                            // staff['designation'].toString().toUpperCase(),
+                            // (staff['gender'] == 'M'
+                            //     ? 'Male'
+                            //     : staff['gender'] == 'F'
+                            //     ? 'Female'
+                            //     : staff['gender'] == 'O'
+                            //     ? 'Others'
+                            //     : ""),
+                            // '', '',
+                            // staff['mobile'] ?? '',
+                            // staff['email'] ?? '',
+                          ];
+                        }).toList(),
+                    headerDecoration: pw.BoxDecoration(color: PdfColors.blue),
+                    headerStyle: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      fontSize: 10,
+                    ),
+                    cellStyle: pw.TextStyle(fontSize: 9, font: ttf),
+                    columnWidths: {
+                      0: pw.FixedColumnWidth(23),
+                      // 1: pw.FlexColumnWidth(0.1),
+                      // 2: pw.FlexColumnWidth(0.1),
+                      3: pw.FixedColumnWidth(80),
+                      4: pw.FixedColumnWidth(80),
+                      //5: pw.FlexColumnWidth(4),
+                    },
+                    cellAlignment: pw.Alignment.centerLeft,
+                  ),
+                ],
+          ),
+        );
+      }
+    }
+
+    return pdf;
+  }
+
   Future<void> handleDownload() async {
     final facultyType = selectedIndex == 0 ? 'teaching' : 'nonteaching';
-    await buildPdf(facultyType: facultyType);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => PdfPreviewCustomPage(
+              buildPdf: () => buildPdfAsync(facultyType: facultyType),
+              title:
+                  '${facultyType[0].toUpperCase()}${facultyType.substring(1)} Staff List',
+              fileName: '${facultyType}_staff_list',
+            ),
+      ),
+    );
+  }
+
+  Future<void> handleDownload1() async {
+    final facultyType = selectedIndex == 0 ? 'teaching' : 'nonteaching';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => PdfPreviewCustomPage(
+              buildPdf: () => buildPdfAsync1(facultyType: facultyType),
+              title:
+                  '${facultyType[0].toUpperCase()}${facultyType.substring(1)} Staff List',
+              fileName: '${facultyType}_staff_list',
+            ),
+      ),
+    );
   }
 
   Widget staffSection(List<Map<String, dynamic>> list, String title) {
@@ -264,7 +521,7 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
               ),
               const SizedBox(height: 60),
               Text(
-                'Do you want to download the $title List as a PDF?',
+                'Do you want to generate the $title as a PDF?',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, color: Colors.grey[700]),
               ),
@@ -272,7 +529,28 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
               ElevatedButton.icon(
                 onPressed: list.isEmpty ? null : handleDownload,
                 icon: const Icon(Icons.download_rounded),
-                label: const Text('Download PDF'),
+                label: const Text('Generate PDF'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 15,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton.icon(
+                onPressed: list.isEmpty ? null : handleDownload1,
+                icon: const Icon(Icons.download_rounded),
+                label: const Text('Generate PDF(email/mobile)'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
                   foregroundColor: Colors.white,
@@ -317,8 +595,13 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
     final nonTeachingStaffs =
         staffs.where((s) => s['faculty'] == 'nonteaching').toList();
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -332,7 +615,7 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -348,10 +631,9 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
                     schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'Staff List',
-
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -375,8 +657,8 @@ class _DownloadStaffNominalRoleState extends State<DownloadStaffNominalRole> {
                 : IndexedStack(
                   index: selectedIndex,
                   children: [
-                    staffSection(teachingStaffs, "Teaching Staffs"),
-                    staffSection(nonTeachingStaffs, "Non Teaching Staffs"),
+                    staffSection(teachingStaffs, "Teaching Staff"),
+                    staffSection(nonTeachingStaffs, "Non Teaching Staff"),
                   ],
                 ),
         bottomNavigationBar: BottomNavigationBar(

@@ -1,15 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/student/services/student_api_services.dart';
 
 import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../services/admin_api_service.dart';
+import '../../../widget/pdf_preview_custom_page.dart';
 import '../../dashboard/admin_dashboard.dart';
+import 'build_student_list_excel.dart';
 import 'build_student_list_pdf.dart';
 import 'classes/download_student_nomial_role_classes.dart';
 
@@ -44,9 +46,10 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
   String? schoolName;
   String? schoolAddress;
   Uint8List? schoolPhotoBytes;
+  int totalStudents = 0;
 
   @override
-  bool get wantKeepAlive => true; // Keep the state alive
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -55,46 +58,68 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
   }
 
   Future<void> init() async {
-    // Use cached data if available
-    if (StudentCache.students.isNotEmpty) {
-      students = StudentCache.students;
-      schoolName = StudentCache.schoolName;
-      schoolAddress = StudentCache.schoolAddress;
-      schoolPhotoBytes = StudentCache.schoolPhotoBytes;
-      setState(() => isLoading = false);
-      return;
-    }
-
     try {
-      await fetchSchoolInfo();
-      students = await AdminApiService.fetchAllStudentData(widget.schoolId);
+      totalStudents = await AdminApiService.countStudentUsernames(
+        widget.schoolId,
+      );
 
-      // Sort by class_id
-      students.sort((a, b) => a["class_id"].compareTo(b["class_id"]));
-
-      // Fetch class & section info for each student
-      for (int i = 0; i < students.length; i++) {
-        try {
-          final classData = await StudentApiServices.fetchClassDatas(
-            widget.schoolId,
-            students[i]["class_id"].toString(),
-          );
-          students[i]['class'] = classData?['class'] ?? '';
-          students[i]['section'] = classData?['section'] ?? '';
-        } catch (e) {
-          debugPrint("Error fetching class data: $e");
-        }
-      }
-
-      // Cache data
-      StudentCache.students = students;
-      StudentCache.schoolName = schoolName;
-      StudentCache.schoolAddress = schoolAddress;
-      StudentCache.schoolPhotoBytes = schoolPhotoBytes;
-    } catch (e) {
-      debugPrint("Error initializing data: $e");
-    } finally {
       if (mounted) setState(() => isLoading = false);
+
+      _loadDetailsInBackground();
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _loadDetailsInBackground() async {
+    // if (StudentCache.students.isNotEmpty) {
+    //   students = StudentCache.students;
+    //   schoolName = StudentCache.schoolName;
+    //   schoolAddress = StudentCache.schoolAddress;
+    //   schoolPhotoBytes = StudentCache.schoolPhotoBytes;
+    //   if (mounted) setState(() {});
+    //   return;
+    // }
+    students = [];
+    try {
+      final results = await Future.wait([
+        fetchSchoolInfo(),
+        AdminApiService.fetchAllStudentDataWithClass(widget.schoolId),
+      ]);
+
+      students = results[1] as List<Map<String, dynamic>>;
+      students.sort((a, b) => a["class_id"].compareTo(b["class_id"]));
+      students.sort((a, b) {
+        // Gender: Males ('M') first, then Females
+        if (a['gender'] == b['gender']) {
+          var aUsername = a['username'].toString();
+          var bUsername = b['username'].toString();
+
+          // Check if both usernames are numeric
+          final numA = int.tryParse(aUsername);
+          final numB = int.tryParse(bUsername);
+
+          if (numA != null && numB != null) {
+            // Both numeric: compare numerically
+            return numA.compareTo(numB);
+          } else {
+            // Otherwise: compare as strings
+            return aUsername.compareTo(bUsername);
+          }
+        } else if (a['gender'] == 'M') {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
+      setState(() {
+        isDownloading = false;
+      });
+      StudentCache.students = students;
+    } catch (e) {
+      setState(() {
+        isDownloading = false;
+      });
     }
   }
 
@@ -104,38 +129,63 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
       if (schoolData.isNotEmpty) {
         schoolName = schoolData[0]['name'];
         schoolAddress = schoolData[0]['address'];
+
+        StudentCache.schoolName = schoolName;
+        StudentCache.schoolAddress = schoolAddress;
+
         if (schoolData[0]['photo'] != null) {
-          try {
-            Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-            schoolPhotoBytes = imageBytes;
-          } catch (e) {
-            debugPrint('Image decode error: $e');
+          Uint8List? decodeBase64(dynamic data) {
+            if (data == null) return null;
+            return base64Decode(data as String);
           }
+
+          schoolPhotoBytes = await compute(
+            decodeBase64,
+            schoolData[0]['photo'],
+          );
+
+          StudentCache.schoolPhotoBytes = schoolPhotoBytes;
         }
+
+        if (mounted) setState(() {});
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      setState(() {});
     }
   }
 
-  /// PDF download/print logic placeholder
   Future<void> handleDownload() async {
-    // Your PDF logic here
-    await buildPdf(
-      students: students,
-      schoolName: schoolName ?? '',
-      schoolAddress: schoolAddress ?? '',
-      schoolPhotoBytes: schoolPhotoBytes,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => PdfPreviewCustomPage(
+              buildPdf:
+                  () => buildPdf(
+                    students: students,
+                    schoolName: schoolName ?? '',
+                    schoolAddress: schoolAddress ?? '',
+                    schoolPhotoBytes: schoolPhotoBytes,
+                  ),
+              title: 'Student List',
+              fileName: 'student_list_school',
+            ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -147,18 +197,13 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                     title: 'Student List',
                     enableDrawer: false,
                     enableBack: true,
-                    onBack: () {
-                      onWillPop();
-                    },
+                    onBack: onWillPop,
                   )
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'Student List',
-
-                    onBack: () {
-                      onWillPop();
-                    },
+                    onBack: onWillPop,
                   ),
         ),
         body:
@@ -169,7 +214,7 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                     size: 60.0,
                   ),
                 )
-                : students.isEmpty
+                : totalStudents == 0
                 ? const Center(
                   child: Text(
                     'Student List is empty.',
@@ -213,7 +258,7 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    '${students.length}',
+                                    '$totalStudents',
                                     style: const TextStyle(
                                       color: Colors.black,
                                       fontWeight: FontWeight.bold,
@@ -226,7 +271,7 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                           ),
                           const SizedBox(height: 60),
                           Text(
-                            'Do you want to download the Student List as a PDF For whole School?',
+                            'Do you want to generate the Student List as a PDF For whole School?',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
@@ -253,7 +298,7 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                                     )
                                     : const Icon(Icons.download_rounded),
                             label: Text(
-                              isDownloading ? 'Downloading...' : 'Download PDF',
+                              isDownloading ? 'Generating...' : 'Generate PDF',
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
@@ -271,9 +316,30 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                               ),
                             ),
                           ),
+                          SizedBox(height: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 30,
+                                vertical: 15,
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed:
+                                () => generatePreviewShareExcel(students),
+                            child: Text('excel'),
+                          ),
                           const SizedBox(height: 60),
                           Text(
-                            'Do you want to download the Student List as a PDF For Class Wise?',
+                            'Do you want to generate the Student List as a PDF For Class Wise?',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,

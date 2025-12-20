@@ -121,7 +121,7 @@ class _AdminRegistrationState extends State<AdminRegistration> {
         }
       }
     } catch (e) {
-      debugPrint('Failed to load admin data: $e');
+      return;
     }
   }
 

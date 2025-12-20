@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StudentAppbarMobile extends StatefulWidget {
@@ -12,8 +13,11 @@ class StudentAppbarMobile extends StatefulWidget {
     required this.enableDrawer,
     required this.enableBack,
     required this.onBack,
+    required this.schoolId,
+    required this.username,
   });
-
+  final int schoolId;
+  final String username;
   final String title;
   final bool enableDrawer;
   final bool enableBack;
@@ -62,7 +66,6 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
           adminPhoto = MemoryImage(imageBytes);
         });
       } catch (e) {
-        debugPrint('Failed to decode stored image: $e');
         setState(() => adminPhoto = null);
       }
     }
@@ -80,7 +83,7 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
         "Jun": "Jun",
         "Jul": "Jul",
         "Aug": "Aug",
-        "Sep": "Sept", // 👈 force "Sept"
+        "Sep": "Sept",
         "Oct": "Oct",
         "Nov": "Nov",
         "Dec": "Dec",
@@ -146,6 +149,24 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
                 ),
               ),
               const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              schoolId: widget.schoolId,
+                              username: widget.username,
+                            ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.home, color: Colors.white),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -164,7 +185,9 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    username,
+                    username.length < 10
+                        ? username
+                        : '${username.substring(0, 10)}...',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 19,

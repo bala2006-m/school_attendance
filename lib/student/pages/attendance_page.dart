@@ -173,6 +173,8 @@ class _AttendancePageState extends State<AttendancePage> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: int.parse(widget.schoolId),
+                  username: widget.username,
                   title: 'Student Attendance',
                   enableDrawer: false,
                   enableBack: true,
@@ -190,7 +192,24 @@ class _AttendancePageState extends State<AttendancePage> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Student Attendance'),
+                : StudentAppbarDesktop(
+                  title: 'Student Attendance',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    StudentDashboardState.selectedIndex = 0;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: int.parse(widget.schoolId),
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body: SingleChildScrollView(
         child: Column(

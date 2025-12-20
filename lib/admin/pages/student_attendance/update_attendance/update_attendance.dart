@@ -254,10 +254,34 @@ class _StudentAttendanceState extends State<StudentAttendance> {
             final status = attendanceMap[username] ?? absentStatus;
             return {...student, sessionKey: status};
           }).toList();
+      students.sort((a, b) {
+        // Gender: Males ('M') first, then Females
+        if (a['gender'] == b['gender']) {
+          var aUsername = a['name'].toString();
+          var bUsername = b['name'].toString();
+
+          // Check if both usernames are numeric
+          final numA = int.tryParse(aUsername);
+          final numB = int.tryParse(bUsername);
+
+          if (numA != null && numB != null) {
+            // Both numeric: compare numerically
+            return numA.compareTo(numB);
+          } else {
+            // Otherwise: compare as strings
+            return aUsername.compareTo(bUsername);
+          }
+        } else if (a['gender'] == 'M') {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
+
       originalStudents =
           students.map((s) => Map<String, dynamic>.from(s)).toList();
     } catch (e) {
-      debugPrint("Data loading error: $e");
+      setState(() => isLoading = false);
     }
 
     if (mounted) setState(() => isLoading = false);
@@ -453,19 +477,20 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                   }
 
                   if (!mounted) return;
-
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => StatusDialog(
-                          message1:
-                              success
-                                  ? 'Attendance updated successfully'
-                                  : 'Failed to update attendance',
-                          isSuccess: success,
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                  );
+                  if (context.mounted) {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (_) => StatusDialog(
+                            message1:
+                                success
+                                    ? 'Attendance updated successfully'
+                                    : 'Failed to update attendance',
+                            isSuccess: success,
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                    );
+                  }
                 }
                 : null,
 
@@ -583,7 +608,7 @@ class StudentCard extends StatelessWidget {
       case 'M':
         return const Icon(Icons.male, color: Colors.blue, size: 42);
       case 'F':
-        return const Icon(Icons.female, color: Colors.pink, size: 42);
+        return const Icon(Icons.female, color: Colors.red, size: 42);
       default:
         return const Icon(Icons.person, color: Colors.grey, size: 42);
     }
@@ -628,13 +653,19 @@ class StudentCard extends StatelessWidget {
               children: [
                 Text(
                   student['name'] ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
+                    color:
+                        student['gender'] == 'M'
+                            ? Colors.blue
+                            : student['gender'] == 'F'
+                            ? Colors.red
+                            : Colors.blue,
                   ),
                 ),
                 Text(
-                  student['mobile'] ?? '',
+                  student['username'] ?? '',
                   style: const TextStyle(fontSize: 16),
                 ),
               ],
@@ -662,18 +693,24 @@ class StudentCard extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not launch WhatsApp')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not launch WhatsApp'),
+                      ),
+                    );
+                  }
                 }
               } else {
                 final telUrl = Uri.parse("tel:$phone");
                 if (await canLaunchUrl(telUrl)) {
                   await launchUrl(telUrl);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not make a call')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not make a call')),
+                    );
+                  }
                 }
               }
             },

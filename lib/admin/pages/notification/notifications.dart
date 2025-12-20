@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
-import 'package:school_attendance/admin/pages/notification/staff_notification.dart';
-import 'package:school_attendance/admin/pages/notification/student_notification.dart';
-import 'package:school_attendance/admin/services/admin_api_service.dart';
-import 'package:school_attendance/teacher/services/teacher_api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../services/api_service.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../dashboard/admin_dashboard.dart';
@@ -17,6 +13,7 @@ class Notifications extends StatefulWidget {
     required this.schoolId,
     required this.username,
   });
+
   final String schoolId;
   final String username;
 
@@ -25,126 +22,33 @@ class Notifications extends StatefulWidget {
 }
 
 class NotificationsState extends State<Notifications> {
-  // 🔴 Shared across all Notifications widgets
-  static List<dynamic> leaveRequests = [];
-  static List<dynamic> feedbacks = [];
-  static Set<int> seenFeedbackIds = {};
-  static Set<int> seenLeaveIds = {};
-  static bool isLoading = true;
-  static int selectedIndex = 1;
-
-  // 🔴 Keep reference to current state (to call setState in static methods)
-  static NotificationsState? _instance;
+  List<Map<String, dynamic>> schoolDatas = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _instance = this;
-    init();
+    fetchSchoolInfo();
   }
 
-  @override
-  void dispose() {
-    if (_instance == this) _instance = null;
-    super.dispose();
-  }
-
-  Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Load seen IDs
-    seenFeedbackIds =
-        (prefs.getStringList("seenFeedbackIds") ?? []).map(int.parse).toSet();
-    seenLeaveIds =
-        (prefs.getStringList("seenLeaveIds") ?? []).map(int.parse).toSet();
-
-    final leave = await AdminApiService.fetchLeaveRequest(widget.schoolId);
-    final feed = await AdminApiService.fetchFeedback(widget.schoolId);
-
-    _instance?.setState(() {
-      leaveRequests =
-          leave.where((item) => !seenLeaveIds.contains(item['id'])).toList();
-      feedbacks =
-          feed.where((item) => !seenFeedbackIds.contains(item['id'])).toList();
-      isLoading = false;
-    });
-  }
-
-  static Future<void> markFeedbackSeen(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    seenFeedbackIds.add(id);
-    await prefs.setStringList(
-      "seenFeedbackIds",
-      seenFeedbackIds.map((e) => e.toString()).toList(),
-    );
-
-    _instance?.setState(() {
-      feedbacks.removeWhere((item) => item['id'] == id);
-    });
-  }
-
-  static Future<void> markLeaveSeen(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    seenLeaveIds.add(id);
-    await prefs.setStringList(
-      "seenLeaveIds",
-      seenLeaveIds.map((e) => e.toString()).toList(),
-    );
-
-    _instance?.setState(() {
-      leaveRequests.removeWhere((item) => item['id'] == id);
-    });
-  }
-
-  static Future<void> updateLeaveStatus(
-    String newStatus,
-    int leaveId,
-    BuildContext context,
-  ) async {
-    // Optimistic UI update
-    final index = leaveRequests.indexWhere((r) => r['id'] == leaveId);
-    if (index != -1) {
-      _instance?.setState(() {
-        leaveRequests[index]['status'] = newStatus;
-      });
-    }
-
+  Future<void> fetchSchoolInfo() async {
     try {
-      await TeacherApiServices.updateLeaveStatus(leaveId, newStatus);
-
-      // ✅ once updated, mark as seen
-      await markLeaveSeen(leaveId);
-
-      if (_instance?.mounted ?? false) {
+      final schoolData = await ApiService.fetchSchoolData(widget.schoolId);
+      setState(() {
+        schoolDatas = schoolData;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Leave status updated to $newStatus')),
+          const SnackBar(content: Text("Failed to load school info")),
         );
       }
-    } catch (e) {
-      if (_instance?.mounted ?? false) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
-      }
-      await _instance?.init(); // rollback
     }
   }
 
   Future<bool> onWillPop() async {
-    _goBack();
-    for (final fb in feedbacks) {
-      await markFeedbackSeen(fb['id']);
-    }
-    for (final leave in leaveRequests) {
-      if (leave['status'] != 'pending') {
-        await markLeaveSeen(leave['id']);
-      }
-    }
-
-    return true;
-  }
-
-  void _goBack() {
     AdminDashboardState.selectedIndex = 1;
     Navigator.push(
       context,
@@ -156,24 +60,35 @@ class NotificationsState extends State<Notifications> {
             ),
       ),
     );
-  }
-
-  static String formatDate(dynamic date, {String format = 'MMM d, yyyy'}) {
-    if (date == null) return '';
-    try {
-      final parsed = DateTime.tryParse(date.toString());
-      if (parsed != null) {
-        return DateFormat(format).format(parsed);
-      }
-    } catch (_) {}
-    return date.toString();
+    return false;
   }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    return WillPopScope(
-      onWillPop: onWillPop,
+    final dateFormat = DateFormat('MMM d, yyyy');
+    final today = DateTime.now();
+
+    // Filter schools that actually have notifications
+    final filteredSchools =
+        schoolDatas.where((school) {
+          if (school['dueDate'] == null) return false;
+          try {
+            final dueDate = DateTime.parse(school['dueDate']);
+            final diffDays = dueDate.difference(today).inDays;
+            return diffDays < 0 || (diffDays >= 0 && diffDays <= 5);
+          } catch (_) {
+            return false;
+          }
+        }).toList();
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
         appBar: PreferredSize(
@@ -186,14 +101,13 @@ class NotificationsState extends State<Notifications> {
                     title: 'Notifications',
                     enableDrawer: false,
                     enableBack: true,
-                    onBack: _goBack,
+                    onBack: () => onWillPop(),
                   )
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'Notifications',
-
-                    onBack: _goBack,
+                    onBack: () => onWillPop(),
                   ),
         ),
         body:
@@ -204,34 +118,165 @@ class NotificationsState extends State<Notifications> {
                     size: 60.0,
                   ),
                 )
-                : (leaveRequests.isEmpty && feedbacks.isEmpty)
-                ? const Center(child: Text("No new notifications 🎉"))
-                : IndexedStack(
-                  index: selectedIndex,
-                  children: [
-                    StaffNotification(leaveRequests: leaveRequests),
-                    StudentNotification(
-                      leaveRequests: leaveRequests,
-                      feedbacks: feedbacks,
-                    ),
-                  ],
+                : filteredSchools.isEmpty
+                ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.notifications_off_outlined,
+                        size: 90,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        "No new notifications",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: filteredSchools.length,
+                  itemBuilder: (context, index) {
+                    final school = filteredSchools[index];
+                    final dueDate = DateTime.parse(school['dueDate']);
+                    final diffDays = dueDate.difference(today).inDays;
+
+                    String message = '';
+                    Color bgColor = Colors.white;
+                    Color textColor = Colors.black87;
+                    IconData icon = Icons.notifications_active_rounded;
+
+                    // Define color schemes for clarity
+                    if (dueDate.isBefore(today)) {
+                      final daysOverdue =
+                          DateTime.now().difference(dueDate).inDays;
+                      message =
+                          "Your payment is overdue by $daysOverdue days.\nIt was due on ${dateFormat.format(dueDate)}.\nPlease make the payment as soon as possible.";
+
+                      bgColor = const Color(0xFFFFE5E5);
+                      textColor = const Color(0xFFD32F2F);
+                      icon = Icons.warning_amber_rounded;
+                    } else if (diffDays >= 0 && diffDays <= 5) {
+                      message =
+                          "Only $diffDays days remaining before the due date.\nPlease ensure payment by ${dateFormat.format(dueDate)}.";
+                      bgColor = const Color(0xFFFFF4E5);
+                      textColor = const Color(0xFFF57C00);
+                      icon = Icons.hourglass_top_rounded;
+                    }
+
+                    return InkWell(
+                      onTap: () {},
+                      borderRadius: BorderRadius.circular(20),
+                      splashColor: textColor.withValues(alpha: 0.1),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              bgColor.withValues(alpha: 0.85),
+                              Colors.white.withValues(alpha: 0.9),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.25),
+                              spreadRadius: 1,
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          leading: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: textColor.withValues(alpha: 0.15),
+                            child: Icon(icon, color: textColor, size: 26),
+                          ),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Payment Reminder',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              if (school['city'] != null)
+                                Text(
+                                  school['city'],
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: RichText(
+                              text: TextSpan(
+                                text: message.split('(').first,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 15,
+                                  height: 1.4,
+                                ),
+                                children: [
+                                  if (message.contains('('))
+                                    TextSpan(
+                                      text: '(${message.split('(').last}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor.withValues(alpha: 0.9),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // trailing: Column(
+                          //   mainAxisAlignment: MainAxisAlignment.center,
+                          //   children: [
+                          //     Icon(
+                          //       Icons.calendar_today_rounded,
+                          //       color: textColor.withOpacity(0.8),
+                          //       size: 20,
+                          //     ),
+                          //     const SizedBox(height: 4),
+                          //     Text(
+                          //       dateFormat.format(dueDate),
+                          //       style: TextStyle(
+                          //         fontSize: 12,
+                          //         color: textColor.withOpacity(0.8),
+                          //         fontWeight: FontWeight.w600,
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          selectedItemColor: Colors.pink,
-          unselectedItemColor: Colors.grey,
-          onTap: (index) => _instance?.setState(() => selectedIndex = index),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: 30),
-              label: 'Staff',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people, size: 30),
-              label: 'Student',
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -6,8 +6,8 @@ import 'package:school_attendance/admin/pages/student_attendance/periodicalRepor
 import 'package:school_attendance/admin/pages/student_attendance/viewAbsentees/student_absentees.dart';
 import 'package:school_attendance/admin/pages/student_attendance/viewAttendance/view_student_attendance.dart';
 
-import '../../../components/build_profile_card_desktop.dart';
 import '../../../components/build_profile_card_mobile.dart';
+import '../../student_attendance/mark_old_attendance/mark_old_attendance.dart';
 import '../../student_attendance/monthelyAttendance/monthly_attendance.dart';
 import '../../student_attendance/update_attendance/modify_student_attendance.dart';
 
@@ -69,23 +69,14 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
   }
 
   Widget buildMainUI(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    // final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    final profileCard =
-        screenWidth > 600
-            ? BuildProfileCardDesktop.buildProfileCardDesktop(
-              adminName: widget.adminName,
-              adminDesignation: widget.adminDesignation,
-              adminPhoto: widget.adminPhoto,
-              schoolAddress: widget.schoolAddress,
-              schoolName: widget.schoolName,
-            )
-            : BuildProfileCard(
-              schoolPhoto: widget.schoolPhoto,
-              schoolAddress: widget.schoolAddress,
-              schoolName: widget.schoolName,
-            );
+    final profileCard = BuildProfileCard(
+      schoolPhoto: widget.schoolPhoto,
+      schoolAddress: widget.schoolAddress,
+      schoolName: widget.schoolName,
+    );
 
     return Scaffold(
       backgroundColor: Colors.blue.shade50,
@@ -113,41 +104,44 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
     return buildSectionContainer(
       title: 'Staff',
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            buildElevatedButton(
-              buttonIndex: 0,
-              context,
-              'Mark Attendance',
-              StaffAttendance(
-                schoolId: widget.schoolId,
-                username: widget.adminUsername,
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              buildElevatedButton(
+                buttonIndex: 0,
+                context,
+                'Mark Attendance',
+                StaffAttendance(
+                  schoolId: widget.schoolId,
+                  username: widget.adminUsername,
+                ),
+                Icons.people,
               ),
-              Icons.people,
-            ),
-            buildElevatedButton(
-              buttonIndex: 1,
-              context,
-              'View Absentees',
-              StaffAbsentees(
-                schoolId: widget.schoolId,
-                username: widget.adminUsername,
+              buildElevatedButton(
+                buttonIndex: 1,
+                context,
+                'View Absentees',
+                StaffAbsentees(
+                  schoolId: widget.schoolId,
+                  username: widget.adminUsername,
+                ),
+                Icons.people_outline,
               ),
-              Icons.people_outline,
-            ),
-            buildElevatedButton(
-              buttonIndex: 2,
-              context,
-              'View Attendance',
-              ViewStaffAttendance(
-                schoolId: widget.schoolId,
-                username: widget.adminUsername,
+              buildElevatedButton(
+                buttonIndex: 2,
+                context,
+                'View Attendance',
+                ViewStaffAttendance(
+                  schoolId: widget.schoolId,
+                  username: widget.adminUsername,
+                ),
+                Icons.people_outline_outlined,
               ),
-              Icons.people_outline_outlined,
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -158,7 +152,7 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       title: 'Student',
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             buildElevatedButton(
@@ -194,7 +188,7 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
           ],
         ),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             buildElevatedButton(
@@ -217,6 +211,16 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
               ),
               Icons.report,
             ),
+            buildElevatedButton(
+              buttonIndex: 8,
+              context,
+              'Mark Old Attendance',
+              MarkOldAttendance(
+                schoolId: widget.schoolId,
+                username: widget.adminUsername,
+              ),
+              Icons.mode_edit_outlined,
+            ),
           ],
         ),
       ],
@@ -228,7 +232,7 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
     required List<Widget> children,
   }) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.7,
+      width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
@@ -278,14 +282,23 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
     required int buttonIndex,
   }) {
     bool isClicked = _clickedButtonIndex == buttonIndex;
-
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 12),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height / 3,
-          minWidth: MediaQuery.of(context).size.width / 7,
-          maxWidth: MediaQuery.of(context).size.width / 7,
+          maxHeight: MediaQuery.of(context).size.height * 0.22,
+          minWidth:
+              MediaQuery.of(context).size.width > 638
+                  ? MediaQuery.of(context).size.width / 6.1
+                  : MediaQuery.of(context).size.width > 510
+                  ? MediaQuery.of(context).size.width / 7
+                  : MediaQuery.of(context).size.width / 7.5,
+          maxWidth:
+              MediaQuery.of(context).size.width > 638
+                  ? MediaQuery.of(context).size.width / 6.1
+                  : MediaQuery.of(context).size.width > 510
+                  ? MediaQuery.of(context).size.width / 7
+                  : MediaQuery.of(context).size.width / 7.5,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -294,8 +307,8 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: isClicked ? Colors.cyan.shade800 : Colors.cyan,
                 minimumSize: Size(
-                  MediaQuery.of(context).size.width / 5.5,
-                  MediaQuery.of(context).size.height / 5.5,
+                  MediaQuery.of(context).size.width / 4.5,
+                  MediaQuery.of(context).size.height * 0.09,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),

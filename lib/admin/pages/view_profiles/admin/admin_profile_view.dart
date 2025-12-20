@@ -64,8 +64,13 @@ class _AdminProfileState extends State<AdminProfile> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -176,7 +181,7 @@ class _AdminProfileState extends State<AdminProfile> {
                             // Details
                             ListTile(
                               leading: const Icon(Icons.badge),
-                              title: Text("Username: ${admin!['username']}"),
+                              title: Text("User ID: ${admin!['username']}"),
                             ),
                             ListTile(
                               leading: const Icon(Icons.phone),
@@ -185,6 +190,22 @@ class _AdminProfileState extends State<AdminProfile> {
                             ListTile(
                               leading: const Icon(Icons.email),
                               title: Text("Email: ${admin!['email']}"),
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                admin!['gender'] == 'M'
+                                    ? Icons.male
+                                    : admin!['gender'] == 'F'
+                                    ? Icons.female
+                                    : Icons.person,
+                              ),
+                              title: Text(
+                                "Gender: ${admin!['gender'] == 'M'
+                                    ? 'Male'
+                                    : admin!['gender'] == 'F'
+                                    ? 'Female'
+                                    : ''}",
+                              ),
                             ),
                           ],
                         ),

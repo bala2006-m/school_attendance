@@ -25,14 +25,19 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 500;
     final userData = widget.userData;
+
     final dob =
-        DateTime.parse(userData["DOB"]).toLocal().toString().split(' ')[0];
+        userData['DOB'].toString().isNotEmpty
+            ? DateTime.parse(userData["DOB"]).toLocal().toString().split(' ')[0]
+            : '';
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
                   title: ' Profile',
                   enableDrawer: false,
                   enableBack: true,
@@ -49,7 +54,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Profile'),
+                : StudentAppbarDesktop(
+                  title: ' Profile',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: widget.schoolId,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -98,7 +119,19 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildInfoTile("Community", userData["community"] ?? ''),
               _buildInfoTile("Father's Name", userData["father_name"] ?? ''),
               _buildInfoTile("Date of Birth", dob),
-              _buildInfoTile("Route", userData["route"] ?? ''),
+              if (userData['address'].toString().isNotEmpty &&
+                  userData['address'].toString() != 'null')
+                _buildInfoTile("Address", userData['address']),
+              if (userData['date_of_join'].toString().isNotEmpty)
+                _buildInfoTile(
+                  "Date of join",
+                  DateTime.parse(
+                    userData["date_of_join"],
+                  ).toLocal().toString().split(' ')[0],
+                ),
+              if (userData['route'].toString().isNotEmpty &&
+                  userData['route'].toString() != 'null')
+                _buildInfoTile("Route", userData["route"] ?? ''),
             ],
           ),
         ),
@@ -139,6 +172,10 @@ class _ProfilePageState extends State<ProfilePage> {
         return Icons.person;
       case "date of birth":
         return Icons.calendar_today;
+      case "date of join":
+        return Icons.calendar_today_outlined;
+      case "Address":
+        return Icons.location_city;
       default:
         return Icons.info_outline;
     }

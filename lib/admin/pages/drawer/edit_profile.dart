@@ -96,7 +96,7 @@ class _EditProfileState extends State<EditProfile> {
         username: widget.username,
         schoolId: widget.schoolId,
       );
-      //print(adminData?['gender']);
+
       adminName = adminData?['name'] ?? '';
       adminMobileNumber = adminData?['mobile'] ?? '';
       adminDesignation = adminData?['designation'] ?? '';
@@ -120,7 +120,6 @@ class _EditProfileState extends State<EditProfile> {
 
       setState(() => _isLoading = false);
     } catch (e) {
-      debugPrint('Initial load failed: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -198,18 +197,21 @@ class _EditProfileState extends State<EditProfile> {
           _newImageFile = null;
           _hasChanges = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Profile updated successfully')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Profile updated successfully')),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              '❌ Failed to update profile (image may be too large)',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '❌ Failed to update profile (image may be too large)',
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
   }

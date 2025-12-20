@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
 import '../../../admin/services/admin_api_service.dart';
@@ -59,34 +58,37 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-
-    return WillPopScope(
-      onWillPop: onWillPop,
+    // final isMobile = MediaQuery.of(context).size.width < 600;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Create Today Message',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      StaffDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => StaffDashboard(
-                                username: widget.username,
-                                schoolId: widget.schoolId,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'Create Today Message'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Create Today Message',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              StaffDashboardState.selectedIndex = 2;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => StaffDashboard(
+                        username: widget.username,
+                        schoolId: widget.schoolId,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body: Center(
           child: SingleChildScrollView(
@@ -107,10 +109,11 @@ class _CreateTodayMessageState extends State<CreateTodayMessage> {
                                 message.text.trim(),
                                 int.parse(widget.schoolId),
                               );
-
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text(result)));
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(SnackBar(content: Text(result)));
+                              }
                               message.text = '';
                               setState(() {
                                 isMessageNotEmpty = false;

@@ -46,7 +46,7 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
       await fetchClasses();
       await fetchAttendanceStatusForAll();
     } catch (e) {
-      debugPrint("Initialization error: $e");
+      setState(() => isLoading = false);
     } finally {
       setState(() {
         isLoading = false;
@@ -69,7 +69,7 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      return;
     }
   }
 
@@ -83,7 +83,7 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
             : a['section'].compareTo(b['section']);
       });
     } catch (e) {
-      debugPrint('Error fetching classes: $e');
+      setState(() {});
     }
   }
 
@@ -101,7 +101,6 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
               attendanceStatusMap[classId] = result == false;
             })
             .catchError((e) {
-              debugPrint("Error checking attendance for class $classId: $e");
               attendanceStatusMap[classId] = true;
             }),
       );
@@ -153,8 +152,13 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
         ),
       );
     }
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),

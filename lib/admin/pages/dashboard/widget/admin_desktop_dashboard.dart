@@ -28,6 +28,9 @@ class AdminDesktopDashboard extends StatelessWidget {
     required this.message,
     required this.attendanceStatusMapAn,
     this.schoolPhoto,
+    required this.allPendingTermFees,
+    required this.allPendingBusFees,
+    required this.allPendingRteFees,
   });
   final String message;
   final String schoolId;
@@ -48,6 +51,9 @@ class AdminDesktopDashboard extends StatelessWidget {
   final String mobile;
   final Map<String, bool> attendanceStatusMapFn;
   final Map<String, bool> attendanceStatusMapAn;
+  final Map<String, dynamic> allPendingTermFees;
+  final Map<String, dynamic> allPendingBusFees;
+  final Map<String, dynamic> allPendingRteFees;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +123,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                     schoolName: schoolName,
                     schoolAddress: schoolAddress,
                   ),
-                  BuildHomePageDesktop.buildHomePageDesktop(
+                  BuildHomePage.buildHomePage(
                     message: message,
                     context: context,
                     totalStudents: '$totalStudents',
@@ -134,6 +140,9 @@ class AdminDesktopDashboard extends StatelessWidget {
                     schoolPhoto: schoolPhoto,
                     attendanceStatusMapFn: attendanceStatusMapFn,
                     attendanceStatusMapAn: attendanceStatusMapAn,
+                    allPendingTermFees: allPendingTermFees,
+                    allPendingBusFees: allPendingBusFees,
+                    allPendingRteFees: allPendingRteFees,
                   ),
                   AdminManagementDesktop(
                     adminUsername: username,

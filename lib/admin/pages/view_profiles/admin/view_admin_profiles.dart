@@ -100,12 +100,45 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
     return false;
   }
 
+  List<Map<String, dynamic>> groupAndSortAdmins(
+    List<Map<String, dynamic>> admins,
+  ) {
+    // Separate by gender
+    final males =
+        admins
+            .where((s) => (s['gender'] ?? '').toString().toUpperCase() == 'M')
+            .toList();
+    final females =
+        admins
+            .where((s) => (s['gender'] ?? '').toString().toUpperCase() == 'F')
+            .toList();
+
+    // Sort by name inside each group (case-insensitive)
+    int nameComparator(Map<String, dynamic> a, Map<String, dynamic> b) {
+      final aName = (a['name'] ?? '').toString().toLowerCase();
+      final bName = (b['name'] ?? '').toString().toLowerCase();
+      return aName.compareTo(bName);
+    }
+
+    males.sort(nameComparator);
+    females.sort(nameComparator);
+
+    // Combine with males first
+    return [...males, ...females];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final adminsToShow = groupAndSortAdmins(filteredAdmins);
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -135,7 +168,6 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                     schoolId: widget.schoolId,
                     username: widget.username,
                     title: 'Admin Profiles',
-
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
                       Navigator.push(
@@ -161,7 +193,6 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                 )
                 : Column(
                   children: [
-                    // ✅ Search bar
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -180,13 +211,18 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                     ),
                     Expanded(
                       child:
-                          filteredAdmins.isEmpty
+                          adminsToShow.isEmpty
                               ? const Center(child: Text('No Admins Found'))
                               : ListView.builder(
                                 padding: const EdgeInsets.all(12),
-                                itemCount: filteredAdmins.length,
+                                itemCount: adminsToShow.length,
                                 itemBuilder: (context, index) {
-                                  final admin = filteredAdmins[index];
+                                  final admin = adminsToShow[index];
+                                  final gender =
+                                      (admin['gender'] ?? '')
+                                          .toString()
+                                          .toUpperCase();
+
                                   return Card(
                                     elevation: 3,
                                     margin: const EdgeInsets.symmetric(
@@ -198,18 +234,32 @@ class _ViewAdminProfileState extends State<ViewAdminProfile> {
                                     child: ListTile(
                                       contentPadding: const EdgeInsets.all(16),
                                       leading: CircleAvatar(
-                                        radius: 24,
-                                        backgroundColor: Colors.blue.shade100,
-                                        child: const Icon(
-                                          Icons.person,
-                                          color: Colors.blue,
+                                        backgroundColor: Colors.white,
+                                        child: Icon(
+                                          gender == 'M'
+                                              ? Icons.male
+                                              : gender == 'F'
+                                              ? Icons.female
+                                              : Icons.person,
+                                          color:
+                                              gender == 'M'
+                                                  ? Colors.blue
+                                                  : gender == 'F'
+                                                  ? Colors.red
+                                                  : Colors.blue,
                                         ),
                                       ),
                                       title: Text(
                                         admin['name'] ?? 'Unknown',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
+                                          color:
+                                              gender == 'M'
+                                                  ? Colors.blue
+                                                  : gender == 'F'
+                                                  ? Colors.red
+                                                  : Colors.blue,
                                         ),
                                       ),
                                       subtitle: Column(

@@ -9,5 +9,6 @@
 
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">smartschoolserver.ramchintech.com</domain>
+        <domain includeSubdomains="true">schoolattendance.ramchintech.com</domain>
     </domain-config>
 </network-security-config>

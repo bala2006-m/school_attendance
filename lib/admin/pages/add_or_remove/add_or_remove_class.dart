@@ -140,13 +140,14 @@ class _ClassRegistrationState extends State<ClassRegistration> {
     setState(() {
       _isSubmitting = false;
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.isNotEmpty ? result : '❌ Unexpected error'),
-        backgroundColor: result.startsWith("✅") ? Colors.green : Colors.red,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.isNotEmpty ? result : '❌ Unexpected error'),
+          backgroundColor: result.startsWith("✅") ? Colors.green : Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -188,8 +189,13 @@ class _ClassRegistrationState extends State<ClassRegistration> {
 
     final isMobile = size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -445,21 +451,22 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                                 );
 
                                 if (!mounted) return;
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      result ==
-                                              '❌ Failed: Internal Server Error'
-                                          ? 'Class ${classData['class']} Section ${classData['section']} is used in other services'
-                                          : result,
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        result ==
+                                                '❌ Failed: Internal Server Error'
+                                            ? 'Class ${classData['class']} Section ${classData['section']} is used in other services'
+                                            : result,
+                                      ),
+                                      backgroundColor:
+                                          result.startsWith("✅")
+                                              ? Colors.green
+                                              : Colors.red,
                                     ),
-                                    backgroundColor:
-                                        result.startsWith("✅")
-                                            ? Colors.green
-                                            : Colors.red,
-                                  ),
-                                );
+                                  );
+                                }
 
                                 if (result.startsWith("✅")) {
                                   await init();

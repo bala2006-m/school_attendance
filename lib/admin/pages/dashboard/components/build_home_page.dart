@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../components/build_marking_card.dart';
-import '../../../components/build_profile_card_desktop.dart';
 import '../../../components/build_profile_card_mobile.dart';
 import '../../../components/message_box.dart';
 import 'desktop_stats.dart';
+import 'fee_stats.dart';
 import 'mobile_stats.dart';
 
 class BuildHomePage {
@@ -25,6 +25,9 @@ class BuildHomePage {
     required String schoolAddress,
     required String message,
     required Image? schoolPhoto,
+    required Map<String, dynamic> allPendingTermFees,
+    required Map<String, dynamic> allPendingBusFees,
+    required Map<String, dynamic> allPendingRteFees,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -35,24 +38,46 @@ class BuildHomePage {
       child: SingleChildScrollView(
         child: Column(
           children: [
-            MediaQuery.of(context).size.width > 600
-                ? BuildProfileCardDesktop.buildProfileCardDesktop(
-                  adminName: adminName,
-                  adminDesignation: adminDesignation,
-                  adminPhoto: adminPhoto,
-                  schoolAddress: schoolAddress,
-                  schoolName: schoolName,
-                )
-                : Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: BuildProfileCard(
-                    schoolPhoto: schoolPhoto,
-                    schoolAddress: schoolAddress,
-                    schoolName: schoolName,
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: BuildProfileCard(
+                schoolPhoto: schoolPhoto,
+                schoolAddress: schoolAddress,
+                schoolName: schoolName,
+              ),
+            ),
             MessageBox(message: message),
             const SizedBox(height: 10),
+            if (allPendingTermFees['allFees'].toString() != '0' &&
+                allPendingTermFees['allFees'] != null &&
+                allPendingTermFees != {} &&
+                allPendingTermFees.toString() != '{}')
+              buildTermFeeStats(
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+                allPendingTermFees: allPendingTermFees,
+              ),
+            SizedBox(height: 10),
+            if (allPendingBusFees['totalBusFees'].toString() != '0' &&
+                allPendingBusFees['totalBusFees'] != null &&
+                allPendingBusFees != {} &&
+                allPendingBusFees.toString() != '{}')
+              buildBusFeeStats(
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+                allPendingBusFees: allPendingBusFees,
+              ),
+            SizedBox(height: 10),
+            if (allPendingRteFees['totalRteFees'].toString() != '0' &&
+                allPendingRteFees['totalRteFees'] != null &&
+                allPendingRteFees != {} &&
+                allPendingRteFees.toString() != '{}')
+              buildRteFeeStats(
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+                allPendingRteFees: allPendingRteFees,
+              ),
+            SizedBox(height: 10),
             MobileStats(
               screenWidth: screenWidth,
               screenHeight: screenHeight,
@@ -117,19 +142,11 @@ class BuildHomePageDesktop {
       padding: EdgeInsets.all(screenWidth * 0.008),
       child: Column(
         children: [
-          MediaQuery.of(context).size.width > 600
-              ? BuildProfileCardDesktop.buildProfileCardDesktop(
-                adminName: adminName,
-                adminDesignation: adminDesignation,
-                adminPhoto: adminPhoto,
-                schoolAddress: schoolAddress,
-                schoolName: schoolName,
-              )
-              : BuildProfileCard(
-                schoolPhoto: schoolPhoto,
-                schoolAddress: schoolAddress,
-                schoolName: schoolName,
-              ),
+          BuildProfileCard(
+            schoolPhoto: schoolPhoto,
+            schoolAddress: schoolAddress,
+            schoolName: schoolName,
+          ),
           const SizedBox(height: 40),
           MessageBox(message: message),
           const SizedBox(height: 10),

@@ -84,7 +84,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       await sendOtp();
     } catch (e) {
-      //print('Error during init: $e');
       showSnackBar('Something went wrong.');
     } finally {
       setState(() => isLoading = false);
@@ -111,10 +110,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       if (res['status'] == 'success') {
         showSnackBar('Password updated successfully!');
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+          );
+        }
       } else {
         showSnackBar('Password update failed');
       }

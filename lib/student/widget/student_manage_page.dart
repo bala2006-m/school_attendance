@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:school_attendance/student/pages/bus_fees/bus_fees.dart';
 
 import '../components/build_profile_card_mobile.dart';
+import '../pages/events.dart';
+import '../pages/exam_marks/student_exam_marks.dart';
 import '../pages/homework/student_homework_page.dart';
+import '../pages/student_fees/student_fees_screen.dart';
 
 class StudentManagePage extends StatelessWidget {
   const StudentManagePage({
@@ -13,6 +17,7 @@ class StudentManagePage extends StatelessWidget {
     required this.schoolAddress,
     required this.message,
     this.schoolPhoto,
+    required this.studentRoute,
   });
   final String schoolId;
   final String classId;
@@ -20,94 +25,239 @@ class StudentManagePage extends StatelessWidget {
   final String schoolName;
   final String schoolAddress;
   final String message;
+  final String studentRoute;
   final Image? schoolPhoto;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(padding: const EdgeInsets.all(10.0), child: BuildProfileCard()),
-        SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              // Row(
-              //   crossAxisAlignment: CrossAxisAlignment.center,
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [
-              //     buildElevatedButton(
-              //       context,
-              //       "Holidays",
-              //       HolidayPage(
-              //         schoolId: schoolId,
-              //         classId: classId,
-              //         username: username,
-              //       ),
-              //       Icons.view_day,
-              //     ),
-              //     const SizedBox(height: 30),
-              //   ],
-              // ),
-              SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.black26, width: 2),
-                  boxShadow: [BoxShadow(color: Colors.transparent)],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: BuildProfileCard(),
+          ),
+          SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                // Row(
+                //   crossAxisAlignment: CrossAxisAlignment.center,
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     buildElevatedButton(
+                //       context,
+                //       "Holidays",
+                //       HolidayPage(
+                //         schoolId: schoolId,
+                //         classId: classId,
+                //         username: username,
+                //       ),
+                //       Icons.view_day,
+                //     ),
+                //     const SizedBox(height: 30),
+                //   ],
+                // ),
+                SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.black26, width: 2),
+                    boxShadow: [BoxShadow(color: Colors.transparent)],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
 
-                          children: [
-                            Text(
-                              'Home Work',
-                              style: TextStyle(
-                                color: Colors.blue.shade900,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 25,
+                            children: [
+                              Text(
+                                'Views',
+                                style: TextStyle(
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 25,
+                                ),
                               ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.blue.shade900,
+                                size: 50,
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildElevatedButton(
+                              context,
+                              "View\nHomework",
+                              StudentHomeworkPage(
+                                username: username,
+                                schoolId: schoolId,
+                                classId: classId,
+                              ),
+                              Icons.home_work_outlined,
                             ),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              color: Colors.blue.shade900,
-                              size: 50,
+                            buildElevatedButton(
+                              context,
+                              "Events",
+                              Events(
+                                username: username,
+                                schoolId: schoolId,
+                                classId: classId,
+                              ),
+                              Icons.event,
+                            ),
+                            // buildElevatedButton(
+                            //   context,
+                            //   "Location",
+                            //   LocationMapPage(),
+                            //   Icons.location_pin,
+                            // ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.black26, width: 2),
+                    boxShadow: [BoxShadow(color: Colors.transparent)],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+
+                            children: [
+                              Text(
+                                'Payments',
+                                style: TextStyle(
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 25,
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.blue.shade900,
+                                size: 50,
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildElevatedButton(
+                              context,
+                              "Term Fees",
+                              StudentFeesScreen(
+                                username: username,
+                                schoolId: int.parse(schoolId),
+                                classId: int.parse(classId),
+                              ),
+                              Icons.payments,
+                            ),
+                            if (studentRoute.isNotEmpty &&
+                                studentRoute != 'null')
+                              buildElevatedButton(
+                                context,
+
+                                "Bus Fees",
+                                BusFees(
+                                  username: username,
+                                  schoolId: int.parse(schoolId),
+                                  classId: int.parse(classId),
+                                ),
+                                Icons.bus_alert,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.black26, width: 2),
+                    boxShadow: [BoxShadow(color: Colors.transparent)],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+
+                            children: [
+                              Text(
+                                'Reports',
+                                style: TextStyle(
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 25,
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.blue.shade900,
+                                size: 50,
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildElevatedButton(
+                              context,
+                              "Exams",
+                              StudentExamMarks(
+                                username: username,
+                                schoolId: schoolId,
+                                classId: classId,
+                              ),
+                              Icons.collections_bookmark_outlined,
                             ),
                           ],
                         ),
-                      ),
-                      SizedBox(height: 10),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          buildElevatedButton(
-                            context,
-                            "View\nHomework",
-                            StudentHomeworkPage(
-                              username: username,
-                              schoolId: schoolId,
-                              classId: classId,
-                            ),
-                            Icons.home_work_outlined,
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

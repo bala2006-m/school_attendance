@@ -138,9 +138,11 @@ class _EditProfileState extends State<EditProfile> {
       });
     } catch (e) {
       setState(() => _fetching = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("❌ Failed to load profile: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("❌ Failed to load profile: $e")));
+      }
     }
   }
 
@@ -179,29 +181,35 @@ class _EditProfileState extends State<EditProfile> {
       gender: _gender,
       photoFile: _photoFile,
     );
-    // print(res);
+
     setState(() => _loading = false);
 
     if (res["status"] == "success") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Profile updated successfully!")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Profile updated successfully!")),
+        );
+      }
       widget.onSave();
       StudentDashboardState.selectedIndex = 1;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => StudentDashboard(
-                username: widget.username,
-                schoolId: widget.schoolId,
-              ),
-        ),
-      );
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => StudentDashboard(
+                  username: widget.username,
+                  schoolId: widget.schoolId,
+                ),
+          ),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Network Error")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Network Error")));
+      }
     }
   }
 
@@ -228,6 +236,8 @@ class _EditProfileState extends State<EditProfile> {
         child:
             isMobile
                 ? StudentAppbarMobile(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
                   title: 'Edit Profile',
                   enableDrawer: false,
                   enableBack: true,
@@ -244,7 +254,23 @@ class _EditProfileState extends State<EditProfile> {
                     );
                   },
                 )
-                : const StudentAppbarDesktop(title: 'Edit Profile'),
+                : StudentAppbarDesktop(
+                  title: 'Edit Profile',
+                  enableDrawer: false,
+                  enableBack: true,
+                  onBack: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => StudentDashboard(
+                              username: widget.username,
+                              schoolId: widget.schoolId,
+                            ),
+                      ),
+                    );
+                  },
+                ),
       ),
       body:
           _fetching

@@ -395,7 +395,6 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
         role: 'staff',
         schoolId: widget.schoolId,
       );
-      //print(AddOrRemoveStaffState.selectedIndex);
       final String faculty =
           AddOrRemoveStaffState.selectedIndex == 0
               ? 'teaching'
@@ -416,7 +415,9 @@ class _StaffRegistrationMobileState extends State<StaffRegistrationMobile> {
         showSnackBar(result1['message']);
         widget.passwordController.clear();
         widget.mobileController.clear();
-        FocusScope.of(context).requestFocus(widget.mobileFocus);
+        if (mounted) {
+          FocusScope.of(context).requestFocus(widget.mobileFocus);
+        }
 
         setState(() {
           fillPass = false;

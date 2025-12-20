@@ -4,6 +4,340 @@ import 'package:http/http.dart' as http;
 import 'package:school_attendance/utils/utils.dart';
 
 class ApiService {
+  static Future<List<dynamic>> fetchStudentsRoutesSchool({
+    required int schoolId,
+  }) async {
+    try {
+      final url = Uri.parse(
+        "$baseUrl/students/fetch_student_routs_school?school_id=$schoolId",
+      );
+      final response = await http.get(
+        url,
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success') {
+          return data['routs'] ?? [];
+        } else {
+          return [];
+        }
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> fetchStudentsRoutes({
+    required int schoolId,
+    required int classId,
+  }) async {
+    try {
+      final url = Uri.parse(
+        "$baseUrl/students/fetch_student_routs?school_id=$schoolId&class_id=$classId",
+      );
+      final response = await http.get(
+        url,
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success') {
+          return data['routs'] ?? [];
+        } else {
+          return [];
+        }
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchUniqueRoutes(int schoolId) async {
+    final url = Uri.parse(
+      '$baseUrl/students/fetch_unique_routs?school_id=$schoolId',
+    );
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data;
+    } else {
+      throw Exception('Failed to load unique routes');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getSchool(String schoolId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/school/$schoolId'));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to get school: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching school: $e');
+    }
+  }
+
+  // Update school due date
+  static Future<Map<String, dynamic>> updateSchoolDueDate({
+    required String schoolId,
+    required DateTime dueDate,
+  }) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/school/$schoolId/due-date'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'dueDate': dueDate.toIso8601String()}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to update due date: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating due date: $e');
+    }
+  }
+
+  // Check payment status (overdue or not)
+  static Future<Map<String, dynamic>> checkPaymentStatus(
+    String schoolId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/school/$schoolId/payment-status'),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+          'Failed to check payment status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error checking payment status: $e');
+    }
+  }
+
+  // Get school with payment history
+  static Future<Map<String, dynamic>> getSchoolWithPayments(
+    String schoolId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/school/$schoolId/with-payments'),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(
+          'Failed to get school with payments: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching school with payments: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getDueAmount({
+    required String schoolId,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/app_payment/due-amount/$schoolId'),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to get due amount');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Calculate payment amount
+  static Future<Map<String, dynamic>> calculatePayment({
+    required int studentsCount,
+    required String paymentPlan, // 'MONTHLY' or 'YEARLY'
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/app_payment/calculate'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'studentsCount': studentsCount,
+          'paymentPlan': paymentPlan,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to calculate payment');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Create payment record
+  static Future<Map<String, dynamic>> createPayment({
+    required int schoolId,
+    required int studentsCount,
+    required String paymentPlan,
+    String? transactionId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/app_payment/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'schoolId': schoolId,
+          'studentsCount': studentsCount,
+          'paymentPlan': paymentPlan,
+          'transactionId': transactionId,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to create payment');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Update payment status after payment gateway response
+  static Future<Map<String, dynamic>> updatePaymentStatus({
+    required int paymentId,
+    required String status,
+    String? transactionId,
+  }) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/app_payment/update-status/$paymentId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'status': status, 'transactionId': transactionId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to update payment status');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Get payment history
+  static Future<List<dynamic>> getPaymentHistory(String schoolId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/app_payment/history/$schoolId'),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to get payment history');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Get payment report
+  static Future<Map<String, dynamic>> getPaymentReport(String schoolId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/app_payment/report/$schoolId'),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to get payment report');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchCombinedData(String schoolId) async {
+    final url = Uri.parse('$baseUrl/school/combined/$schoolId');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load combined school data');
+      }
+    } catch (e) {
+      throw Exception('Error fetching combined school data: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchAbsenteesSchool(
+    String date,
+    String schoolId,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/attendance/student/fetch_stu_absentees_school?date=$date&school_id=$schoolId',
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['status'] == 'success') {
+        return {
+          'fn_absentees': data['fn_absentees'],
+          'an_absentees': data['an_absentees'],
+        };
+      } else {
+        throw Exception('Backend returned error status');
+      }
+    } else {
+      throw Exception('Failed to load absentees');
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchAdminAndSchoolData({
+    required String username,
+    required String schoolId,
+  }) async {
+    final url =
+        '$baseUrl/admin/fetch_admin_and_school_data?username=$username&school_id=$schoolId';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      return jsonData;
+    } else {
+      throw Exception('Failed to fetch data: HTTP ${response.statusCode}');
+    }
+  }
+
   Future<Map<String, dynamic>> storeTickets({
     required String username,
     required String name,
@@ -27,7 +361,7 @@ class ApiService {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
       );
-      // print(response.body);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
@@ -75,7 +409,7 @@ class ApiService {
       }),
     );
     final data = jsonDecode(response.body);
-    //print(data);
+
     if (response.statusCode == 200 ||
         data['message'] == "Password updated successfully") {
       return data;
@@ -142,7 +476,7 @@ class ApiService {
 
     try {
       final response = await http.get(url);
-      //print(response.body);
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -160,7 +494,6 @@ class ApiService {
 
     try {
       final response = await http.get(url);
-      //print(response.body);
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -289,7 +622,6 @@ class ApiService {
         '$baseUrl/attendance/student/fetch_stu_attendance?date=$date&school_id=$schoolId',
       ),
     );
-    //print(response.body);
 
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
@@ -321,7 +653,6 @@ class ApiService {
         '$baseUrl/attendance/student/fetch_stu_attendance?date=$date&school_id=$schoolId',
       ),
     );
-    //print(response.body);
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
       if (jsonData['status'] == 'success') {
@@ -346,20 +677,16 @@ class ApiService {
       );
 
       final response = await http.get(url);
-      //print(response.body);
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
 
         if (data['status'] == 'success') {
           return data['attendance_exists'] as bool? ?? false;
-        } else {
-          //print('Server responded with error: ${data['message']}');
         }
-      } else {
-        //print('HTTP error: ${response.statusCode} - ${response.reasonPhrase}');
       }
     } catch (e) {
-      //print('Exception while checking attendance: $e');
+      return null;
     }
 
     return null;
@@ -383,14 +710,10 @@ class ApiService {
 
         if (data['status'] == 'success') {
           return data['attendance_exists'] as bool? ?? false;
-        } else {
-          //print('Server responded with error: ${data['message']}');
-        }
-      } else {
-        //print('HTTP error: ${response.statusCode} - ${response.reasonPhrase}');
-      }
+        } else {}
+      } else {}
     } catch (e) {
-      //print('Exception while checking attendance: $e');
+      return null;
     }
 
     return null;
@@ -413,14 +736,10 @@ class ApiService {
 
         if (data['status'] == 'success' && data['attendance'] is List) {
           return List<Map<String, dynamic>>.from(data['attendance']);
-        } else {
-          //print("Unexpected data format or status: ${data['status']}");
         }
-      } else {
-        // print("Error response: ${response.statusCode}");
       }
     } catch (e) {
-      //print("Fetch attendance error: $e");
+      return [];
     }
 
     return [];
@@ -443,11 +762,9 @@ class ApiService {
             return data[0]['school_id']?.toString();
           }
         }
-      } else {
-        // print('Failed: ${response.statusCode}');
       }
     } catch (e) {
-      //print('Error fetching school_id: $e');
+      return null;
     }
     return null;
   }
@@ -468,7 +785,9 @@ class ApiService {
             'id': school['id'],
             'name': school['name'],
             'address': school['address'],
-            'photo': school['photo'], // base64 string (or null)
+            'photo': school['photo'],
+            'createdAt': school['createdAt'],
+            'dueDate': school['dueDate'],
           });
         }
 
@@ -522,7 +841,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      // print('Error fetching attendance: $e');
+      return [];
     }
 
     return [];
@@ -554,11 +873,9 @@ class ApiService {
       if (response.statusCode == 200 || res['status'] == 'success') {
         return true;
       } else {
-        //print('Attendance post failed: ${res['message'] ?? 'Unknown error'}');
         return false;
       }
     } catch (e) {
-      // print('Error posting attendance: $e');
       return false;
     }
   }
@@ -622,7 +939,7 @@ class ApiService {
           .timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
-      //print(data);
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return "✅ ${data['message']}";
       } else if (response.statusCode == 409 ||
@@ -673,7 +990,7 @@ class ApiService {
         'an': an,
       }),
     );
-    //print(response.body);
+
     if (response.statusCode != 200 && response.statusCode != 201) {
       final error = jsonDecode(response.body);
       final err = error['error'];
@@ -709,6 +1026,10 @@ class ApiService {
     required String mobile,
     required String classId,
     required String schoolId,
+    required String fatherName,
+    required String community,
+    required String route,
+    required String dob,
   }) async {
     final url = Uri.parse('$baseUrl/auth/register_student');
 
@@ -724,11 +1045,15 @@ class ApiService {
           'mobile': mobile.trim(),
           'class_id': classId.trim(),
           'school_id': schoolId.trim(),
+          'fatherName': fatherName.trim(),
+          'community': community.trim(),
+          'route': route.trim(),
+          'dob': dob.trim(),
         }),
       );
 
       final data = jsonDecode(response.body);
-      //print(data);
+
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           data['status'] == 'success') {
@@ -812,7 +1137,7 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
-      //print(data);
+
       if (response.statusCode == 200 ||
           response.statusCode == 201 ||
           data['status'] == 'success') {

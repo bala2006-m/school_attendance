@@ -99,7 +99,7 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
         }
       }
     } catch (e) {
-      debugPrint('Failed to load admin data: $e');
+      return;
     }
   }
 
@@ -240,7 +240,7 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                   table: 'admin',
                 );
 
-                if (result['success'] && res['success']) {
+                if (result['success'] && res['success'] && mounted) {
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text(result['message'])));
@@ -256,12 +256,14 @@ class _AdminRegistrationMobileState extends State<AdminRegistrationMobile> {
                   });
                   widget.onRegistered();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: ${result['error']}'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${result['error']}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               }
               : null,

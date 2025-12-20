@@ -182,12 +182,14 @@ class StudentDesktopDashboard extends StatelessWidget {
 
                       await prefs.remove('rememberMe');
                       await prefs.clear();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
-                      );
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ),

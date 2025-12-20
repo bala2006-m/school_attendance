@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../../../services/api_service.dart';
-import '../../../student/services/student_api_services.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../../services/admin_api_service.dart';
+import '../../widget/pdf_preview_custom_page.dart';
 import '../dashboard/admin_dashboard.dart';
 import 'build_daily_report.dart';
 
@@ -31,47 +31,23 @@ class _DailyReportState extends State<DailyReport> {
   bool isLoading = false;
   DateTime? date;
   bool isDownloading = false;
-  List<Map<String, dynamic>> students = [];
+  List<dynamic> students = [];
 
   Future<void> fetchStudents() async {
     try {
       students = []; // Clear old data
-      await fetchSchoolInfo();
-      students = await AdminApiService.fetchAllStudentData(widget.schoolId);
-
-      students.sort((a, b) => a["class_id"].compareTo(b["class_id"]));
-
-      await Future.wait(
-        students.map((student) async {
-          try {
-            final classData = await StudentApiServices.fetchClassDatas(
-              widget.schoolId,
-              student["class_id"].toString(),
-            );
-            student['class'] = classData?['class'] ?? '';
-            student['section'] = classData?['section'] ?? '';
-
-            final data =
-                await AdminApiService.fetchStudentAttendanceBetweenDays(
-                  username: student['username'],
-                  fromDate: date!,
-                  toDate: date!,
-                  schoolId: int.parse(widget.schoolId),
-                );
-
-            student['fnPresentDates'] = data?['fnPresentDates'] ?? [];
-            student['anPresentDates'] = data?['anPresentDates'] ?? [];
-            student['TotalMarking'] = data?['TotalMarking'] ?? [];
-            student['fnAbsentDates'] = data?['fnAbsentDates'] ?? [];
-            student['anAbsentDates'] = data?['anAbsentDates'] ?? [];
-            student['totalPercentage'] = data?['totalPercentage'] ?? [];
-          } catch (e) {
-            debugPrint("Error fetching student data: $e");
-          }
-        }),
+      fetchSchoolInfo();
+      final fetchedStudents = await AdminApiService.fetchPeriodicalReportAll(
+        schoolId: widget.schoolId,
+        fromDate: date!,
+        toDate: date!,
       );
+      students = fetchedStudents;
+
+      // Sort students by class_id
+      students.sort((a, b) => a["class_id"].compareTo(b["class_id"]));
     } catch (e) {
-      debugPrint("Error initializing data: $e");
+      return;
     }
   }
 
@@ -83,15 +59,11 @@ class _DailyReportState extends State<DailyReport> {
         schoolAddress = schoolData[0]['address'];
 
         if (schoolData[0]['photo'] != null) {
-          try {
-            schoolPhotoBytes = base64Decode(schoolData[0]['photo']);
-          } catch (e) {
-            debugPrint('Image decode error: $e');
-          }
+          schoolPhotoBytes = base64Decode(schoolData[0]['photo']);
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      return;
     }
   }
 
@@ -100,18 +72,32 @@ class _DailyReportState extends State<DailyReport> {
     try {
       await fetchSchoolInfo();
       await fetchStudents();
-      await buildPdf(
-        students: students,
-        schoolName: schoolName,
-        schoolAddress: schoolAddress,
-        schoolPhotoBytes: schoolPhotoBytes,
-        date: date,
-      );
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => PdfPreviewCustomPage(
+                  buildPdf:
+                      () => buildPdf(
+                        students: students,
+                        schoolName: schoolName,
+                        schoolAddress: schoolAddress,
+                        schoolPhotoBytes: schoolPhotoBytes,
+                        date: date,
+                      ),
+                  title: 'Admin List',
+                  fileName: 'admin_list',
+                ),
+          ),
+        );
+      }
     } catch (e) {
-      debugPrint("Download error: $e");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to generate PDF')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to generate PDF')));
+      }
     } finally {
       if (mounted) setState(() => isDownloading = false);
     }
@@ -121,8 +107,13 @@ class _DailyReportState extends State<DailyReport> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -182,7 +173,7 @@ class _DailyReportState extends State<DailyReport> {
                           const SizedBox(height: 20),
 
                           Text(
-                            'Do you want to download the Student Attendance Report as a PDF For whole School?',
+                            'Do you want to generate the Student Attendance Report as a PDF For whole School?',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
@@ -227,7 +218,7 @@ class _DailyReportState extends State<DailyReport> {
                                     )
                                     : const Icon(Icons.download_rounded),
                             label: Text(
-                              isDownloading ? 'Downloading...' : 'Download PDF',
+                              isDownloading ? 'Generating...' : 'Generate PDF',
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
@@ -245,47 +236,6 @@ class _DailyReportState extends State<DailyReport> {
                               ),
                             ),
                           ),
-                          // const SizedBox(height: 60),
-                          // Text(
-                          //   'Do you want to download the Student Attendance Report as a PDF For Class Wise?',
-                          //   textAlign: TextAlign.center,
-                          //   style: TextStyle(
-                          //     fontSize: 18,
-                          //     color: Colors.grey[700],
-                          //   ),
-                          // ),
-                          // const SizedBox(height: 30),
-                          // ElevatedButton.icon(
-                          //   onPressed: () {
-                          //     // Navigator.push(
-                          //     //   context,
-                          //     //   MaterialPageRoute(
-                          //     //     builder:
-                          //     //         (context) => PrintStudentCertificates(
-                          //     //           username: widget.username,
-                          //     //           schoolId: widget.schoolId,
-                          //     //         ),
-                          //     //   ),
-                          //     // );
-                          //   },
-                          //   icon: const Icon(Icons.arrow_right_alt_sharp),
-                          //   label: const Text('Classes'),
-                          //   style: ElevatedButton.styleFrom(
-                          //     backgroundColor: Colors.blueAccent,
-                          //     foregroundColor: Colors.white,
-                          //     padding: const EdgeInsets.symmetric(
-                          //       horizontal: 30,
-                          //       vertical: 15,
-                          //     ),
-                          //     textStyle: const TextStyle(
-                          //       fontSize: 16,
-                          //       fontWeight: FontWeight.bold,
-                          //     ),
-                          //     shape: RoundedRectangleBorder(
-                          //       borderRadius: BorderRadius.circular(8),
-                          //     ),
-                          //   ),
-                          // ),
                         ],
                       ),
                     ),

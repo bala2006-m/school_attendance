@@ -103,7 +103,8 @@ class Uploads {
         ...student.map((adminUser) {
           final username = adminUser['username'];
           final data = studentData[username] ?? {};
-          final name = data['name'] ?? 'Name not available';
+          // final name = data['name'] ?? 'Name not available';
+          final gender = (data['gender'] ?? '').toUpperCase();
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
             elevation: 3,
@@ -111,15 +112,38 @@ class Uploads {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListTile(
-              leading: CircleAvatar(child: Text(name[0])),
+              leading: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(
+                  gender == 'M'
+                      ? Icons.male
+                      : gender == 'F'
+                      ? Icons.female
+                      : Icons.person,
+                  color:
+                      gender == 'M'
+                          ? Colors.blue
+                          : gender == 'F'
+                          ? Colors.red
+                          : Colors.blue,
+                ),
+              ),
               title: Text(
                 data['name'] ?? 'Name not available',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color:
+                      gender == 'M'
+                          ? Colors.blue
+                          : gender == 'F'
+                          ? Colors.red
+                          : Colors.blue,
+                ),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Username: $username', style: TextStyle(fontSize: 13)),
+                  Text('Admn. No: $username', style: TextStyle(fontSize: 13)),
                   Text(
                     'Mobile: ${data['mobile'] ?? 'N/A'}',
                     style: TextStyle(fontSize: 13),
@@ -235,6 +259,7 @@ class Uploads {
         ...staff.map((staffUser) {
           final username = staffUser['username'];
           final data = staffData[username] ?? {};
+          final gender = (data['gender'] ?? '').toUpperCase();
 
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -243,10 +268,30 @@ class Uploads {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListTile(
-              leading: const Icon(Icons.people, color: Colors.blue),
+              leading: Icon(
+                gender == 'M'
+                    ? Icons.male
+                    : gender == 'F'
+                    ? Icons.female
+                    : Icons.person,
+                color:
+                    gender == 'M'
+                        ? Colors.blue
+                        : gender == 'F'
+                        ? Colors.red
+                        : Colors.blue,
+              ),
               title: Text(
                 data['name'] ?? 'Name not available',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color:
+                      gender == 'M'
+                          ? Colors.blue
+                          : gender == 'F'
+                          ? Colors.red
+                          : Colors.blue,
+                ),
               ),
               subtitle: Row(
                 children: [
@@ -254,7 +299,7 @@ class Uploads {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Username: $username',
+                        'User ID: $username',
                         style: TextStyle(fontSize: 13),
                       ),
                       Text(
@@ -388,6 +433,8 @@ class Uploads {
           final username = adminUser['username'];
           final data = adminData[username] ?? {};
           final designation = data['designation'] ?? 'Designation';
+          final gender = (data['gender'] ?? '').toUpperCase();
+
           final name =
               data['name'] == null || data['name'].isEmpty
                   ? 'Name not available'
@@ -401,13 +448,30 @@ class Uploads {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListTile(
-              leading: const Icon(
-                Icons.admin_panel_settings,
-                color: Colors.blue,
+              leading: Icon(
+                gender == 'M'
+                    ? Icons.male
+                    : gender == 'F'
+                    ? Icons.female
+                    : Icons.person,
+                color:
+                    gender == 'M'
+                        ? Colors.blue
+                        : gender == 'F'
+                        ? Colors.red
+                        : Colors.blue,
               ),
               title: Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color:
+                      gender == 'M'
+                          ? Colors.blue
+                          : gender == 'F'
+                          ? Colors.red
+                          : Colors.blue,
+                ),
               ),
               subtitle: Row(
                 children: [
@@ -415,7 +479,7 @@ class Uploads {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Username: $username',
+                        'User ID: $username',
                         style: TextStyle(fontSize: 13),
                       ),
                       Text(

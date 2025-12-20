@@ -53,6 +53,29 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
       classId: widget.classId,
       schoolId: widget.schoolId,
     );
+    students.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
 
     filteredStudents = students; // ✅ initially show all
     setState(() {});
@@ -100,10 +123,11 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
         );
       });
     } catch (e) {
-      //print('Error fetching attendance: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch attendance')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to fetch attendance')),
+        );
+      }
     } finally {
       setState(() {
         isLoading = false;
@@ -139,8 +163,13 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -247,8 +276,26 @@ class _ViewStudentAttendanceState extends State<ViewStudentAttendance> {
                                 final student =
                                     filteredStudents[index]; // ✅ use filtered list
                                 return ListTile(
-                                  leading: const Icon(Icons.person),
-                                  title: Text(student['name']),
+                                  leading: Icon(
+                                    student['gender'] == 'M'
+                                        ? Icons.male
+                                        : Icons.female,
+                                    color:
+                                        student['gender'] == 'M'
+                                            ? Colors.blue
+                                            : Colors.pink,
+                                  ),
+                                  title: Text(
+                                    student['name'],
+                                    style: TextStyle(
+                                      color:
+                                          student['gender'] == 'M'
+                                              ? Colors.blue
+                                              : student['gender'] == 'F'
+                                              ? Colors.red
+                                              : Colors.blue,
+                                    ),
+                                  ),
                                   subtitle: Text(student['username']),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap:

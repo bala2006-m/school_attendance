@@ -47,6 +47,29 @@ class _ReportsState extends State<Reports> {
       schoolId: widget.schoolId,
       classId: widget.classId,
     );
+    students.sort((a, b) {
+      // Gender: Males ('M') first, then Females
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+
+        // Check if both usernames are numeric
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+
+        if (numA != null && numB != null) {
+          // Both numeric: compare numerically
+          return numA.compareTo(numB);
+        } else {
+          // Otherwise: compare as strings
+          return aUsername.compareTo(bUsername);
+        }
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
 
     // Fetch attendance in parallel
     final futures =
@@ -118,8 +141,13 @@ class _ReportsState extends State<Reports> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -301,7 +329,13 @@ class _ReportsState extends State<Reports> {
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.grey.shade800,
+
+                                          color:
+                                              student['gender'] == 'M'
+                                                  ? Colors.blue
+                                                  : student['gender'] == 'F'
+                                                  ? Colors.red
+                                                  : Colors.blue,
                                         ),
                                       ),
                                       const SizedBox(height: 4),

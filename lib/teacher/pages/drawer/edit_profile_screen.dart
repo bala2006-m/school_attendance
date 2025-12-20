@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 
-import '../../appbar/desktop_appbar.dart';
 import '../../appbar/mobile_appbar.dart';
 import '../../services/teacher_api_service.dart'; // Backend service
 
@@ -77,11 +76,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (photoField is Map) {
           photoBytes = Uint8List.fromList(List<int>.from(photoField.values));
         } else if (photoField is String && photoField.isNotEmpty) {
-          try {
-            photoBytes = base64Decode(photoField);
-          } catch (e) {
-            debugPrint("Invalid Base64 photo: $e");
-          }
+          photoBytes = base64Decode(photoField);
         }
       }
 
@@ -105,7 +100,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         };
       });
     } catch (e) {
-      debugPrint("Error loading staff data: $e");
       setState(() {
         _error = "Failed to load profile.";
         _isLoading = false;
@@ -169,7 +163,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 500;
+    // final isMobile = MediaQuery.of(context).size.width < 500;
 
     final ImageProvider? imageProvider =
         _newImageFile != null
@@ -180,27 +174,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isMobile ? 190 : 150),
-        child:
-            isMobile
-                ? MobileAppbar(
-                  title: 'Edit Profile',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StaffDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId.toString(),
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : const DesktopAppbar(title: 'Edit Profile'),
+        preferredSize: Size.fromHeight(190),
+        child: MobileAppbar(
+          username: widget.username,
+          schoolId: widget.schoolId.toString(),
+          title: 'Edit Profile',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => StaffDashboard(
+                      username: widget.username,
+                      schoolId: widget.schoolId.toString(),
+                    ),
+              ),
+            );
+          },
+        ),
       ),
       body:
           _isLoading
@@ -384,28 +377,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 },
                                 schoolId: widget.schoolId,
                               );
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Profile updated!'),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Profile updated!'),
+                                  ),
+                                );
+                              }
                               StaffDashboardState.selectedIndex = 1;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => StaffDashboard(
-                                        username: widget.username,
-                                        schoolId: widget.schoolId.toString(),
-                                      ),
-                                ),
-                              );
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => StaffDashboard(
+                                          username: widget.username,
+                                          schoolId: widget.schoolId.toString(),
+                                        ),
+                                  ),
+                                );
+                              }
                             } catch (e) {
-                              //print(e);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Update failed: $e')),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Update failed: $e')),
+                                );
+                              }
                             }
                           }
                         }

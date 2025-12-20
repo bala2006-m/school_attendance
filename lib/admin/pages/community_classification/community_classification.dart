@@ -6,9 +6,9 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
 
 import '../../../services/api_service.dart';
-import '../../../student/services/student_api_services.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
+import '../../widget/pdf_preview_custom_page.dart';
 import '../dashboard/admin_dashboard.dart';
 import './build_community_pdf.dart';
 
@@ -43,26 +43,12 @@ class _CommunityClassificationState extends State<CommunityClassification> {
   /// Fetch students and their class/section info
   Future<void> fetchCommunityClassification() async {
     try {
-      final fetchedStudents = await AdminApiService.fetchAllStudentData(
-        widget.schoolId,
-      );
-      fetchedStudents.sort((a, b) => a["class_id"].compareTo(b["class_id"]));
-
-      // Fetch class & section in parallel
-      await Future.wait(
-        fetchedStudents.map((student) async {
-          final classData = await StudentApiServices.fetchClassDatas(
-            widget.schoolId,
-            student["class_id"].toString(),
-          );
-          student['class'] = classData?['class'] ?? '';
-          student['section'] = classData?['section'] ?? '';
-        }),
-      );
+      final fetchedStudents =
+          await AdminApiService.fetchAllStudentDataWithClass(widget.schoolId);
 
       setState(() => students = fetchedStudents);
     } catch (e) {
-      debugPrint('Error fetching students: $e');
+      return;
     }
   }
 
@@ -77,28 +63,37 @@ class _CommunityClassificationState extends State<CommunityClassification> {
         });
 
         if (schoolData[0]['photo'] != null) {
-          try {
-            Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-            setState(() => schoolPhotoBytes = imageBytes);
-          } catch (e) {
-            debugPrint('Image decode error: $e');
-          }
+          Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
+          setState(() => schoolPhotoBytes = imageBytes);
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      return;
     }
   }
 
   Future<void> handleDownload() async {
     setState(() => isDownloading = true);
     await initData();
-    await buildPdf(
-      schoolPhotoBytes: schoolPhotoBytes!,
-      schoolName: schoolName,
-      schoolAddress: schoolAddress,
-      students: students,
-    );
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => PdfPreviewCustomPage(
+                buildPdf:
+                    () => buildPdf(
+                      schoolPhotoBytes: schoolPhotoBytes,
+                      schoolName: schoolName,
+                      schoolAddress: schoolAddress,
+                      students: students,
+                    ),
+                title: 'Community Report',
+                fileName: 'community_classification',
+              ),
+        ),
+      );
+    }
     setState(() => isDownloading = false);
   }
 
@@ -106,8 +101,13 @@ class _CommunityClassificationState extends State<CommunityClassification> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -145,7 +145,7 @@ class _CommunityClassificationState extends State<CommunityClassification> {
                         children: [
                           const SizedBox(height: 60),
                           Text(
-                            'Do you want to download the Student Community List as a PDF for the whole school?',
+                            'Do you want to generate the Student Community List as a PDF for the whole school?',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
@@ -169,7 +169,7 @@ class _CommunityClassificationState extends State<CommunityClassification> {
                                     )
                                     : const Icon(Icons.download_rounded),
                             label: Text(
-                              isDownloading ? 'Downloading...' : 'Download PDF',
+                              isDownloading ? 'Generating...' : 'Generate PDF',
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
@@ -199,7 +199,7 @@ class _CommunityClassificationState extends State<CommunityClassification> {
                           // const SizedBox(height: 30),
                           // ElevatedButton.icon(
                           //   onPressed: () {
-                          //     // TODO: Implement Class Wise download navigation
+                          //
                           //   },
                           //   icon: const Icon(Icons.arrow_right_alt_sharp),
                           //   label: const Text('Class Wise'),

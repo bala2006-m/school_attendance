@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/teacher/appbar/desktop_appbar.dart';
 
 import '../../../services/api_service.dart';
 import '../../../teacher/services/teacher_api_service.dart';
@@ -55,21 +54,17 @@ class _TimetableClassListState extends State<TimetableClassList> {
         schoolAddress = schoolData[0]['address'];
 
         if (schoolData[0]['photo'] != null) {
-          try {
-            Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
-            schoolPhoto = Image.memory(
-              imageBytes,
-              width: 150,
-              height: 150,
-              fit: BoxFit.cover,
-            );
-          } catch (e) {
-            debugPrint('Image decode error: $e');
-          }
+          Uint8List imageBytes = base64Decode(schoolData[0]['photo']);
+          schoolPhoto = Image.memory(
+            imageBytes,
+            width: 150,
+            height: 150,
+            fit: BoxFit.cover,
+          );
         }
       }
     } catch (e) {
-      debugPrint('Error fetching school info: $e');
+      return;
     }
   }
 
@@ -112,7 +107,7 @@ class _TimetableClassListState extends State<TimetableClassList> {
         return a['section'].toString().compareTo(b['section'].toString());
       });
     } catch (e) {
-      debugPrint('Error fetching classes: $e');
+      return;
     }
   }
 
@@ -194,34 +189,38 @@ class _TimetableClassListState extends State<TimetableClassList> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(isMobile ? 190 : 60),
-          child:
-              isMobile
-                  ? MobileAppbar(
-                    title: 'Class List',
-                    enableDrawer: false,
-                    enableBack: true,
-                    onBack: () {
-                      StaffDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => StaffDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
-                    },
-                  )
-                  : const DesktopAppbar(title: 'Class List'),
+          preferredSize: Size.fromHeight(190),
+          child: MobileAppbar(
+            username: widget.username,
+            schoolId: widget.schoolId.toString(),
+            title: 'Class List',
+            enableDrawer: false,
+            enableBack: true,
+            onBack: () {
+              StaffDashboardState.selectedIndex = 2;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => StaffDashboard(
+                        schoolId: widget.schoolId,
+                        username: widget.username,
+                      ),
+                ),
+              );
+            },
+          ),
         ),
         body:
             isLoading

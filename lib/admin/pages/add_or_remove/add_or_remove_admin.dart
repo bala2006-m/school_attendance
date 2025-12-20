@@ -149,12 +149,52 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
     return false;
   }
 
+  List<dynamic> groupAndSortAdmins(
+    List<dynamic> admins,
+    Map<String, dynamic> adminData,
+  ) {
+    // Filter groups
+    List<dynamic> males =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'M';
+        }).toList();
+
+    List<dynamic> females =
+        admins.where((admin) {
+          final data = adminData[admin['username']] ?? {};
+          return (data['gender'] ?? '').toUpperCase() == 'F';
+        }).toList();
+
+    // Sort by name inside each group (case-insensitive)
+    int nameComparator(a, b) {
+      final aName =
+          (adminData[a['username']]?['name'] ?? '').toString().toLowerCase();
+      final bName =
+          (adminData[b['username']]?['name'] ?? '').toString().toLowerCase();
+      return aName.compareTo(bName);
+    }
+
+    males.sort(nameComparator);
+    females.sort(nameComparator);
+
+    // Combine with males on top
+    return [...males, ...females];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final adminsToShow = groupAndSortAdmins(filteredAdmins, adminData);
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, res) {
+        if (!didPop) {
+          onWillPop();
+        }
+      },
+
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
@@ -251,7 +291,7 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                       controller: _searchController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.search),
-                        hintText: "Search by name, username, or mobile",
+                        hintText: "Search by name, user Id, or mobile",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -293,10 +333,10 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                         ),
                       ),
 
-                    ...filteredAdmins.map((adminUser) {
+                    ...adminsToShow.map((adminUser) {
                       final username = adminUser['username'];
                       final data = adminData[username] ?? {};
-
+                      final gender = (data['gender'] ?? '').toUpperCase();
                       return Card(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 4,
@@ -307,18 +347,35 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: ListTile(
-                          leading: const Icon(
-                            Icons.admin_panel_settings,
-                            color: Colors.blue,
+                          leading: Icon(
+                            gender == 'M'
+                                ? Icons.male
+                                : gender == 'F'
+                                ? Icons.female
+                                : Icons.person,
+                            color:
+                                gender == 'M'
+                                    ? Colors.blue
+                                    : gender == 'F'
+                                    ? Colors.red
+                                    : Colors.blue,
                           ),
                           title: Text(
                             data['name'] ?? 'Name not available',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  gender == 'M'
+                                      ? Colors.blue
+                                      : gender == 'F'
+                                      ? Colors.red
+                                      : Colors.blue,
+                            ),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Username: $username'),
+                              Text('User ID: $username'),
                               Text('Mobile: ${data['mobile'] ?? 'N/A'}'),
                             ],
                           ),
@@ -368,19 +425,23 @@ class _AddOrRemoveAdminState extends State<AddOrRemoveAdmin> {
                                 if (success) {
                                   await init();
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Deleted $username'),
-                                    ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Failed to delete $username',
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Deleted $username'),
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  }
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Failed to delete $username',
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 }
                               }
                             },
