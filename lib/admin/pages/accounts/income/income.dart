@@ -214,19 +214,19 @@ class IncomeState extends State<Income> with SingleTickerProviderStateMixin {
 
           const SizedBox(height: 20),
 
-          // Section Header
-          const Text(
-            "Finance",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-
           // Add Income Button
           Align(
             alignment: Alignment.center,
             child: FilledButton.icon(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.blue),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
               ),
               onPressed: _showAddIncomeDialog,
               icon: const Icon(Icons.add),
@@ -236,7 +236,12 @@ class IncomeState extends State<Income> with SingleTickerProviderStateMixin {
 
           const SizedBox(height: 16),
           const Divider(),
-
+          // Section Header
+          const Text(
+            "Incomes",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
           // Income List
           if (allAccounts['finance'] != null &&
               allAccounts['finance'].isNotEmpty)
@@ -447,15 +452,14 @@ class IncomeState extends State<Income> with SingleTickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
 
-          buildFilterButtonsRow(
-            onFilterTap: onFilterTap,
-            selectedFilter: selectedFilter,
-            from: from,
-            to: to,
-          ),
-
-          const SizedBox(height: 12),
-
+          // buildFilterButtonsRow(
+          //   onFilterTap: onFilterTap,
+          //   selectedFilter: selectedFilter,
+          //   from: from,
+          //   to: to,
+          // ),
+          //
+          // const SizedBox(height: 12),
           buildOverallIncomeCard(allAccounts: allAccounts),
 
           const SizedBox(height: 12),

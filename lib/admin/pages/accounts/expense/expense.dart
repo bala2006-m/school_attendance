@@ -141,183 +141,180 @@ class _ExpenseState extends State<Expense> with SingleTickerProviderStateMixin {
   }
 
   Widget addTab() {
-    final int totalExpense = finance.fold<int>(
-      0,
-      (sum, item) => sum + (item['amount'] as int? ?? 0),
-    );
+    // final int totalExpense = finance.fold<int>(
+    //   0,
+    //   (sum, item) => sum + (item['amount'] as int? ?? 0),
+    // );
 
     return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
 
-          // ---------- PROFILE CARD ----------
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: BuildProfileCard(
+            // ---------- PROFILE CARD ----------
+            BuildProfileCard(
               schoolPhoto: Image.memory(schoolPhotoBytes),
               schoolAddress: schoolAddress,
               schoolName: schoolName,
             ),
-          ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // ---------- ADD EXPENSE BUTTON ----------
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: _showAddIncomeDialog,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Add Expense',
-                style: TextStyle(color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            // ---------- ADD EXPENSE BUTTON ----------
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: _showAddIncomeDialog,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  'Add Expense',
+                  style: TextStyle(color: Colors.white),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ---------- TOTAL EXPENSE CARD ----------
-          if (finance.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Total Expense",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      "₹$totalExpense",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ],
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // ---------- SECTION TITLE ----------
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: const Text(
+            // ---------- TOTAL EXPENSE CARD ----------
+            // if (finance.isNotEmpty)
+            //   Padding(
+            //     padding: const EdgeInsets.symmetric(horizontal: 12),
+            //     child: Container(
+            //       padding: const EdgeInsets.all(16),
+            //       decoration: BoxDecoration(
+            //         color: Colors.blue.shade50,
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //       child: Row(
+            //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //         children: [
+            //           const Text(
+            //             "Total Expense",
+            //             style: TextStyle(
+            //               fontSize: 18,
+            //               fontWeight: FontWeight.w600,
+            //             ),
+            //           ),
+            //           Text(
+            //             "₹$totalExpense",
+            //             style: const TextStyle(
+            //               fontSize: 20,
+            //               fontWeight: FontWeight.bold,
+            //               color: Colors.blue,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            const SizedBox(height: 20),
+            Divider(),
+            // ---------- SECTION TITLE ----------
+            const Text(
               "Expenses",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-          ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          // ---------- EXPENSE LIST ----------
-          finance.isNotEmpty
-              ? ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: finance.length,
-                itemBuilder: (context, index) {
-                  final income = finance[index];
+            // ---------- EXPENSE LIST ----------
+            finance.isNotEmpty
+                ? ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: finance.length,
+                  itemBuilder: (context, index) {
+                    final income = finance[index];
 
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 12,
-                      ),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: Card(
+                        // margin: const EdgeInsets.symmetric(
+                        //   vertical: 6,
+                        //   horizontal: 12,
+                        // ),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
 
-                        // AMOUNT
-                        title: Text(
-                          "₹${income['amount']}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          // AMOUNT
+                          title: Text(
+                            "Amount: ₹${income['amount']}",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          // REASON
+                          subtitle: Text(
+                            "Reason: ${income["reason"]}",
+                            style: const TextStyle(fontSize: 14),
+                          ),
+
+                          // EDIT + DELETE BUTTONS
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blueAccent,
+                                ),
+                                onPressed:
+                                    () => _showUpdateIncomeDialog(income),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: () => _deleteIncome(income['id']),
+                              ),
+                            ],
                           ),
                         ),
-
-                        // REASON
-                        subtitle: Text(
-                          income["reason"] ?? "No reason provided",
-                          style: const TextStyle(fontSize: 14),
-                        ),
-
-                        // EDIT + DELETE BUTTONS
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.blueAccent,
-                              ),
-                              onPressed: () => _showUpdateIncomeDialog(income),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () => _deleteIncome(income['id']),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
-                  );
-                },
-              )
-              // ---------- EMPTY STATE ----------
-              : Padding(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  children: const [
-                    Icon(Icons.receipt_long, size: 60, color: Colors.grey),
-                    SizedBox(height: 12),
-                    Text(
-                      'No expenses found.',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  ],
+                    );
+                  },
+                )
+                // ---------- EMPTY STATE ----------
+                : Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    children: const [
+                      Icon(Icons.receipt_long, size: 60, color: Colors.grey),
+                      SizedBox(height: 12),
+                      Text(
+                        'No expenses found.',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-          const SizedBox(height: 30),
-        ],
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }
@@ -466,7 +463,6 @@ class _ExpenseState extends State<Expense> with SingleTickerProviderStateMixin {
 
             const SizedBox(height: 20),
 
-            /// Expenses Section
             if (finance.isEmpty)
               const Center(
                 child: Padding(
@@ -478,102 +474,120 @@ class _ExpenseState extends State<Expense> with SingleTickerProviderStateMixin {
                 ),
               )
             else
-              Column(
-                children: [
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: finance.length,
-                    itemBuilder: (context, index) {
-                      final item = finance[index];
-                      final d =
-                          item['updated_at'] != null
-                              ? DateTime.parse(
-                                item['updated_at'].toString(),
-                              ).toLocal()
-                              : null;
-
-                      final date =
-                          d != null
-                              ? DateFormat('dd-MM-yyyy').format(d)
-                              : "N/A";
-
-                      return Card(
-                        elevation: 2,
-                        shadowColor: Colors.black12,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 4,
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 16,
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      const Center(
+                        child: Text(
+                          "Overall Expense",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
                           ),
-                          title: Row(
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // List of incomes
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: finance.length,
+                        separatorBuilder:
+                            (_, __) => const SizedBox(height: 6), // small gap
+                        itemBuilder: (context, index) {
+                          final item = finance[index];
+                          final d =
+                              item['updated_at'] != null
+                                  ? DateTime.parse(
+                                    item['updated_at'].toString(),
+                                  ).toLocal()
+                                  : null;
+                          final date =
+                              d != null
+                                  ? DateFormat('d/M/yyyy').format(d)
+                                  : null;
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Reason: ${item['reason'] ?? 'N/A'}'),
-                              Spacer(),
+                              // Left text (reason + optional date on next line)
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['reason']?.toString() ?? 'N/A',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    if (date != null)
+                                      Text(
+                                        "($date)",
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+
+                              // Right text (amount)
                               Text(
-                                "₹ ${item['amount']}",
+                                item['amount'].toString(),
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              "Date: $date",
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// Total Amount Card
-                  Card(
-                    color: Colors.blue.shade50,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Total Expenses",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            "₹ $totalAmount",
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    ),
+
+                      const SizedBox(height: 12),
+                      const Divider(),
+
+                      // Grand total row
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Grand Total",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              totalAmount.toStringAsFixed(0),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),

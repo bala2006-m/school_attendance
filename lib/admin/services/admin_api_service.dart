@@ -884,6 +884,41 @@ class AdminApiService {
     }
   }
 
+  static Future<List<Map<String, dynamic>>> fetchAllMessage(
+    String schoolId,
+  ) async {
+    try {
+      final int id = int.parse(schoolId);
+      final url = Uri.parse('$baseUrl/messages/all/$id');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+
+        return jsonDecode(response.body.toString());
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<bool> deleteMessage(String id) async {
+    final url = Uri.parse('$baseUrl/message/delete/$id');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> fetchAllClasses(
     String schoolId,
   ) async {

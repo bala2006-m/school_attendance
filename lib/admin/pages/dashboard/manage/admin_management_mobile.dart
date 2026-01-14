@@ -15,6 +15,7 @@ import '../../../components/build_profile_card_desktop.dart';
 import '../../../components/build_profile_card_mobile.dart';
 import '../../accounts/drawing/drawing.dart';
 import '../../accounts/expense/expense.dart';
+import '../../accounts/finance/finance.dart';
 import '../../accounts/income/income.dart';
 import '../../add_or_remove/add_or_remove_class.dart';
 import '../../add_or_remove/bulk_upload/bulk_upload_register_admin.dart';
@@ -163,6 +164,8 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                           schoolAddress: widget.schoolAddress,
                           schoolName: widget.schoolName,
                         ),
+                    const SizedBox(height: 30),
+                    buildCollectFeesContainer(),
                     const SizedBox(height: 30),
                     buildManageContainer(),
 
@@ -458,7 +461,7 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                 buildElevatedButton(
                   buttonIndex: 28,
                   context,
-                  'Events',
+                  'Post Events',
                   UploadImagesVideos(
                     schoolId: widget.schoolId,
                     username: widget.adminUsername,
@@ -532,14 +535,14 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                   Icons.feed,
                 ),
                 buildElevatedButton(
-                  buttonIndex: 26,
+                  buttonIndex: 46,
                   context,
-                  'Collect Term \nFees',
-                  CollectFeesClasses(
+                  'Activate\nTerm Fees',
+                  UpdateTermFeeStatus(
                     schoolId: widget.schoolId,
                     username: widget.adminUsername,
                   ),
-                  Icons.collections_bookmark,
+                  Icons.update,
                 ),
                 buildElevatedButton(
                   buttonIndex: 29,
@@ -653,19 +656,133 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                 ),
               ],
             ),
+            // Row(
+            //   crossAxisAlignment: CrossAxisAlignment.start,
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //
+            //   ],
+            // ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildCollectFeesContainer() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.black26, width: 2),
+        boxShadow: [BoxShadow(color: Colors.transparent)],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+
+                children: [
+                  Text(
+                    'Collect Fees',
+                    style: TextStyle(
+                      color: Colors.blue.shade900,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 25,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: Colors.blue.shade900,
+                    size: 50,
+                  ),
+                ],
+              ),
+            ),
+
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 buildElevatedButton(
-                  buttonIndex: 46,
+                  buttonIndex: 26,
                   context,
-                  'Activate\nTerm Fees',
-                  UpdateTermFeeStatus(
+                  'Term Fees',
+                  CollectFeesClasses(
                     schoolId: widget.schoolId,
                     username: widget.adminUsername,
                   ),
-                  Icons.update,
+                  Icons.collections_bookmark,
+                ),
+                buildElevatedButton(
+                  buttonIndex: 35,
+                  context,
+                  'Bus Fees',
+                  BuildClasses(
+                    schoolId: widget.schoolId,
+                    username: widget.adminUsername,
+                    title: 'Class List',
+                    onTap: ({
+                      required String schoolId,
+                      required String username,
+                      required String className,
+                      required String section,
+                      required String classId,
+                    }) {
+                      // Return the page you want to navigate to
+                      return CollectBusFees(
+                        schoolId: schoolId,
+                        username: username,
+                        className: className,
+                        section: section,
+                        classId: classId,
+                      );
+                    },
+
+                    onWillPop: AdminDashboard(
+                      schoolId: widget.schoolId,
+                      username: widget.adminUsername,
+                    ),
+                  ),
+
+                  Icons.generating_tokens,
+                ),
+                buildElevatedButton(
+                  buttonIndex: 42,
+                  context,
+                  'RTE Fees',
+                  BuildClasses(
+                    schoolId: widget.schoolId,
+                    username: widget.adminUsername,
+                    title: 'Class List',
+                    onTap: ({
+                      required String schoolId,
+                      required String username,
+                      required String className,
+                      required String section,
+                      required String classId,
+                    }) {
+                      //10
+                      return CollectRteFees(
+                        schoolId: int.parse(schoolId),
+                        username: username,
+                        className: className,
+                        section: section,
+                        classId: int.parse(classId),
+                      );
+                    },
+
+                    onWillPop: AdminDashboard(
+                      schoolId: widget.schoolId,
+                      username: widget.adminUsername,
+                    ),
+                  ),
+
+                  Icons.generating_tokens,
                 ),
               ],
             ),
@@ -781,16 +898,16 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                   ),
                   Icons.drive_folder_upload,
                 ),
-                // buildElevatedButton(
-                //   buttonIndex: 50,
-                //   context,
-                //   'Finance',
-                //   UpdateTermFeeStatus(
-                //     schoolId: widget.schoolId,
-                //     username: widget.adminUsername,
-                //   ),
-                //   Icons.analytics,
-                // ),
+                buildElevatedButton(
+                  buttonIndex: 50,
+                  context,
+                  'Finance',
+                  Finance(
+                    schoolId: widget.schoolId,
+                    username: widget.adminUsername,
+                  ),
+                  Icons.analytics,
+                ),
               ],
             ),
           ],
@@ -849,37 +966,14 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                   Icons.bus_alert,
                 ),
                 buildElevatedButton(
-                  buttonIndex: 35,
+                  buttonIndex: 51,
                   context,
-                  'Collect Bus\nFees',
-                  BuildClasses(
+                  'Activate\nBus Fees',
+                  ActivateBusFees(
                     schoolId: widget.schoolId,
                     username: widget.adminUsername,
-                    title: 'Class List',
-                    onTap: ({
-                      required String schoolId,
-                      required String username,
-                      required String className,
-                      required String section,
-                      required String classId,
-                    }) {
-                      // Return the page you want to navigate to
-                      return CollectBusFees(
-                        schoolId: schoolId,
-                        username: username,
-                        className: className,
-                        section: section,
-                        classId: classId,
-                      );
-                    },
-
-                    onWillPop: AdminDashboard(
-                      schoolId: widget.schoolId,
-                      username: widget.adminUsername,
-                    ),
                   ),
-
-                  Icons.generating_tokens,
+                  Icons.update,
                 ),
                 buildElevatedButton(
                   buttonIndex: 36,
@@ -961,16 +1055,6 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                   Icons.analytics,
                   buttonIndex: 40,
                 ),
-                buildElevatedButton(
-                  buttonIndex: 51,
-                  context,
-                  'Activate\nBus Fees',
-                  ActivateBusFees(
-                    schoolId: widget.schoolId,
-                    username: widget.adminUsername,
-                  ),
-                  Icons.update,
-                ),
               ],
             ),
           ],
@@ -1051,37 +1135,14 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                   Icons.rtt,
                 ),
                 buildElevatedButton(
-                  buttonIndex: 42,
+                  buttonIndex: 52,
                   context,
-                  'Collect RTE\nFees',
-                  BuildClasses(
+                  'Activate\nRTE Fees',
+                  ActivateRteFees(
                     schoolId: widget.schoolId,
                     username: widget.adminUsername,
-                    title: 'Class List',
-                    onTap: ({
-                      required String schoolId,
-                      required String username,
-                      required String className,
-                      required String section,
-                      required String classId,
-                    }) {
-                      //10
-                      return CollectRteFees(
-                        schoolId: int.parse(schoolId),
-                        username: username,
-                        className: className,
-                        section: section,
-                        classId: int.parse(classId),
-                      );
-                    },
-
-                    onWillPop: AdminDashboard(
-                      schoolId: widget.schoolId,
-                      username: widget.adminUsername,
-                    ),
                   ),
-
-                  Icons.generating_tokens,
+                  Icons.update,
                 ),
                 buildElevatedButton(
                   buttonIndex: 43,
@@ -1160,16 +1221,6 @@ class _AdminManagementMobileState extends State<AdminManagementMobile> {
                   ),
                   Icons.analytics,
                   buttonIndex: 45,
-                ),
-                buildElevatedButton(
-                  buttonIndex: 52,
-                  context,
-                  'Activate\nRTE Fees',
-                  ActivateRteFees(
-                    schoolId: widget.schoolId,
-                    username: widget.adminUsername,
-                  ),
-                  Icons.update,
                 ),
               ],
             ),

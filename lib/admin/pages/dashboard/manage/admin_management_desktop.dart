@@ -14,6 +14,7 @@ import '../../../components/build_classes.dart';
 import '../../../components/build_profile_card_mobile.dart';
 import '../../accounts/drawing/drawing.dart';
 import '../../accounts/expense/expense.dart';
+import '../../accounts/finance/finance.dart';
 import '../../accounts/income/income.dart';
 import '../../add_or_remove/add_or_remove_class.dart';
 import '../../add_or_remove/bulk_upload/bulk_upload_register_admin.dart';
@@ -442,7 +443,7 @@ class _AdminManagementDesktopState extends State<AdminManagementDesktop> {
                 buildElevatedButton(
                   buttonIndex: 28,
                   context,
-                  'Events',
+                  'Post Events',
                   UploadImagesVideos(
                     schoolId: widget.schoolId,
                     username: widget.adminUsername,
@@ -765,16 +766,16 @@ class _AdminManagementDesktopState extends State<AdminManagementDesktop> {
                   ),
                   Icons.drive_folder_upload,
                 ),
-                // buildElevatedButton(
-                //   buttonIndex: 50,
-                //   context,
-                //   'Finance',
-                //   UpdateTermFeeStatus(
-                //     schoolId: widget.schoolId,
-                //     username: widget.adminUsername,
-                //   ),
-                //   Icons.analytics,
-                // ),
+                buildElevatedButton(
+                  buttonIndex: 50,
+                  context,
+                  'Finance',
+                  Finance(
+                    schoolId: widget.schoolId,
+                    username: widget.adminUsername,
+                  ),
+                  Icons.analytics,
+                ),
               ],
             ),
           ],

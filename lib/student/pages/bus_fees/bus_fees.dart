@@ -502,13 +502,13 @@ class _BusFeesState extends State<BusFees> with SingleTickerProviderStateMixin {
                     ? StudentAppbarMobile(
                       schoolId: widget.schoolId,
                       username: widget.username,
-                      title: 'Bus Fee Payments',
+                      title: 'Bus Payments',
                       enableDrawer: false,
                       enableBack: true,
                       onBack: () => onWillPop(),
                     )
                     : StudentAppbarDesktop(
-                      title: 'Bus Fee Payments',
+                      title: 'Bus Payments',
                       enableDrawer: false,
                       enableBack: true,
                       onBack: () => onWillPop(),

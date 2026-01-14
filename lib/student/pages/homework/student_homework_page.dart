@@ -59,7 +59,7 @@ class _StudentHomeworkPageState extends State<StudentHomeworkPage> {
     if (dateStr == null) return "N/A";
     try {
       final date = DateTime.parse(dateStr);
-      return DateFormat('MMM d, yyyy').format(date);
+      return DateFormat('d-MM-yy').format(date);
     } catch (_) {
       return dateStr;
     }
@@ -390,12 +390,8 @@ class HomeworkDetailsPage extends StatefulWidget {
 class _HomeworkDetailsPageState extends State<HomeworkDetailsPage> {
   String formatDate(String? dateStr) {
     if (dateStr == null) return "N/A";
-    try {
-      final date = DateTime.parse(dateStr);
-      return '${date.day}-${date.month}-${date.year}';
-    } catch (_) {
-      return dateStr;
-    }
+    final date = DateTime.parse(dateStr);
+    return '${date.day}-${date.month}-${date.year}';
   }
 
   @override

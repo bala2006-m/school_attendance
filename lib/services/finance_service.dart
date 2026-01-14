@@ -59,7 +59,6 @@ class FinanceService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode(data),
     );
-
     if (response.statusCode == 201 || response.statusCode == 200) {
       return true;
     } else {

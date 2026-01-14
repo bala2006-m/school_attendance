@@ -214,13 +214,13 @@ class _StudentFeesScreenState extends State<StudentFeesScreen>
                     ? StudentAppbarMobile(
                       schoolId: widget.schoolId,
                       username: widget.username,
-                      title: 'Term Fees Payments',
+                      title: 'Term Payments',
                       enableDrawer: false,
                       enableBack: true,
                       onBack: () => onWillPop(),
                     )
                     : StudentAppbarDesktop(
-                      title: 'Term Fees Payments',
+                      title: 'Term Payments',
                       enableDrawer: false,
                       enableBack: true,
                       onBack: () => onWillPop(),

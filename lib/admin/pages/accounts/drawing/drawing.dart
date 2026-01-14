@@ -37,7 +37,7 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
   List<dynamic> incomes = [];
   List<dynamic> expenses = [];
   Map<String, dynamic> allFees = {};
-
+  int cashOnHand = 0;
   @override
   void initState() {
     super.initState();
@@ -66,12 +66,40 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
     try {
       drawingIn = await financeApi.getAllDrawingIN(schoolId: widget.schoolId);
       drawingOut = await financeApi.getAllDrawingOUT(schoolId: widget.schoolId);
-      incomes = await financeApi.getAllIncome(schoolId: widget.schoolId);
-      expenses = await financeApi.getAllExpense(schoolId: widget.schoolId);
-      allFees = await AccountService.fetchAll(
+      final fees = await AccountService.fetchAll(
         schoolId: int.parse(widget.schoolId),
       );
-    } catch (_) {
+      final incomeList = List.from(
+        await financeApi.getAllIncome(schoolId: widget.schoolId),
+      );
+      final expenseList = List.from(
+        await financeApi.getAllExpense(schoolId: widget.schoolId),
+      );
+      final otherIncomeTotal = incomeList.fold<double>(
+        0,
+        (sum, e) => sum + (double.tryParse(e['amount'].toString()) ?? 0),
+      );
+      final expenseTotal = expenseList.fold<double>(
+        0,
+        (sum, e) => sum + (double.tryParse(e['amount'].toString()) ?? 0),
+      );
+      final drawingInTotal = drawingIn.fold<double>(
+        0,
+        (sum, e) => sum + (double.tryParse(e['amount'].toString()) ?? 0),
+      );
+      final drawingOutTotal = drawingOut.fold<double>(
+        0,
+        (sum, e) => sum + (double.tryParse(e['amount'].toString()) ?? 0),
+      );
+      cashOnHand =
+          fees['termCash'] +
+          fees['busCash'] +
+          fees['rteCash'] +
+          otherIncomeTotal.toInt() +
+          drawingInTotal.toInt() -
+          drawingOutTotal.toInt() -
+          expenseTotal.toInt();
+    } catch (e) {
       drawingIn = [];
       drawingOut = [];
       incomes = [];
@@ -164,6 +192,45 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
           ),
 
           const SizedBox(height: 20),
+          Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.green,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Cash ON Hand:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '₹$cashOnHand',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
 
           // ADD BUTTON ----------------------------------------------------------
           Center(
@@ -189,7 +256,7 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
           ),
 
           const SizedBox(height: 25),
-
+          Divider(),
           // SECTION TITLE -------------------------------------------------------
           Text(
             "All Drawings",
@@ -291,11 +358,11 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit),
+              icon: const Icon(Icons.edit, color: Colors.blue),
               onPressed: () => _showUpdateDrawingDialog(item),
             ),
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () => _deleteDrawing(item['id']),
             ),
           ],
@@ -352,9 +419,27 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
             ),
             ElevatedButton(
               onPressed: () async {
+                final amountText = amountController.text.trim();
+                if (amountText.isEmpty) return;
+
+                final amount = double.tryParse(amountText) ?? 0;
+
+                // Block if Drawing Out > cashOnHand
+                if (type == "DRAWING_OUT" && amount > cashOnHand) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Drawing Out cannot be more than Cash On Hand',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 final data = {
                   'school_id': int.parse(widget.schoolId),
-                  'amount': double.parse(amountController.text),
+                  'amount': amount,
                   'reason': reasonController.text,
                   'type': type,
                   'created_by': widget.username,
@@ -410,8 +495,25 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
             ),
             ElevatedButton(
               onPressed: () async {
+                final amountText = amountController.text.trim();
+                if (amountText.isEmpty) return;
+
+                final amount = double.tryParse(amountText) ?? 0;
+
+                if (item['type'] == "DRAWING_OUT" && amount > cashOnHand) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Drawing Out cannot be more than Cash On Hand',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 final data = {
-                  'amount': double.parse(amountController.text),
+                  'amount': amount,
                   'reason': reasonController.text,
                   'updated_by': widget.username,
                 };
@@ -450,28 +552,28 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
       (s, i) => s + (double.tryParse(i['amount'].toString()) ?? 0),
     );
 
-    final totalIncome = incomes.fold<double>(
-      0.0,
-      (s, i) => s + (double.tryParse(i['amount'].toString()) ?? 0),
-    );
+    // final totalIncome = incomes.fold<double>(
+    //   0.0,
+    //   (s, i) => s + (double.tryParse(i['amount'].toString()) ?? 0),
+    // );
+    //
+    // final totalExpense = expenses.fold<double>(
+    //   0.0,
+    //   (s, i) => s + (double.tryParse(i['amount'].toString()) ?? 0),
+    // );
 
-    final totalExpense = expenses.fold<double>(
-      0.0,
-      (s, i) => s + (double.tryParse(i['amount'].toString()) ?? 0),
-    );
-
-    // FEES
-    final termFee =
-        double.tryParse(allFees["termFeesTotal"]?.toString() ?? "0") ?? 0;
-    final busFee =
-        double.tryParse(allFees["busFeeTotal"]?.toString() ?? "0") ?? 0;
-    final rteFee =
-        double.tryParse(allFees["rteFeesTotal"]?.toString() ?? "0") ?? 0;
+    // // FEES
+    // final termFee =
+    //     double.tryParse(allFees["termFeesTotal"]?.toString() ?? "0") ?? 0;
+    // final busFee =
+    //     double.tryParse(allFees["busFeeTotal"]?.toString() ?? "0") ?? 0;
+    // final rteFee =
+    //     double.tryParse(allFees["rteFeesTotal"]?.toString() ?? "0") ?? 0;
 
     // NET BALANCE
-    final netBalance =
-        (totalDrawingIn + totalIncome + termFee + busFee + rteFee) -
-        (totalDrawingOut + totalExpense);
+    // final netBalance =
+    //     (totalDrawingIn + totalIncome + termFee + busFee + rteFee) -
+    //     (totalDrawingOut + totalExpense);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12),
@@ -484,7 +586,45 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
           ),
 
           const SizedBox(height: 20),
-
+          Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: Colors.green,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Cash ON Hand:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '₹$cashOnHand',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
           if (drawingIn.isEmpty &&
               drawingOut.isEmpty &&
               incomes.isEmpty &&
@@ -500,7 +640,7 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
             Column(
               children: [
                 Card(
-                  color: Colors.blue.shade50,
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -511,27 +651,27 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
                         totalRow(
                           "Total Drawing In",
                           totalDrawingIn,
-                          Colors.green,
+                          Colors.black,
                         ),
                         totalRow(
                           "Total Drawing Out",
                           totalDrawingOut,
-                          Colors.red,
+                          Colors.black,
                         ),
-                        totalRow("Total Income", totalIncome, Colors.blue),
-                        totalRow("Total Expense", totalExpense, Colors.orange),
 
-                        // FEES
-                        totalRow("Term Fees", termFee, Colors.purple),
-                        totalRow("Bus Fees", busFee, Colors.brown),
-                        totalRow("RTE Fees", rteFee, Colors.teal),
-
+                        // totalRow("Total Income", totalIncome, Colors.blue),
+                        // totalRow("Total Expense", totalExpense, Colors.orange),
+                        //
+                        // // FEES
+                        // totalRow("Term Fees", termFee, Colors.purple),
+                        // totalRow("Bus Fees", busFee, Colors.brown),
+                        // totalRow("RTE Fees", rteFee, Colors.teal),
                         const Divider(),
 
                         totalRow(
-                          "Net Balance",
-                          netBalance,
-                          netBalance >= 0 ? Colors.green : Colors.red,
+                          "Cash in Drawing",
+                          totalDrawingIn - totalDrawingOut,
+                          Colors.black,
                         ),
                       ],
                     ),
@@ -540,10 +680,10 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
                 const SizedBox(height: 20),
                 ...drawingIn.map((i) => drawingCard(i, Colors.green)),
                 ...drawingOut.map((i) => drawingCard(i, Colors.red)),
-                ...incomes.map((i) => financeCard(i, Colors.blue, "Income")),
-                ...expenses.map(
-                  (i) => financeCard(i, Colors.orange, "Expense"),
-                ),
+                // ...incomes.map((i) => financeCard(i, Colors.blue, "Income")),
+                // ...expenses.map(
+                //   (i) => financeCard(i, Colors.orange, "Expense"),
+                // ),
 
                 // SUMMARY CARD
               ],

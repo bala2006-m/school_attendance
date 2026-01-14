@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:month_year_picker/month_year_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:permission_handler/permission_handler.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
+
+// import 'package:timezone/data/latest.dart' as tz;
+// import 'package:timezone/timezone.dart' as tz;
 
 import 'admin/pages/dashboard/admin_dashboard.dart';
 import 'login_page.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+// final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+//     FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   WidgetsFlutterBinding.ensureInitialized();
-  await Geolocator.isLocationServiceEnabled();
-  await Permission.manageExternalStorage.isGranted;
+  // await Geolocator.isLocationServiceEnabled();
+  // await Permission.manageExternalStorage.isGranted;
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool isLoggedIn = prefs.getBool('rememberMe') ?? false;
   String role = prefs.getString('role') ?? '';
@@ -64,21 +61,21 @@ Future<void> main() async {
     startPage = const LoginPage();
   }
   // Android init
-  const AndroidInitializationSettings androidInit =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+  // const AndroidInitializationSettings androidInit =
+  //     AndroidInitializationSettings('@mipmap/ic_launcher');
 
   // iOS init
-  const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
+  // const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
 
   // Combine
-  const InitializationSettings initSettings = InitializationSettings(
-    android: androidInit,
-    iOS: iosInit,
-  );
-  tz.initializeTimeZones();
-  tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
-  // Initialize
-  await flutterLocalNotificationsPlugin.initialize(initSettings);
+  // const InitializationSettings initSettings = InitializationSettings(
+  //   android: androidInit,
+  //   iOS: iosInit,
+  // );
+  // tz.initializeTimeZones();
+  // tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+  // // Initialize
+  // await flutterLocalNotificationsPlugin.initialize(initSettings);
   runApp(MyApp(startPage: startPage));
 }
 
@@ -96,12 +93,12 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF8F8F8),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        MonthYearPickerLocalizations.delegate,
-      ],
+      // localizationsDelegates: const [
+      //   GlobalMaterialLocalizations.delegate,
+      //   GlobalWidgetsLocalizations.delegate,
+      //   GlobalCupertinoLocalizations.delegate,
+      //   MonthYearPickerLocalizations.delegate,
+      // ],
       supportedLocales: const [
         Locale('en', 'US'), // Add more if needed
       ],

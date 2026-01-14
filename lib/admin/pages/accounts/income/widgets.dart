@@ -189,7 +189,7 @@ List<Widget> _buildFinanceList(List<dynamic> financeList) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: _amountRow(
-        '${entry['reason'] ?? 'Unknown'}',
+        '${entry['reason'] ?? 'Unknown'}\n(${DateTime.parse(entry['created_at']).day}/${DateTime.parse(entry['created_at']).month}/${DateTime.parse(entry['created_at']).year})',
         '${entry['amount'] ?? 0}',
       ),
     );

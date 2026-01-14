@@ -37,6 +37,7 @@ class AccountService {
       final url = Uri.parse(
         "$baseUrl/accounts/fetch_all_periodical/$schoolId/$from/$to",
       );
+
       final response = await http.get(
         url,
         headers: {"Content-Type": "application/json"},
