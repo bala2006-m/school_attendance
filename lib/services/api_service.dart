@@ -497,11 +497,13 @@ class ApiService {
   static Future<List<dynamic>> getUsersByRole({
     required String role,
     required int schoolId,
+    bool forceCloud = false,
   }) async {
     try {
       final response = await HybridApiService.get(
         '/attendance-users?role=$role&school_id=$schoolId',
         headers: getApiHeaders(),
+        forceCloud: forceCloud,
       );
 
       if (response.statusCode == 200) {
@@ -1348,55 +1350,58 @@ class ApiService {
       }
 
       // 2. Legacy Fallback: If server hasn't been updated yet or any error occurs
-      print("Auth Failed (${response.statusCode}): Falling back to legacy client-side role check... (BaseURL: $baseUrl)");
+      print("FALLBACK START: Status ${response.statusCode}. Trying legacy role-check... (URL: $baseUrl)");
       
       List<String> roles = ['student', 'staff', 'admin', 'administrator'];
+      bool userFoundInLegacy = false;
 
       for (String role in roles) {
         try {
-          print("Checking role: $role for school $schoolId...");
-          final users = await getUsersByRole(role: role, schoolId: schoolId);
-          print("  Role $role: found ${users.length} total users.");
+          print("  -> Checking role: $role...");
+          final users = await getUsersByRole(
+            role: role, 
+            schoolId: schoolId,
+            forceCloud: true, // Always hit cloud for legacy fallback on hosted apps
+          );
+          print("  <- Role $role: ${users.length} users returned.");
           
           final user = users.cast<Map<String, dynamic>?>().firstWhere(
             (u) {
-              final match = u?['username']?.toString() == username;
-              if (match) print("  MATCH FOUND entry for $username in role $role");
-              return match;
+              final uname = u?['username']?.toString();
+              return uname == username;
             },
             orElse: () => null,
           );
 
           if (user != null) {
+            userFoundInLegacy = true;
             final hashedPassword = user['password']?.toString();
-            print("  User found! Verifying password... (Hashed: ${hashedPassword?.substring(0, 10)}...)");
+            print("     MATCH: Found $username in $role. Verifying password...");
+            
             if (hashedPassword != null && BCrypt.checkpw(password, hashedPassword)) {
-              print("  SUCCESS: Legacy login matched for $username ($role)");
+              print("     SUCCESS: Legacy password verified!");
               return {
                 'status': 'success',
                 'message': 'Legacy login successful',
                 'user': user,
               };
             } else {
-              print("  FAILED: Password mismatch for $username ($role)");
+              print("     FAILURE: Legacy password mismatch.");
             }
           }
         } catch (roleError) {
-          // If a role check fails, continue to next role
-          print("  ERROR: Role check failed for $role: $roleError");
+          print("     ERROR in $role check: $roleError");
         }
       }
-
       
-      // If we reach here, either it was a real 401/400 from new server OR legacy check also failed
-      try {
-        final data = jsonDecode(response.body);
-        throw Exception(data['message'] ?? 'Invalid user Id or password');
-      } catch (_) {
-        throw Exception('Invalid user Id or password');
+      if (!userFoundInLegacy) {
+        print("FALLBACK COMPLETE: No matching user found in any role.");
       }
+      
+      throw Exception('Invalid user Id or password');
     } catch (e) {
       if (e.toString().contains('Invalid user Id or password')) rethrow;
+      print("FATAL LOGIN ERROR: $e");
       throw Exception('Login connection error: $e');
     }
 
