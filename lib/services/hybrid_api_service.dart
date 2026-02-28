@@ -1,7 +1,7 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 import 'package:school_attendance/utils/utils.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 
 class HybridApiService {
   static String? localBaseUrl;
@@ -21,7 +21,18 @@ class HybridApiService {
   static Future<void> _doInitialize() async {
     _isDesktop = isDesktopPlatform;
 
-    if (_isDesktop!) {
+    // Detect local server if on Desktop OR if on Web (but only if NOT on HTTPS production)
+    bool shouldDetectLocal = _isDesktop!;
+
+    if (kIsWeb) {
+      // In web mode, allow local detection if we are debugging or NOT on HTTPS
+      String scheme = Uri.base.scheme;
+      if (kDebugMode || scheme != 'https') {
+        shouldDetectLocal = true;
+      }
+    }
+
+    if (shouldDetectLocal) {
       await _detectLocalServer();
     }
     _isInitialized = true;
@@ -73,14 +84,13 @@ class HybridApiService {
   }
 
   static String get effectiveBaseUrl {
-    if (_isDesktop == true && _isLocalServerAvailable == true && localBaseUrl != null) {
+    if (_isLocalServerAvailable == true && localBaseUrl != null) {
       return localBaseUrl!;
     }
     return baseUrl;
   }
 
-
-  static bool get isHybridMode => _isDesktop! && _isLocalServerAvailable!;
+  static bool get isHybridMode => _isLocalServerAvailable == true;
 
   static bool get isLocalAvailable => _isLocalServerAvailable ?? false;
 
