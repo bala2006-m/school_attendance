@@ -74,7 +74,7 @@ class _MarkOldAttendanceState extends State<MarkOldAttendance> {
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Mark Old Attendance',
+                    title: 'Mark Attendance',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -94,7 +94,7 @@ class _MarkOldAttendanceState extends State<MarkOldAttendance> {
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Mark Old Attendance',
+                    title: 'Mark  Attendance',
 
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;

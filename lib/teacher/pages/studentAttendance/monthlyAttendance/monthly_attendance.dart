@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -34,7 +35,7 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
   Image? schoolPhoto;
   bool isLoading = true;
   List<Map<String, dynamic>> classes = [];
-
+  late Timer refreshTimer;
   @override
   void initState() {
     super.initState();
@@ -42,14 +43,19 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
     selectedMonth = now.month;
     selectedYear = now.year;
     init();
+    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      fetchClasses();
+    });
+  }
+
+  @override
+  void dispose() {
+    refreshTimer.cancel();
+    super.dispose();
   }
 
   Future<void> init() async {
-    try {
-      await Future.wait([fetchSchoolInfo(), fetchClasses()]);
-    } finally {
-      setState(() => isLoading = false);
-    }
+    await Future.wait([fetchSchoolInfo()]);
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -73,8 +79,28 @@ class _MonthlyAttendanceState extends State<MonthlyAttendance> {
   }
 
   Future<void> fetchClasses() async {
-    final cls = await TeacherApiServices.fetchClassData(widget.schoolId);
-    classes = List.from(cls);
+    final classes1 = await TeacherApiServices.fetchClassData(widget.schoolId);
+    final data = await TeacherApiServices.fetchStaffDataUsername(
+      username: widget.username,
+      schoolId: int.tryParse(widget.schoolId) ?? 0,
+    );
+    final ids = data?['class_ids'];
+
+    if (ids != null) {
+      final classIds = jsonDecode(ids.toString());
+
+      // Filter classes based on stored class_ids
+      final filteredList =
+          classes1.where((cls) {
+            return classIds.contains(cls['id']);
+          }).toList();
+
+      setState(() {
+        classes = filteredList;
+        isLoading = false;
+      });
+    }
+    // classes = List.from(cls);
   }
 
   final List<String> kinderGrades = ['PRE-KG', 'LKG', 'UKG', 'KG', 'NURSERY'];

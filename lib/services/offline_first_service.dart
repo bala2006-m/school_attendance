@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -29,7 +28,7 @@ class OfflineFirstService {
   int get pendingOperationsCount => _pendingOperations.length;
 
   Future<void> initialize() async {
-    _isDesktop = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    _isDesktop = isDesktopPlatform;
 
     if (_isDesktop) {
       await _loadPendingOperations();
@@ -83,9 +82,9 @@ class OfflineFirstService {
           _pendingOperations.add(pendingOp);
           await _savePendingOperations();
 
-          debugPrint(
-            'Stored locally and queued for cloud sync: ${operation['type']} on ${endpoint}',
-          );
+          // debugPrint(
+          //   'Stored locally and queued for cloud sync: ${operation['type']} on $endpoint',
+          // );
 
           // Try to sync immediately if online
           if (_isOnline) {

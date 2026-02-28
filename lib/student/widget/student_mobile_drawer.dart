@@ -1,12 +1,11 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
+import '../../services/api_service.dart';
 import '../color/custom_color.dart';
 import '../pages/change_password.dart';
-import '../pages/edit_profile.dart';
 import '../pages/profile_page.dart';
 
 class StudentMobileDrawer extends StatelessWidget {
@@ -138,16 +137,16 @@ class StudentMobileDrawer extends StatelessWidget {
                     schoolId: int.parse(schoolId),
                   ),
                 ),
-                _buildListTile(
-                  context,
-                  icon: Icons.edit_note,
-                  text: 'Edit Profile',
-                  page: EditProfile(
-                    username: username,
-                    onSave: onSave,
-                    schoolId: int.parse(schoolId),
-                  ),
-                ),
+                // _buildListTile(
+                //   context,
+                //   icon: Icons.edit_note,
+                //   text: 'Edit Profile',
+                //   page: EditProfile(
+                //     username: username,
+                //     onSave: onSave,
+                //     schoolId: int.parse(schoolId),
+                //   ),
+                // ),
                 _buildListTile(
                   context,
                   icon: Icons.edit,
@@ -187,6 +186,21 @@ class StudentMobileDrawer extends StatelessWidget {
                 onTap: () async {
                   SharedPreferences prefs =
                       await SharedPreferences.getInstance();
+
+                  final String? userRole = prefs.getString('role');
+
+                  // Trigger logout sync before clearing preferences (only for admin and staff)
+                  if (userRole == 'admin' || userRole == 'staff') {
+                    try {
+                      await ApiService.triggerUserLogout(
+                        schoolId: int.parse(schoolId),
+                        userId: username,
+                      );
+                    } catch (e) {
+                      // Log error but don't block logout
+                      debugPrint('Logout sync failed: $e');
+                    }
+                  }
 
                   await prefs.remove('role');
                   await prefs.remove('username');

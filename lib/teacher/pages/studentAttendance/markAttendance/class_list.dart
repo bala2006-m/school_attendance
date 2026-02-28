@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
@@ -21,11 +24,20 @@ class _ClassListState extends State<ClassList> {
   bool isLoading = true;
   Map<String, bool> attendanceStatusMapFn = {};
   Map<String, bool> attendanceStatusMapAn = {};
-
+  List<dynamic> classIds = [];
+  late Timer refreshTimer;
   @override
   void initState() {
     super.initState();
-    init();
+    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      init();
+    });
+  }
+
+  @override
+  void dispose() {
+    refreshTimer.cancel();
+    super.dispose();
   }
 
   Future<void> fetchAttendanceStatusForAll() async {
@@ -70,11 +82,32 @@ class _ClassListState extends State<ClassList> {
       widget.schoolId,
     );
 
-    setState(() {
-      classList = fetchedClassList;
+    final data = await TeacherApiServices.fetchStaffDataUsername(
+      username: widget.username,
+      schoolId: int.tryParse(widget.schoolId) ?? 0,
+    );
+    final ids = data?['class_ids'];
 
-      isLoading = false;
-    });
+    if (ids != null) {
+      classIds = jsonDecode(ids.toString());
+
+      // Filter classes based on stored class_ids
+      final filteredList =
+          fetchedClassList.where((cls) {
+            return classIds.contains(cls['id']);
+          }).toList();
+
+      setState(() {
+        classList = filteredList;
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        classList = [];
+        isLoading = false;
+      });
+    }
+
     fetchAttendanceStatusForAll();
   }
 

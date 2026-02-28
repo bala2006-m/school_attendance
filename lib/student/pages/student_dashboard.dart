@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:school_attendance/utils/utils.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -47,6 +48,7 @@ class StudentDashboardState extends State<StudentDashboard> {
   @override
   void initState() {
     super.initState();
+
     _initializeDashboard();
   }
 
@@ -215,7 +217,10 @@ class StudentDashboardState extends State<StudentDashboard> {
       ];
 
       final results = await Future.wait([
-        AdminApiService.fetchLatestMessage('${studentData!["school_id"]}'),
+        AdminApiService.fetchLatestMessageRole(
+          '${studentData!["school_id"]}',
+          'student',
+        ),
         StudentApiServices.fetchSchoolData('${studentData!["school_id"]}'),
         StudentApiServices.fetchClassDatas(
           '${studentData!["school_id"]}',
@@ -293,9 +298,7 @@ class StudentDashboardState extends State<StudentDashboard> {
                       title: 'Student Dashboard',
                       enableDrawer: true,
                       enableBack: false,
-                      onBack: () {
-                        exit(0);
-                      },
+                      onBack: safeExit,
                     )
                     : StudentAppbarDesktop(
                       title: 'Student Dashboard',
@@ -367,9 +370,7 @@ class StudentDashboardState extends State<StudentDashboard> {
                     title: 'Student Dashboard',
                     enableDrawer: false,
                     enableBack: false,
-                    onBack: () {
-                      exit(0);
-                    },
+                    onBack: safeExit,
                   ),
         ),
         drawer: Drawer(
@@ -408,6 +409,7 @@ class StudentDashboardState extends State<StudentDashboard> {
           schoolAddress: schoolAddressLocal,
           message: message,
           studentRoute: route,
+          schoolData: schoolData,
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: selectedIndex,

@@ -1,8 +1,8 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:school_attendance/utils/utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../pages/nominal_roles/student/build_student_list_excel.dart';
@@ -151,7 +151,7 @@ class ExcelPreviewPage extends StatelessWidget {
                       students: students,
                       fileName: fileName,
                     );
-                    if (Platform.isAndroid || Platform.isIOS) {
+                    if (isMobilePlatform) {
                       await Share.shareXFiles([
                         XFile(
                           path,

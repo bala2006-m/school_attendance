@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'package:school_attendance/utils/utils.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -849,10 +849,7 @@ class StudentCard extends StatelessWidget {
                 return;
               }
 
-              if (kIsWeb ||
-                  Platform.isWindows ||
-                  Platform.isMacOS ||
-                  Platform.isLinux) {
+              if (kIsWeb || isDesktopPlatform) {
                 final whatsappUrl = Uri.parse("https://wa.me/$phone");
                 if (await canLaunchUrl(whatsappUrl)) {
                   await launchUrl(

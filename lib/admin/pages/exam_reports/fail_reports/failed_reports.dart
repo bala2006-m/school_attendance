@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:school_attendance/admin/pages/exam_reports/pass_reports/pass_report_page.dart';
 
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../services/admin_api_service.dart';
 import '../../dashboard/admin_dashboard.dart';
+import 'failed_report_page.dart';
 
-class PassReports extends StatefulWidget {
-  const PassReports({
+class FailedReports extends StatefulWidget {
+  const FailedReports({
     super.key,
     required this.username,
     required this.schoolId,
@@ -16,10 +16,10 @@ class PassReports extends StatefulWidget {
   final String username;
   final String schoolId;
   @override
-  State<PassReports> createState() => _PassReportsState();
+  State<FailedReports> createState() => _FailedReportsState();
 }
 
-class _PassReportsState extends State<PassReports> {
+class _FailedReportsState extends State<FailedReports> {
   List<dynamic> titles = [];
   bool isLoading = true;
   @override
@@ -60,7 +60,7 @@ class _PassReportsState extends State<PassReports> {
       context,
       MaterialPageRoute(
         builder:
-            (_) => PassReportPage(
+            (_) => FailedReportPage(
               username: widget.username,
               schoolId: widget.schoolId,
               title: title,
@@ -88,7 +88,7 @@ class _PassReportsState extends State<PassReports> {
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Pass Reports',
+                    title: 'Failed Reports',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -98,7 +98,7 @@ class _PassReportsState extends State<PassReports> {
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Pass Reports',
+                    title: 'Failed Reports',
                     onBack: () {
                       onWillPop();
                     },

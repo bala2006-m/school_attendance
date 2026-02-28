@@ -174,7 +174,7 @@ class TeacherApiServices {
   static Future<bool> saveTimetable(
     List<Map<String, dynamic>> timetables,
   ) async {
-    const String url = '$baseUrl/timetable/create';
+    final String url = '$baseUrl/timetable/create';
 
     // Convert the list to the required plain-text format
     String timetableString = timetables

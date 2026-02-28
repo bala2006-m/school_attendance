@@ -1,17 +1,19 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+
 import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../services/admin_api_service.dart';
 import '../../../widget/pdf_preview_custom_page.dart';
-import 'build_pass_report_pdf.dart';
-import 'pass_reports.dart';
-import 'dart:convert';
-import 'dart:typed_data';
+import 'build_failed_report_pdf.dart';
+import 'failed_reports.dart';
 
-class PassReportPage extends StatefulWidget {
-  const PassReportPage({
+class FailedReportPage extends StatefulWidget {
+  const FailedReportPage({
     super.key,
     required this.username,
     required this.schoolId,
@@ -21,10 +23,10 @@ class PassReportPage extends StatefulWidget {
   final String schoolId;
   final String title;
   @override
-  State<PassReportPage> createState() => _PassReportPageState();
+  State<FailedReportPage> createState() => _FailedReportPageState();
 }
 
-class _PassReportPageState extends State<PassReportPage> {
+class _FailedReportPageState extends State<FailedReportPage> {
   List<Map<String, dynamic>> classes = [];
   List<dynamic> schoolWiseMark = [];
   List<dynamic> classWiseMark = [];
@@ -73,8 +75,6 @@ class _PassReportPageState extends State<PassReportPage> {
 
       classId: classId,
     );
-    print(classWiseMark);
-    //I/flutter (32270): [{id: 177, school_id: 1, class_id: 29, username: 2025003, title: I TERM, min_max_marks: [35, 100], marks: [AA, 66, 79], subjects: [TAMIL, ENGLISH, MATHS], subject_rank: [0, 0, 0], rank: -1, created_by: 1, created_at: 2026-02-12T07:29:34.492Z, updated_by: 1, updated_at: 2026-02-12T11:55:14.603Z, status: active, date: [2026-02-13, 2026-02-14, 2026-02-14], session: [AN, FN, AN], name: SARAN, class_name: I, section: A}, {id: 178, school_id: 1, class_id: 29, username: 2025008, title: I TERM, min_max_marks: [35, 100], marks: [22, 35, 100], subjects: [TAMIL, ENGLISH, MATHS], subject_rank: [0, 0, 0], rank: -1, created_by: 1, created_at: 2026-02-12T07:29:35.108Z, updated_by: 1, updated_at: 2026-02-12T11:55:14.603Z, status: active, date: [2026-02-13, 2026-02-14, 2026-02-14], session: [AN, FN, AN], name: RAGU P, class_name: I, section: A}, {id: 179, school_id: 1, class_id: 29, username: 1001, title: I TERM, min_max_marks: [35, 100], marks: [30, 44, 66], subjects: [TAMIL, ENGLISH, MATHS], subject_rank: [0, 0, 0], rank:
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -110,15 +110,15 @@ class _PassReportPageState extends State<PassReportPage> {
         builder:
             (_) => PdfPreviewCustomPage(
               buildPdf:
-                  () => buildPassReportPdf(
+                  () => buildFailedReportPdf(
                     title: widget.title,
                     examMarks: schoolWiseMark,
                     schoolName: schoolName,
                     schoolAddress: schoolAddress,
                     schoolPhotoBytes: schoolPhotoBytes,
                   ),
-              title: '${widget.title} Pass Report (School Wise)',
-              fileName: '${widget.title.toLowerCase()}_school_pass_report',
+              title: '${widget.title} Failed Report (School Wise)',
+              fileName: '${widget.title.toLowerCase()}_school_failed_report',
             ),
       ),
     );
@@ -149,16 +149,16 @@ class _PassReportPageState extends State<PassReportPage> {
           builder:
               (_) => PdfPreviewCustomPage(
                 buildPdf:
-                    () => buildPassReportPdf(
+                    () => buildFailedReportPdf(
                       title: widget.title,
                       examMarks: classWiseMark,
                       schoolName: schoolName,
                       schoolAddress: schoolAddress,
                       schoolPhotoBytes: schoolPhotoBytes,
                     ),
-                title: '${widget.title} Pass Report ($className - $section)',
+                title: '${widget.title} Failed Report ($className - $section)',
                 fileName:
-                    '${widget.title.toLowerCase()}_${className.toLowerCase()}_${section.toLowerCase()}_pass_report',
+                    '${widget.title.toLowerCase()}_${className.toLowerCase()}_${section.toLowerCase()}_failed_report',
               ),
         ),
       );
@@ -244,7 +244,7 @@ class _PassReportPageState extends State<PassReportPage> {
       context,
       MaterialPageRoute(
         builder:
-            (context) => PassReports(
+            (context) => FailedReports(
               schoolId: widget.schoolId,
               username: widget.username,
             ),
@@ -297,49 +297,101 @@ class _PassReportPageState extends State<PassReportPage> {
                   ),
                 )
                 : SingleChildScrollView(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 20,
+                    bottom: 40,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      ElevatedButton(
-                        onPressed: handlePrintSchoolWise,
-                        child: Text('Print School Wise PDF'),
-                      ),
-                      const SizedBox(height: 16),
-                      classes.isEmpty
-                          ? const Center(
-                            child: Text(
-                              "No Classes Found",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          )
-                          : SingleChildScrollView(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildClassContainer(
-                                  title: "Nursery",
-                                  classes: filterKinderGarden(),
-                                  context: context,
-                                  isKinderGarden: true,
-                                ),
-                                const SizedBox(height: 20),
-                                _buildClassContainer(
-                                  title: "Classes 1 to 5",
-                                  classes: filterClasses(1, 5),
-                                  context: context,
-                                  isKinderGarden: false,
-                                ),
-                                const SizedBox(height: 20),
-                                _buildClassContainer(
-                                  title: "Classes 6 and above",
-                                  classes: filterClassesFrom(6),
-                                  context: context,
-                                  isKinderGarden: false,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: InkWell(
+                          onTap: handlePrintSchoolWise,
+                          borderRadius: BorderRadius.circular(30),
+                          child: Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(maxWidth: 400),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.redAccent, Colors.red.shade900],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.redAccent.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.picture_as_pdf, color: Colors.white),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Print School Wise PDF',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      classes.isEmpty
+                          ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 100),
+                              child: Text(
+                                "No Classes Found",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          )
+                          : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildClassContainer(
+                                title: "Nursery",
+                                icon: Icons.child_care,
+                                classes: filterKinderGarden(),
+                                context: context,
+                                isKinderGarden: true,
+                              ),
+                              const SizedBox(height: 24),
+                              _buildClassContainer(
+                                title: "Classes 1 to 5",
+                                icon: Icons.school,
+                                classes: filterClasses(1, 5),
+                                context: context,
+                                isKinderGarden: false,
+                              ),
+                              const SizedBox(height: 24),
+                              _buildClassContainer(
+                                title: "Classes 6 and above",
+                                icon: Icons.auto_stories,
+                                classes: filterClassesFrom(6),
+                                context: context,
+                                isKinderGarden: false,
+                              ),
+                            ],
                           ),
                     ],
                   ),
@@ -350,106 +402,128 @@ class _PassReportPageState extends State<PassReportPage> {
 
   Widget _buildClassContainer({
     required String title,
+    required IconData icon,
     required List<Map<String, dynamic>> classes,
     required BuildContext context,
     required bool isKinderGarden,
   }) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     final isSmall = MediaQuery.of(context).size.width < 800;
-    if (classes.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          "",
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-        ),
-      );
-    }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.blueAccent,
-            ),
+    if (classes.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0, bottom: 16),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.blueAccent.shade700, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.blueAccent.shade700,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Divider(
+                  color: Colors.blueAccent.withValues(alpha: 0.2),
+                  thickness: 2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount:
-                isMobile
-                    ? 3
-                    : isSmall
-                    ? 5
-                    : 6,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 1,
-            children:
-                classes.map((classItem) {
-                  final className = classItem['class'].toString();
-                  final section = classItem['section'].toString();
+        ),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount:
+              isMobile
+                  ? 3
+                  : isSmall
+                  ? 5
+                  : 6,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.1,
+          children:
+              classes.map((classItem) {
+                final className = classItem['class'].toString();
+                final section = classItem['section'].toString();
 
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      if (!mounted) return;
-                      handlePrintClassWise(
-                        classId: classItem['id'].toString(),
-                        className: className,
-                        section: section,
-                      );
-                    },
-                    child: Card(
-                      color: Colors.teal,
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isKinderGarden ? className : 'Class $className',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            'Sec $section',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                            ),
-                          ),
+                return InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    if (!mounted) return;
+                    handlePrintClassWise(
+                      classId: classItem['id'].toString(),
+                      className: className,
+                      section: section,
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.orange.shade400,
+                          Colors.deepOrange.shade700,
                         ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  );
-                }).toList(),
-          ),
-        ],
-      ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isKinderGarden ? className : 'CLASS $className',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'SEC $section',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+        ),
+      ],
     );
   }
 }

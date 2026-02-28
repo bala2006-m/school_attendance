@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
@@ -21,22 +24,45 @@ class HomeworkClassList extends StatefulWidget {
 class _HomeworkClassListState extends State<HomeworkClassList> {
   List<dynamic> classList = [];
   bool isLoading = true;
+  late Timer refreshTimer;
   @override
   void initState() {
     super.initState();
-    init();
+
+    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      fetchClasses();
+    });
   }
 
-  Future<void> init() async {
-    final fetchedClassList = await TeacherApiServices.fetchClassData(
-      widget.schoolId,
+  @override
+  void dispose() {
+    refreshTimer.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchClasses() async {
+    final classes1 = await TeacherApiServices.fetchClassData(widget.schoolId);
+    final data = await TeacherApiServices.fetchStaffDataUsername(
+      username: widget.username,
+      schoolId: int.tryParse(widget.schoolId) ?? 0,
     );
+    final ids = data?['class_ids'];
 
-    setState(() {
-      classList = fetchedClassList;
+    if (ids != null) {
+      final classIds = jsonDecode(ids.toString());
 
-      isLoading = false;
-    });
+      // Filter classes based on stored class_ids
+      final filteredList =
+          classes1.where((cls) {
+            return classIds.contains(cls['id']);
+          }).toList();
+
+      setState(() {
+        classList = filteredList;
+        isLoading = false;
+      });
+    }
+    // classes = List.from(cls);
   }
 
   int? parseClassValue(dynamic val) {

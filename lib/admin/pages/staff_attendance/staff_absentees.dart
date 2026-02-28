@@ -57,10 +57,11 @@ class _StaffAbsenteesState extends State<StaffAbsentees> {
     final anAbsentees =
         an.entries.where((entry) => entry.value == 'A').toList();
 
-    final uniqueUsernames = {
+    final Set<String> uniqueUsernames = {
       ...fnAbsentees.map((e) => e.key),
       ...anAbsentees.map((e) => e.key),
     };
+
 
     Map<String, Map<String, String>> fetchedDetails = {};
     for (var username in uniqueUsernames) {

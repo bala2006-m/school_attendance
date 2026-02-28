@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../login_page.dart';
+import '../../services/api_service.dart';
 import '../pages/edit_password.dart';
 
 class MobileDrawer extends StatefulWidget {
@@ -28,6 +29,25 @@ class _MobileDrawerState extends State<MobileDrawer> {
 
   Future<void> onClick() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Trigger logout sync before clearing preferences (administrator role)
+    try {
+      await ApiService.triggerUserLogout(
+        schoolId: widget.schoolId,
+        userId: widget.username,
+      );
+    } catch (e) {
+      // Show error but don't block logout
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout sync failed: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+
     await prefs.clear();
     back();
   }

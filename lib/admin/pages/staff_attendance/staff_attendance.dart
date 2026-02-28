@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import 'package:school_attendance/admin/services/admin_api_service.dart';
+import 'package:school_attendance/utils/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../services/api_service.dart';
@@ -524,11 +524,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
                   );
                   return;
                 }
-                final isDesktop =
-                    kIsWeb ||
-                    Platform.isWindows ||
-                    Platform.isLinux ||
-                    Platform.isMacOS;
+                final isDesktop = kIsWeb || isDesktopPlatform;
                 final url =
                     isDesktop
                         ? Uri.parse('https://wa.me/$phone')

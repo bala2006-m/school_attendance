@@ -88,7 +88,7 @@ class StudentApiServices {
     required String schoolId,
     required String classId,
   }) async {
-    const apiUrl = '$baseUrl/feedback';
+    final apiUrl = '$baseUrl/feedback';
 
     final response = await http.post(
       Uri.parse(apiUrl),
@@ -155,8 +155,9 @@ class StudentApiServices {
           schoolList.add({
             'id': school['id'],
             'name': school['name'],
+            'student_access': school['student_access'],
             'address': school['address'],
-            'photo': school['photo'], // base64 string (or null)
+            'photo': school['photo'],
           });
         }
 

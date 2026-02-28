@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:school_attendance/services/offline_first_service.dart';
-import 'package:school_attendance/services/hybrid_api_service.dart';
 
 class OfflineFirstWidget extends StatefulWidget {
   @override
@@ -48,24 +47,21 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
 
     try {
       final result = await OfflineFirstService.instance.forceSyncAll();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Sync completed: ${result['success']} successful, ${result['failed']} failed'
+            'Sync completed: ${result['success']} successful, ${result['failed']} failed',
           ),
           backgroundColor: result['failed'] > 0 ? Colors.orange : Colors.green,
           duration: Duration(seconds: 3),
         ),
       );
-      
+
       _loadOfflineStatus();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sync failed: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Sync failed: $e'), backgroundColor: Colors.red),
       );
     } finally {
       setState(() {
@@ -82,7 +78,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
   Future<void> _clearSyncedOperations() async {
     await OfflineFirstService.instance.clearSyncedOperations();
     _loadOfflineStatus();
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Cleared synced operations'),
@@ -138,19 +134,22 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
                 SizedBox(width: 8),
                 Text(
                   'Offline-First Database Sync',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isOnline ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                    color:
+                        isOnline
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isOnline ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3)
+                      color:
+                          isOnline
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.orange.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(
@@ -165,10 +164,10 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
               ],
             ),
             SizedBox(height: 16),
-            
+
             _buildStatusInfo(isDesktopMode, isOnline, mode, pendingOperations),
             SizedBox(height: 16),
-            
+
             if (isDesktopMode) ...[
               _buildPendingOperationsList(),
               SizedBox(height: 16),
@@ -182,7 +181,12 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
     );
   }
 
-  Widget _buildStatusInfo(bool isDesktopMode, bool isOnline, String mode, int pendingOperations) {
+  Widget _buildStatusInfo(
+    bool isDesktopMode,
+    bool isOnline,
+    String mode,
+    int pendingOperations,
+  ) {
     return Column(
       children: [
         Row(
@@ -206,7 +210,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
             ),
           ],
         ),
-        
+
         if (isDesktopMode) ...[
           SizedBox(height: 12),
           Container(
@@ -221,10 +225,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
               children: [
                 Text(
                   'Pending Operations',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -249,25 +250,24 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
     );
   }
 
-  Widget _buildStatusCard(String title, String value, Color color, IconData icon) {
+  Widget _buildStatusCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
           SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           Text(
             value,
             style: TextStyle(
@@ -283,7 +283,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
 
   Widget _buildPendingOperationsList() {
     final pendingOps = OfflineFirstService.instance.pendingOperations;
-    
+
     if (pendingOps.isEmpty) {
       return Container(
         padding: EdgeInsets.all(12),
@@ -315,10 +315,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
             padding: EdgeInsets.all(8),
             child: Text(
               'Pending Operations',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
           Expanded(
@@ -341,23 +338,27 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
                     _formatTimestamp(operation['timestamp']),
                     style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                   ),
-                  trailing: operation['retryCount'] > 0
-                      ? Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            'Retry ${operation['retryCount']}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                  trailing:
+                      operation['retryCount'] > 0
+                          ? Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
                             ),
-                          ),
-                        )
-                      : null,
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Retry ${operation['retryCount']}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                          : null,
                 );
               },
             ),
@@ -373,9 +374,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: _isSyncing ? null : _forceSyncAll,
-            icon: _isSyncing 
-                ? Icon(Icons.front_loader)
-                : Icon(Icons.sync),
+            icon: _isSyncing ? Icon(Icons.front_loader) : Icon(Icons.sync),
             label: Text(_isSyncing ? 'Syncing...' : 'Force Sync'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
@@ -415,9 +414,9 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
+        color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -434,10 +433,7 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
           SizedBox(height: 4),
           Text(
             'All changes are stored directly in the cloud database',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -473,14 +469,14 @@ class _OfflineFirstWidgetState extends State<OfflineFirstWidget> {
 
   String _formatTimestamp(String? timestamp) {
     if (timestamp == null) return 'Unknown';
-    
+
     try {
       final dateTime = DateTime.parse(timestamp);
       return '${dateTime.hour.toString().padLeft(2, '0')}:'
-             '${dateTime.minute.toString().padLeft(2, '0')}:'
-             '${dateTime.second.toString().padLeft(2, '0')}';
+          '${dateTime.minute.toString().padLeft(2, '0')}:'
+          '${dateTime.second.toString().padLeft(2, '0')}';
     } catch (e) {
-      return timestamp ?? 'Unknown';
+      return timestamp;
     }
   }
 }

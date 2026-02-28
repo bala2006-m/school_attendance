@@ -20,6 +20,7 @@ class StudentMobileDashboard extends StatelessWidget {
     required this.timetable,
     this.schoolPhoto,
     required this.studentRoute,
+    required this.schoolData,
   });
   final List<String> timetable;
   final String username;
@@ -35,6 +36,7 @@ class StudentMobileDashboard extends StatelessWidget {
   final String message;
   final Image? schoolPhoto;
   final String studentRoute;
+  final Map<String, dynamic>? schoolData;
   @override
   Widget build(BuildContext context) {
     return IndexedStack(
@@ -61,6 +63,7 @@ class StudentMobileDashboard extends StatelessWidget {
           schoolAddress: schoolAddress,
           message: message,
           schoolPhoto: schoolPhoto,
+          schoolData: schoolData,
         ),
         StudentManagePage(
           schoolId: schoolId,
@@ -71,6 +74,7 @@ class StudentMobileDashboard extends StatelessWidget {
           message: message,
           schoolPhoto: schoolPhoto,
           studentRoute: studentRoute,
+          schoolData: schoolData,
         ),
       ],
     );

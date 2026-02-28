@@ -1,15 +1,19 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:path/path.dart' as p;
+// import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../utils/utils.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../dashboard/admin_dashboard.dart';
+import 'group_photos_page.dart';
 
 class UploadImagesVideos extends StatefulWidget {
   const UploadImagesVideos({
@@ -32,10 +36,10 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
 
   bool _isUploading = false;
   bool _isLoading = false;
-  List<String> uploadedImages = [];
-  List<String> uploadedVideos = [];
-
-  final String baseUrl = 'https://smartschoolserver.ramchintech.com';
+  List<Map<String, dynamic>> uploadedImages = [];
+  List<Map<String, dynamic>> uploadedVideos = [];
+  List<dynamic> imageTitles = [];
+  List<dynamic> videoTitles = [];
   late final String uploadUrl;
   late final String uploadVideoUrl;
   late final String fetchUrl;
@@ -59,18 +63,37 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          uploadedImages = List<String>.from(
-            data['images'].map((e) => e['link']),
-          );
-          uploadedVideos = List<String>.from(
-            data['videos'].map((e) => e['link']),
-          );
+          uploadedImages = List<Map<String, dynamic>>.from(data['images']);
+          uploadedVideos = List<Map<String, dynamic>>.from(data['videos']);
         });
       }
+      fetchTitles();
     } catch (e) {
       setState(() => _isLoading = false);
+      fetchTitles();
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> fetchTitles() async {
+    final response1 = await http.get(
+      Uri.parse('$baseUrl/upload/titles/image/${widget.schoolId}'),
+    );
+    final response2 = await http.get(
+      Uri.parse('$baseUrl/upload/titles/video/${widget.schoolId}'),
+    );
+    if (response1.statusCode == 200 || response1.statusCode == 201) {
+      final data = jsonDecode(response1.body);
+      setState(() {
+        imageTitles = data;
+      });
+    }
+    if (response2.statusCode == 200 || response2.statusCode == 201) {
+      final data = jsonDecode(response2.body);
+      setState(() {
+        videoTitles = data;
+      });
     }
   }
 
@@ -79,9 +102,16 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile == null) return;
 
+    final existingTitles =
+        uploadedImages
+            .map((e) => e['title'] as String? ?? '')
+            .where((e) => e.isNotEmpty)
+            .toSet()
+            .toList();
+
     Map<String, String>? details;
     if (mounted) {
-      details = await _askForDetails(context);
+      details = await _askForDetails(context, existingTitles);
     }
     if (details == null) return;
 
@@ -103,11 +133,11 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
             });
 
       final response = await request.send();
-      final res = await http.Response.fromStream(response);
+      await http.Response.fromStream(response);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(res.body);
-        setState(() => uploadedImages.insert(0, data['url']));
+        // Refresh list to get new image with ID
+        await _fetchMedia();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('✅ Image uploaded successfully')),
@@ -124,14 +154,21 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
   // ------------------- Video Upload -------------------
   Future<void> _addVideoLink() async {
     final link = _videoController.text.trim();
-    if (link.isEmpty || !link.contains('youtube')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Enter a valid YouTube URL')),
-      );
-      return;
-    }
+    // if (link.isEmpty || !link.contains('youtube')) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('⚠️ Enter a valid YouTube URL')),
+    //   );
+    //   return;
+    // }
 
-    final details = await _askForDetails(context);
+    final existingTitles =
+        uploadedVideos
+            .map((e) => e['title'] as String? ?? '')
+            .where((e) => e.isNotEmpty)
+            .toSet()
+            .toList();
+
+    final details = await _askForDetails(context, existingTitles);
     if (details == null) return;
 
     try {
@@ -151,9 +188,9 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         setState(() {
-          uploadedVideos.insert(0, link);
           _videoController.clear();
         });
+        await _fetchMedia();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('✅ Video added successfully')),
@@ -166,39 +203,39 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
   }
 
   // ------------------- Delete Confirmations -------------------
-  Future<void> _confirmDeleteImage(String imageUrl) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Text('Delete Image'),
-            content: const Text('Are you sure you want to delete this image?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                ),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-    );
+  // Future<void> _confirmDeleteImage(String imageUrl) async {
+  //   final confirm = await showDialog<bool>(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(16),
+  //           ),
+  //           title: const Text('Delete Image'),
+  //           content: const Text('Are you sure you want to delete this image?'),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.pop(context, false),
+  //               child: const Text('Cancel'),
+  //             ),
+  //             ElevatedButton(
+  //               style: ElevatedButton.styleFrom(
+  //                 backgroundColor: Colors.redAccent,
+  //               ),
+  //               onPressed: () => Navigator.pop(context, true),
+  //               child: const Text(
+  //                 'Delete',
+  //                 style: TextStyle(color: Colors.white),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  //
+  //   if (confirm == true) _deleteImage(imageUrl);
+  // }
 
-    if (confirm == true) _deleteImage(imageUrl);
-  }
-
-  Future<void> _confirmDeleteVideo(String link) async {
+  Future<void> _confirmDeleteVideo(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder:
@@ -227,21 +264,43 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
           ),
     );
 
-    if (confirm == true) _deleteVideo(link);
+    if (confirm == true) _deleteVideo(id);
   }
 
-  Future<void> _deleteImage(String imageUrl) async {
-    final filename = p.basename(imageUrl);
-    final uri = Uri.parse('$baseUrl/upload/${widget.schoolId}/$filename');
+  // Future<void> _deleteImage(String imageUrl) async {
+  //   final filename = Uri.parse(imageUrl).pathSegments.last;
+  //   final uri = Uri.parse('$baseUrl/upload/${widget.schoolId}/$filename');
+  //
+  //   try {
+  //     final response = await http.delete(uri);
+  //     if (response.statusCode == 200) {
+  //       setState(() {
+  //         uploadedImages.removeWhere((element) => element['link'] == imageUrl);
+  //       });
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(
+  //           context,
+  //         ).showSnackBar(const SnackBar(content: Text('🗑️ Image deleted')));
+  //       }
+  //     }
+  //   } catch (e) {
+  //     return;
+  //   }
+  // }
+
+  Future<void> _deleteVideo(int id) async {
+    final uri = Uri.parse('$baseUrl/upload/videos/$id');
 
     try {
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
-        setState(() => uploadedImages.remove(imageUrl));
+        setState(() {
+          uploadedVideos.removeWhere((element) => element['id'] == id);
+        });
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('🗑️ Image deleted')));
+          ).showSnackBar(const SnackBar(content: Text('🗑️ Video deleted')));
         }
       }
     } catch (e) {
@@ -249,15 +308,18 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
     }
   }
 
-  void _deleteVideo(String link) {
-    setState(() => uploadedVideos.remove(link));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('🗑️ Video deleted')));
-  }
+  // void _deleteVideo(String link) {
+  //   setState(() => uploadedVideos.remove(link));
+  //   ScaffoldMessenger.of(
+  //     context,
+  //   ).showSnackBar(const SnackBar(content: Text('🗑️ Video deleted')));
+  // }
 
   // ------------------- Detail Dialog -------------------
-  Future<Map<String, String>?> _askForDetails(BuildContext context) async {
+  Future<Map<String, String>?> _askForDetails(
+    BuildContext context,
+    List<String> existingTitles,
+  ) async {
     final titleController = TextEditingController();
     final descController = TextEditingController();
     DateTime selectedDate = DateTime.now();
@@ -276,17 +338,48 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextField(
-                        controller: titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Title',
-                          border: OutlineInputBorder(),
-                        ),
+                      Autocomplete<String>(
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text == '') {
+                            return const Iterable<String>.empty();
+                          }
+                          return existingTitles.where((String option) {
+                            return option.toLowerCase().contains(
+                              textEditingValue.text.toLowerCase(),
+                            );
+                          });
+                        },
+                        onSelected: (String selection) {
+                          titleController.text = selection;
+                        },
+                        fieldViewBuilder: (
+                          BuildContext context,
+                          TextEditingController fieldTextEditingController,
+                          FocusNode fieldFocusNode,
+                          VoidCallback onFieldSubmitted,
+                        ) {
+                          // Sync internal controller with our controller if needed,
+                          // or just use the fieldTextEditingController.
+                          // Here we listen to changes to update our titleController
+                          fieldTextEditingController.addListener(() {
+                            titleController.text =
+                                fieldTextEditingController.text;
+                          });
+                          return TextField(
+                            controller: fieldTextEditingController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Title',
+                              border: OutlineInputBorder(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: descController,
                         maxLines: 3,
+                        maxLength: 190,
                         decoration: const InputDecoration(
                           labelText: 'Description',
                           border: OutlineInputBorder(),
@@ -359,35 +452,135 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
       return _buildEmptyState('No images uploaded yet', Icons.photo);
     }
 
-    return RefreshIndicator(
-      onRefresh: _fetchMedia,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(10),
-        itemCount: uploadedImages.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: MediaQuery.of(context).size.width > 900 ? 4 : 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+    final groupedImages = groupBy(
+      uploadedImages,
+      (obj) => (obj['title'] as String?)?.trim() ?? 'No Title',
+    );
+
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: _isUploading ? null : _pickAndUploadImage,
+        backgroundColor: _isUploading ? Colors.grey : Colors.blueAccent,
+        child:
+            _isUploading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Icon(Icons.add_a_photo),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _fetchMedia,
+        child: GridView.builder(
+          padding: const EdgeInsets.all(10),
+          itemCount: groupedImages.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.8,
+          ),
+          itemBuilder: (context, i) {
+            final title = groupedImages.keys.elementAt(i);
+            final images = groupedImages[title]!;
+            final firstImg = images.first;
+            final imgUrl = firstImg['link'] ?? '';
+            final count = images.length;
+
+            return GestureDetector(
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => GroupPhotosPage(
+                          title: title,
+                          images: images,
+                          schoolId: widget.schoolId,
+                        ),
+                  ),
+                );
+
+                if (result == true) {
+                  _fetchMedia();
+                }
+              },
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                clipBehavior: Clip.antiAlias,
+                elevation: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: imgUrl,
+                            fit: BoxFit.cover,
+                            placeholder:
+                                (_, __) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                            errorWidget:
+                                (_, __, ___) => const Icon(Icons.error),
+                          ),
+                          Container(
+                            color: Colors.black26,
+                            child: const Center(
+                              child: Icon(
+                                Icons.folder_open,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            title.isEmpty ? 'No Title' : title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '$count items',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              // IconButton(
+                              //   icon: const Icon(
+                              //     Icons.delete,
+                              //     color: Colors.redAccent,
+                              //     size: 20,
+                              //   ),
+                              //   onPressed: () => _confirmDeleteImage(imgUrl),
+                              // ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
-        itemBuilder: (context, i) {
-          final img = uploadedImages[i];
-          return GestureDetector(
-            onLongPress: () => _confirmDeleteImage(img),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              clipBehavior: Clip.antiAlias,
-              elevation: 6,
-              child: CachedNetworkImage(
-                imageUrl: img,
-                fit: BoxFit.cover,
-                placeholder:
-                    (_, __) => const Center(child: CircularProgressIndicator()),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
@@ -432,25 +625,107 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
                     padding: const EdgeInsets.all(12),
                     itemCount: uploadedVideos.length,
                     itemBuilder: (context, i) {
-                      final link = uploadedVideos[i];
+                      final vidData = uploadedVideos[i];
+                      final link = vidData['link'] ?? '';
+                      final title = vidData['title'] ?? 'Video ${i + 1}';
+                      final desc = vidData['description'] ?? '';
+                      final date =
+                          vidData['date'] != null
+                              ? DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(DateTime.parse(vidData['date']))
+                              : '';
+
                       return Card(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                         elevation: 4,
                         margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: const Icon(
-                            Icons.play_circle_fill,
-                            color: Colors.redAccent,
-                            size: 36,
-                          ),
-                          title: Text('Video ${i + 1}'),
-                          subtitle: Text(link, overflow: TextOverflow.ellipsis),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.grey),
-                            onPressed: () => _confirmDeleteVideo(link),
-                          ),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: IconButton(
+                                icon: const Icon(
+                                  Icons.play_circle_fill,
+                                  color: Colors.redAccent,
+                                  size: 36,
+                                ),
+                                onPressed: () async {
+                                  final uri = Uri.parse(link);
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  } else {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Could not launch video',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
+                              title: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                link,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed:
+                                    () => _confirmDeleteVideo(vidData['id']),
+                              ),
+                            ),
+                            if (desc.isNotEmpty || date.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 72,
+                                  right: 16,
+                                  bottom: 12,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (desc.isNotEmpty)
+                                      Text(
+                                        desc,
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 13,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    if (date.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        date,
+                                        style: TextStyle(
+                                          color: Colors.grey[500],
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
                       );
                     },
@@ -462,16 +737,7 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (_) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
-      ),
-    );
+    Navigator.pop(context);
     return false;
   }
 
@@ -525,18 +791,6 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
             ),
           ],
         ),
-        floatingActionButton:
-            _tabController.index == 0
-                ? FloatingActionButton(
-                  onPressed: _isUploading ? null : _pickAndUploadImage,
-                  backgroundColor:
-                      _isUploading ? Colors.grey : Colors.blueAccent,
-                  child:
-                      _isUploading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Icon(Icons.add_a_photo),
-                )
-                : null,
       ),
     );
   }

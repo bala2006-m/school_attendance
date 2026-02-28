@@ -1,20 +1,22 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:school_attendance/admin/services/admin_api_service.dart';
 import 'package:school_attendance/admin/widget/admin_mobile_drawer.dart';
 import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../administrator/services/administrator_api_service.dart';
+import '../../../main.dart';
 import '../../../services/api_service.dart';
 import '../../../services/bus_fee_payment_api.dart';
 import '../../../services/rte_fees_service.dart';
 import '../../../services/term_fee_structure_api.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
+import '../../services/admin_api_service.dart';
 import '../../widget/admin_mobile_dashboard.dart';
 import '../drawer/edit_profile.dart';
 import 'widget/admin_desktop_dashboard.dart';
@@ -60,19 +62,60 @@ class AdminDashboardState extends State<AdminDashboard> {
   int presentStaffAN = 0;
   int presentStudentFN = 0;
   int presentStudentAN = 0;
+  Map<String, dynamic>? adminAccess;
   String message = '';
   bool _isLoading = true;
-
+  bool dialogOpen = false;
   static bool _hasLoadedOnce = false;
 
   bool isBlocked = false;
   String? reason;
-
+  Timer? _realTimeTimer;
   @override
   void initState() {
     super.initState();
-    loadCachedData();
-    fetchFreshData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadCachedData();
+      fetchFreshData();
+      _startRealTimeTimer();
+    });
+  }
+
+  @override
+  void dispose() {
+    _realTimeTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startRealTimeTimer() {
+    _realTimeTimer?.cancel();
+    _realTimeTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _refreshRealTimeData();
+    });
+  }
+
+  Future<void> _refreshRealTimeData() async {
+    // 1. Refresh Access
+    try {
+      final accessResponse = await AdminApiService.fetchAdminAccess(
+        username: widget.username,
+        schoolId: widget.schoolId,
+      );
+      final finalAccess = _extractAccess(accessResponse);
+      if (finalAccess != null && mounted) {
+        // Only update if it actually changed to avoid unnecessary rebuilds
+        if (jsonEncode(finalAccess) != jsonEncode(adminAccess)) {
+          setState(() {
+            adminAccess = finalAccess;
+          });
+        }
+      }
+    } catch (e) {
+      // Ignore background fetch errors
+    }
+
+    // 2. Check Blocked Status
+    _checkBlocked(int.parse(widget.schoolId));
   }
 
   Future<void> loadCachedData() async {
@@ -101,28 +144,145 @@ class AdminDashboardState extends State<AdminDashboard> {
         );
       }
 
+      // Load Statistics
+      totalStudents = prefs.getInt('totalStudents') ?? 0;
+      totalStaff = prefs.getInt('totalStaff') ?? 0;
+      presentStaffFN = prefs.getInt('presentStaffFN') ?? 0;
+      presentStaffAN = prefs.getInt('presentStaffAN') ?? 0;
+      presentStudentFN = prefs.getInt('presentStudentFN') ?? 0;
+      presentStudentAN = prefs.getInt('presentStudentAN') ?? 0;
+      message = prefs.getString('dashboardMessage') ?? '';
+
+      final classesStr = prefs.getString('classesJson');
+      if (classesStr != null) {
+        classes = List<Map<String, dynamic>>.from(jsonDecode(classesStr));
+      }
+
+      final attFnStr = prefs.getString('attFnJson');
+      if (attFnStr != null) {
+        attendanceStatusMapFn = Map<String, bool>.from(jsonDecode(attFnStr));
+      }
+
+      final attAnStr = prefs.getString('attAnJson');
+      if (attAnStr != null) {
+        attendanceStatusMapAn = Map<String, bool>.from(jsonDecode(attAnStr));
+      }
+
+      final termFeesStr = prefs.getString('termFeesJson');
+      if (termFeesStr != null) {
+        allPendingTermFees = Map<String, dynamic>.from(jsonDecode(termFeesStr));
+      }
+
+      final busFeesStr = prefs.getString('busFeesJson');
+      if (busFeesStr != null) {
+        allPendingBusFees = Map<String, dynamic>.from(jsonDecode(busFeesStr));
+      }
+
+      final rteFeesStr = prefs.getString('rteFeesJson');
+      if (rteFeesStr != null) {
+        allPendingRteFees = Map<String, dynamic>.from(jsonDecode(rteFeesStr));
+      }
+
       _isLoading = adminName.isEmpty; // only show loader if no cached data
     });
   }
 
+  Map<String, dynamic>? _extractAccess(
+    Map<String, dynamic>? accessDataWrapper,
+  ) {
+    if (accessDataWrapper == null) return null;
+
+    // Option 1: It's directly the map (has common permission keys)
+    if (accessDataWrapper.containsKey('manage') ||
+        accessDataWrapper.containsKey('staff') ||
+        accessDataWrapper.containsKey('student')) {
+      return Map<String, dynamic>.from(accessDataWrapper);
+    }
+
+    // Option 1.5: It's a list (some backends return a list for single queries)
+    if (accessDataWrapper['data'] is List &&
+        (accessDataWrapper['data'] as List).isNotEmpty) {
+      final firstItem = (accessDataWrapper['data'] as List).first;
+      if (firstItem is Map<String, dynamic>) {
+        return _extractAccess(firstItem);
+      }
+    }
+
+    // Option 2: It's wrapped in 'data' and/or 'access'
+    final accessData =
+        (accessDataWrapper['data'] is Map)
+            ? accessDataWrapper['data'] as Map<String, dynamic>
+            : accessDataWrapper;
+    final rawAccess = accessData['access'];
+
+    if (rawAccess is Map) {
+      if (rawAccess['access'] is Map) {
+        return Map<String, dynamic>.from(rawAccess['access']);
+      } else {
+        return Map<String, dynamic>.from(rawAccess);
+      }
+    } else if (accessData.containsKey('manage') ||
+        accessData.containsKey('staff')) {
+      // Case where it was wrapped in 'data' but 'access' key is missing
+      return Map<String, dynamic>.from(accessData);
+    }
+
+    return null;
+  }
+
   Future<void> fetchFreshData() async {
-    setState(() => _isLoading = true);
+    if (!_hasLoadedOnce && adminName.isEmpty) {
+      setState(() => _isLoading = true);
+    }
     try {
-      final response = await ApiService.fetchAdminAndSchoolData(
-        username: widget.username,
-        schoolId: widget.schoolId,
-      );
+      final results = await Future.wait([
+        ApiService.fetchAdminAndSchoolData(
+          username: widget.username,
+          schoolId: widget.schoolId,
+        ),
+        AdminApiService.fetchAdminAccess(
+          username: widget.username,
+          schoolId: widget.schoolId,
+        ),
+      ]);
+
+      final response = results[0] as Map<String, dynamic>;
+      final accessResponse = results[1];
 
       if (response['status'] != 'success') {
         throw Exception('API returned failure status');
       }
 
       final data = response['data'] as Map<String, dynamic>?;
-
       final adminData = data?['adminData'] as Map<String, dynamic>?;
       final schoolData = data?['schoolData'] as Map<String, dynamic>?;
+      final finalAccess = _extractAccess(accessResponse);
 
       adminName = adminData?['name'] ?? '';
+      if (adminName.isEmpty || adminName == 'null') {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => EditProfile(
+                    username: widget.username,
+                    schoolName: schoolData?['name'],
+                    schoolAddress: schoolData?['address'],
+                    schoolId: widget.schoolId,
+                    onBack: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                      );
+                    },
+                  ),
+            ),
+          );
+        }
+        return;
+      }
+
       adminDesignation = adminData?['designation'] ?? '';
       mobile = adminData?['mobile'] ?? '';
       schoolName = schoolData?['name'] ?? '';
@@ -136,68 +296,31 @@ class AdminDashboardState extends State<AdminDashboard> {
       await prefs.setString('adminPhoto', adminData?['photo'] ?? '');
       await prefs.setString('schoolPhoto', schoolData?['photo'] ?? '');
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          if (adminData?['photo'] != null && adminData!['photo'].isNotEmpty) {
-            adminPhoto = Image.memory(
-              base64Decode(adminData['photo']),
-              gaplessPlayback: true,
-            );
-          }
-          if (schoolData?['photo'] != null && schoolData!['photo'].isNotEmpty) {
-            schoolPhoto = Image.memory(
-              base64Decode(schoolData['photo']),
-              gaplessPlayback: true,
-            );
-          }
-        });
+      setState(() {
+        adminAccess = finalAccess;
+        if (adminData?['photo'] != null && adminData!['photo'].isNotEmpty) {
+          adminPhoto = Image.memory(
+            base64Decode(adminData['photo']),
+            gaplessPlayback: true,
+          );
+        }
+        if (schoolData?['photo'] != null && schoolData!['photo'].isNotEmpty) {
+          schoolPhoto = Image.memory(
+            base64Decode(schoolData['photo']),
+            gaplessPlayback: true,
+          );
+        }
       });
 
       await fetchSecondaryData();
       _hasLoadedOnce = true;
+
+      // Check if school is blocked
+      // _checkBlocked(int.parse(widget.schoolId));
     } catch (e) {
       setState(() => _isLoading = false);
     } finally {
       setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> loadCachedDataOrInitialize() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Load cached data immediately
-    setState(() {
-      adminName = prefs.getString('adminName') ?? '';
-      adminDesignation = prefs.getString('adminDesignation') ?? '';
-      schoolName = prefs.getString('schoolName');
-      schoolAddress = prefs.getString('schoolAddress');
-      mobile = prefs.getString('mobile');
-
-      final cachedAdminPhoto = prefs.getString('adminPhoto');
-      if (cachedAdminPhoto != null) {
-        adminPhoto = Image.memory(
-          base64Decode(cachedAdminPhoto),
-          gaplessPlayback: true,
-        );
-      }
-
-      final cachedSchoolPhoto = prefs.getString('schoolPhoto');
-      if (cachedSchoolPhoto != null) {
-        schoolPhoto = Image.memory(
-          base64Decode(cachedSchoolPhoto),
-          gaplessPlayback: true,
-        );
-      }
-
-      _isLoading = false;
-    });
-
-    // Check if school is blocked
-    _checkBlocked(int.parse(widget.schoolId));
-
-    // Fetch fresh data in background if not loaded yet
-    if (!_hasLoadedOnce) {
-      initializeInitialData();
     }
   }
 
@@ -209,11 +332,26 @@ class AdminDashboardState extends State<AdminDashboard> {
         isBlocked = result['isBlocked'] ?? false;
         reason = result['reason'];
       });
+      if (!isBlocked) {
+        if (dialogOpen && mounted) {
+          Navigator.of(navigatorKey.currentState!.overlay!.context).pop();
+        }
 
+        dialogOpen = false;
+
+        return;
+      }
       if (isBlocked) {
         if (mounted) {
+          if (dialogOpen) return;
+
+          dialogOpen = true;
+
+          final ctx = navigatorKey.currentContext;
+          if (ctx == null || !ctx.mounted) return;
+
           showDialog(
-            context: context,
+            context: ctx,
             builder:
                 (context) => AlertDialog(
                   title: const Text('School Blocked'),
@@ -247,7 +385,7 @@ class AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> initializeInitialData() async {
-    if (_hasLoadedOnce) return;
+    if (_hasLoadedOnce && adminName.isNotEmpty) return;
 
     setState(() => _isLoading = true);
 
@@ -338,26 +476,31 @@ class AdminDashboardState extends State<AdminDashboard> {
   Future<void> fetchSecondaryData() async {
     try {
       final RteFeesService service = RteFeesService();
-      // Call the combined API endpoint once and get all data together
-      final combinedData = await ApiService.fetchCombinedData(widget.schoolId);
-      final allPendingTermFee =
-          await TermFeeStructureApi.countAllPendingTermFees(
-            int.parse(widget.schoolId),
-          );
-      final allPendingBusFee = await BusFeePaymentApi.getPaidPendingBySchoolId(
-        int.parse(widget.schoolId),
-      );
-      final pendingPaid = await service.countRtePaidStudents(
-        int.parse(widget.schoolId),
-      );
+
+      final results = await Future.wait([
+        ApiService.fetchCombinedData(widget.schoolId),
+        TermFeeStructureApi.countAllPendingTermFees(int.parse(widget.schoolId)),
+        BusFeePaymentApi.getPaidPendingBySchoolId(int.parse(widget.schoolId)),
+        service.countRtePaidStudents(int.parse(widget.schoolId)),
+      ]);
+
+      final combinedData = results[0] as Map<String, dynamic>;
+      final allPendingTermFee = results[1] as Map<String, dynamic>;
+      final allPendingBusFee = results[2];
+      final pendingPaid = results[3] as Map<String, dynamic>;
+
       setState(() {
         allPendingTermFees = allPendingTermFee;
-        allPendingBusFees = allPendingBusFee!;
+        allPendingBusFees = allPendingBusFee ?? {};
         allPendingRteFees = pendingPaid;
       });
-      totalStudents = combinedData['totalStudents'] as int;
-      totalStaff = combinedData['totalStaff'] as int;
-      message = combinedData['lastMessage']['messages'] as String;
+
+      totalStudents = int.parse(combinedData['totalStudents'].toString());
+      totalStaff = int.parse(combinedData['totalStaff'].toString());
+      message =
+          combinedData['lastMessage']['messages'] == null
+              ? '-'
+              : combinedData['lastMessage']['messages'].toString();
 
       classes = List.from(combinedData['classes']);
 
@@ -368,11 +511,34 @@ class AdminDashboardState extends State<AdminDashboard> {
             : a['section'].compareTo(b['section']);
       });
 
-      await fetchAttendanceStatusForAll();
-      await fetchAttendanceData();
+      // These two can also run in parallel
+      await Future.wait([fetchAttendanceStatusForAll(), fetchAttendanceData()]);
+
+      await _saveStatsToCache();
       await makeSundayHoliday(classes);
     } catch (e) {
       return;
+    }
+  }
+
+  Future<void> _saveStatsToCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('totalStudents', totalStudents);
+      await prefs.setInt('totalStaff', totalStaff);
+      await prefs.setInt('presentStaffFN', presentStaffFN);
+      await prefs.setInt('presentStaffAN', presentStaffAN);
+      await prefs.setInt('presentStudentFN', presentStudentFN);
+      await prefs.setInt('presentStudentAN', presentStudentAN);
+      await prefs.setString('dashboardMessage', message);
+      await prefs.setString('classesJson', jsonEncode(classes));
+      await prefs.setString('attFnJson', jsonEncode(attendanceStatusMapFn));
+      await prefs.setString('attAnJson', jsonEncode(attendanceStatusMapAn));
+      await prefs.setString('termFeesJson', jsonEncode(allPendingTermFees));
+      await prefs.setString('busFeesJson', jsonEncode(allPendingBusFees));
+      await prefs.setString('rteFeesJson', jsonEncode(allPendingRteFees));
+    } catch (e) {
+      // Ignore cache saving errors
     }
   }
 
@@ -464,8 +630,8 @@ class AdminDashboardState extends State<AdminDashboard> {
     final currentDate = formattedCurrentDate;
 
     final attendanceFutures = await Future.wait([
-      AdminApiService.fetchStaffData(widget.schoolId),
-      AdminApiService.fetchAllStudentData(widget.schoolId),
+      // AdminApiService.fetchStaffData(widget.schoolId),
+      // AdminApiService.fetchAllStudentData(widget.schoolId),
       ApiService.fetchTodayAttendance(currentDate, 'fn', widget.schoolId),
       ApiService.fetchTodayAttendance(currentDate, 'an', widget.schoolId),
       ApiService.fetchTodayStudentAttendance(
@@ -480,10 +646,10 @@ class AdminDashboardState extends State<AdminDashboard> {
       ),
     ]);
 
-    final staffAttendanceFn = attendanceFutures[2] as Map<String, dynamic>;
-    final staffAttendanceAn = attendanceFutures[3] as Map<String, dynamic>;
-    final studentAttendanceFn = attendanceFutures[4] as Map<String, dynamic>;
-    final studentAttendanceAn = attendanceFutures[5] as Map<String, dynamic>;
+    final staffAttendanceFn = attendanceFutures[0] as Map<String, dynamic>;
+    final staffAttendanceAn = attendanceFutures[1] as Map<String, dynamic>;
+    final studentAttendanceFn = attendanceFutures[2] as Map<String, dynamic>;
+    final studentAttendanceAn = attendanceFutures[3] as Map<String, dynamic>;
 
     setState(() {
       presentStaffFN = staffAttendanceFn.values.where((s) => s == 'P').length;
@@ -563,7 +729,7 @@ class AdminDashboardState extends State<AdminDashboard> {
         body: RefreshIndicator(
           onRefresh: () async {
             _hasLoadedOnce = false;
-            await initializeInitialData();
+            await fetchFreshData();
           },
           child:
               isMobile
@@ -588,6 +754,7 @@ class AdminDashboardState extends State<AdminDashboard> {
                     allPendingTermFees: allPendingTermFees,
                     allPendingBusFees: allPendingBusFees,
                     allPendingRteFees: allPendingRteFees,
+                    adminAccess: adminAccess,
                   )
                   : AdminDesktopDashboard(
                     message: message,
@@ -611,6 +778,7 @@ class AdminDashboardState extends State<AdminDashboard> {
                     allPendingTermFees: allPendingTermFees,
                     allPendingBusFees: allPendingBusFees,
                     allPendingRteFees: allPendingRteFees,
+                    adminAccess: adminAccess,
                   ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.startTop,

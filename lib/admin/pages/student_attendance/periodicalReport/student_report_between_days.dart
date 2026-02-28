@@ -227,7 +227,7 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Periodical Report',
+                    title: 'Periodical Attendance',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -247,7 +247,7 @@ class _StudentReportBetweenDaysState extends State<StudentReportBetweenDays> {
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Periodical Report',
+                    title: 'Periodical Attendance',
 
                     onBack: () {
                       AdminDashboardState.selectedIndex = 0;

@@ -10,15 +10,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'admin/pages/dashboard/admin_dashboard.dart';
 import 'login_page.dart';
+import 'package:school_attendance/services/hybrid_api_service.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 //     FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Hybrid API Service as early as possible (checks for local server)
+  await HybridApiService.initialize();
   // await Geolocator.isLocationServiceEnabled();
   // await Permission.manageExternalStorage.isGranted;
   SharedPreferences prefs = await SharedPreferences.getInstance();
+  // FORCE RESET: Commented back out after first run.
+  // await prefs.clear();
+
+
   bool isLoggedIn = prefs.getBool('rememberMe') ?? false;
   String role = prefs.getString('role') ?? '';
   String username = prefs.getString('username') ?? '';
@@ -86,6 +95,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Ramchin Smart School',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

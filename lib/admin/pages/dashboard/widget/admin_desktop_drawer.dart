@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../login_page.dart';
+import '../../../../services/api_service.dart';
 import '../../../../teacher/color/teacher_custom_color.dart'
     as admin_custom_color;
 import '../../drawer/edit_profile.dart';
@@ -160,9 +161,27 @@ class AdminDesktopDrawer extends StatelessWidget {
             ),
             onPressed: () async {
               SharedPreferences prefs = await SharedPreferences.getInstance();
+
+              // Trigger logout sync before clearing preferences (admin desktop)
+              try {
+                await ApiService.triggerUserLogout(
+                  schoolId: int.parse(schoolId),
+                  userId: username,
+                );
+              } catch (e) {
+                // Show error but don't block logout
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Logout sync failed: $e'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              }
+
               await prefs.remove('role');
               await prefs.remove('username');
-
               await prefs.remove('rememberMe');
               if (context.mounted) {
                 Navigator.push(

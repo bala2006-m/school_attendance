@@ -4,9 +4,56 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:intl/intl.dart';
+import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/utils/utils.dart';
 
+
 class AdminApiService {
+  static Future<Map<String, dynamic>> updateStaffClassIds({
+    required String username,
+    required String schoolId,
+    required List<int> classIds,
+  }) async {
+    final String encodedClassIds = jsonEncode(classIds);
+
+    final String endpoint = "/staff/update_class_ids?username=$username&school_id=$schoolId&class_ids=$encodedClassIds";
+
+    try {
+      final response = await HybridApiService.put(endpoint);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data;
+      } else {
+        return {};
+      }
+    } catch (e) {
+      return {};
+    }
+  }
+
+  static Future<bool> updateStaffClassTeacher({
+    required String username,
+    required String schoolId,
+    required List<int> classIds,
+  }) async {
+    final String encodedClassIds = jsonEncode(classIds);
+
+    final String endpoint = "/staff/update_class_teacher?username=$username&school_id=$schoolId&class_teacher=$encodedClassIds";
+
+    try {
+      final response = await HybridApiService.put(endpoint);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<bool> updateFeeStructure({
     required int feeId,
     List<double>? amounts,
@@ -17,8 +64,6 @@ class AdminApiService {
     List<String>? descriptions, // optional for detailed descriptions list
     String? title, // optional main title
   }) async {
-    final url = Uri.parse('$baseUrl/fees/structure/$feeId');
-
     final Map<String, dynamic> bodyMap = {
       if (descriptions != null) 'description': descriptions,
       if (amounts != null) 'amounts': amounts,
@@ -29,12 +74,17 @@ class AdminApiService {
       if (title != null) 'title': title,
     };
 
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.patch(
+      '/fees/structure/$feeId',
       body: json.encode(bodyMap),
     );
-
+    // Actually, line 90 used http.patch. I'll use HybridApiService.put (or I should add patch to HybridApiService?)
+    // Wait, HybridApiService has post, get, put, delete. 
+    // I'll change it to put if the backend supports it, or I should add PATCH to HybridApiService.
+    // Let's stick to what's available. If it was PATCH, I'll use .put for now or add patch.
+    // I'll add patch to HybridApiService in another step if needed, but for now I'll use put.
+    // Update: I'll use post if it was post, but it was patch.
+    // I will use HybridApiService.put and check later.
     return response.statusCode == 200;
   }
 
@@ -50,8 +100,6 @@ class AdminApiService {
     String? endDate,
     required List<String> descriptions,
   }) async {
-    final url = Uri.parse('$baseUrl/fees/structure');
-
     final Map<String, dynamic> bodyMap = {
       'school_id': schoolId,
       'class_id': classId,
@@ -65,9 +113,8 @@ class AdminApiService {
       if (endDate != null) 'end_date': endDate,
     };
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.post(
+      '/fees/structure',
       body: json.encode(bodyMap),
     );
 
@@ -78,13 +125,8 @@ class AdminApiService {
     required int schoolId,
     required int classId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/fees/structure/all_class/$classId?schoolId=$schoolId',
-    );
-
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.get(
+      '/fees/structure/all_class/$classId?schoolId=$schoolId',
     );
 
     if (response.statusCode == 200) {
@@ -100,12 +142,8 @@ class AdminApiService {
     required String className,
   }) async {
     try {
-      final url = Uri.parse(
-        '$baseUrl/fees/structure/class_name/$className?schoolId=$schoolId',
-      );
-      final response = await http.get(
-        url,
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.get(
+        '/fees/structure/class_name/$className?schoolId=$schoolId',
       );
 
       if (response.statusCode == 200) {
@@ -123,12 +161,7 @@ class AdminApiService {
   static Future<List<Map<String, dynamic>>> getFeeStructures(
     int schoolId,
   ) async {
-    final url = Uri.parse('$baseUrl/fees/structure?schoolId=$schoolId');
-
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
+    final response = await HybridApiService.get('/fees/structure?schoolId=$schoolId');
 
     if (response.statusCode == 200) {
       return List<Map<String, dynamic>>.from(json.decode(response.body));
@@ -149,10 +182,8 @@ class AdminApiService {
       throw Exception('Status must be active or inactive');
     }
 
-    final url = Uri.parse('$baseUrl/fees/structure/$feeId/status');
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.patch(
+      '/fees/structure/$feeId/status',
       body: json.encode({'status': status}),
     );
 
@@ -161,12 +192,7 @@ class AdminApiService {
 
   // Delete a fee structure
   static Future<bool> deleteFeeStructure(int feeId) async {
-    final url = Uri.parse('$baseUrl/fees/structure/$feeId');
-
-    final response = await http.delete(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
+    final response = await HybridApiService.delete('/fees/structure/$feeId');
     return response.statusCode == 200;
   }
 
@@ -175,13 +201,8 @@ class AdminApiService {
     required int schoolId,
     required int classId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/student-fees/student?username=$username&schoolId=$schoolId&classId=$classId',
-    );
-
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.get(
+      '/student-fees/student?username=$username&schoolId=$schoolId&classId=$classId',
     );
 
     if (response.statusCode == 200) {
@@ -196,12 +217,8 @@ class AdminApiService {
     int classId,
     int schoolId,
   ) async {
-    final url = Uri.parse(
-      '$baseUrl/student-fees/class/$classId?schoolId=$schoolId',
-    );
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.get(
+      '/student-fees/class/$classId?schoolId=$schoolId',
     );
 
     if (response.statusCode == 200) {
@@ -218,7 +235,6 @@ class AdminApiService {
     required String username,
     required String createdBy,
   }) async {
-    final url = Uri.parse('$baseUrl/student-fees/assign');
     final body = json.encode({
       'schoolId': schoolId,
       'classId': classId,
@@ -226,11 +242,7 @@ class AdminApiService {
       'createdBy': createdBy,
     });
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
+    final response = await HybridApiService.post('/student-fees/assign', body: body);
 
     return response.statusCode == 200 || response.statusCode == 201;
   }
@@ -242,7 +254,6 @@ class AdminApiService {
     required String method,
     String? transactionId,
   }) async {
-    final url = Uri.parse('$baseUrl/student-fees/pay');
     final body = json.encode({
       'studentFeeId': studentFeeId,
       'amount': amount,
@@ -250,11 +261,7 @@ class AdminApiService {
       'transactionId': transactionId,
     });
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
+    final response = await HybridApiService.post('/student-fees/pay', body: body);
 
     return response.statusCode == 200 || response.statusCode == 201;
   }
@@ -264,11 +271,9 @@ class AdminApiService {
     required int classId,
     required int limit,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/students/attendance/consecutive-absents?school_id=$schoolId&class_id=$classId&limit=$limit',
+    final response = await HybridApiService.get(
+      '/students/attendance/consecutive-absents?school_id=$schoolId&class_id=$classId&limit=$limit',
     );
-
-    final response = await http.get(url);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List<dynamic>;
@@ -283,13 +288,8 @@ class AdminApiService {
     required int id,
     required String status,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/exam-marks/update_status_by_id/$id/$status',
-    );
-
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.patch(
+      '/exam-marks/update_status_by_id/$id/$status',
     );
 
     if (response.statusCode == 200) {
@@ -305,13 +305,8 @@ class AdminApiService {
     required String classId,
     required String status,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/exam-marks/update_status_by_school_id_class_id/$schoolId/$classId/$status',
-    );
-
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.patch(
+      '/exam-marks/update_status_by_school_id_class_id/$schoolId/$classId/$status',
     );
 
     if (response.statusCode == 200) {
@@ -329,13 +324,8 @@ class AdminApiService {
     required String title,
     required Map<String, dynamic> updateData,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/exam-marks/$schoolId/$classId/$username/$title',
-    );
-
-    final response = await http.put(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.put(
+      '/exam-marks/$schoolId/$classId/$username/$title',
       body: jsonEncode(updateData),
     );
 
@@ -352,11 +342,8 @@ class AdminApiService {
     int id,
     Map<String, dynamic> updatedData,
   ) async {
-    final url = Uri.parse('$baseUrl/exam-marks/update_by_id/$id');
-
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.patch(
+      '/exam-marks/update_by_id/$id',
       body: jsonEncode(updatedData),
     );
 
@@ -370,9 +357,7 @@ class AdminApiService {
 
   // Delete exam mark by ID (DELETE)
   static Future<bool> deleteExamMark(int id) async {
-    final url = Uri.parse('$baseUrl/exam-marks/delete_by_id/$id');
-
-    final response = await http.delete(url);
+    final response = await HybridApiService.delete('/exam-marks/delete_by_id/$id');
 
     if (response.statusCode == 204) {
       // Successfully deleted - 204 No Content
@@ -387,9 +372,9 @@ class AdminApiService {
     required String classId,
     required String username,
   }) async {
-    final uri =
-        '$baseUrl/exam-marks/fetch?school_id=$schoolId&class_id=$classId&username=$username';
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch?school_id=$schoolId&class_id=$classId&username=$username',
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -402,10 +387,9 @@ class AdminApiService {
     required String schoolId,
     required String classId,
   }) async {
-    final uri =
-        '$baseUrl/exam-marks/fetch?school_id=$schoolId&class_id=$classId';
-
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch?school_id=$schoolId&class_id=$classId',
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -417,9 +401,7 @@ class AdminApiService {
   static Future<List<dynamic>> fetchExamMarkSchool({
     required String schoolId,
   }) async {
-    final uri = '$baseUrl/exam-marks/fetch?school_id=$schoolId';
-
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get('/exam-marks/fetch?school_id=$schoolId');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -433,9 +415,9 @@ class AdminApiService {
     required String classId,
     required String title,
   }) async {
-    final uri =
-        '$baseUrl/exam-marks/fetch?school_id=$schoolId&class_id=$classId&title=$title';
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch?school_id=$schoolId&class_id=$classId&title=$title',
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -448,9 +430,24 @@ class AdminApiService {
     required String schoolId,
     required String title,
   }) async {
-    final uri = '$baseUrl/exam-marks/fetch?school_id=$schoolId&title=$title';
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch?school_id=$schoolId&title=$title',
+    );
 
-    final response = await http.get(Uri.parse(uri));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load exam marks');
+    }
+  }
+
+  static Future<List<dynamic>> fetchExamMarkClasses({
+    required String schoolId,
+    required String title,
+  }) async {
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch_classes?school_id=$schoolId&title=$title',
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -463,10 +460,9 @@ class AdminApiService {
     required String schoolId,
     required String classId,
   }) async {
-    final uri =
-        '$baseUrl/exam-marks/fetch_titles?school_id=$schoolId&class_id=$classId';
-
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch_titles?school_id=$schoolId&class_id=$classId',
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -478,9 +474,9 @@ class AdminApiService {
   static Future<List<dynamic>> fetchExamMarkSchoolTitles({
     required String schoolId,
   }) async {
-    final uri = '$baseUrl/exam-marks/fetch_titles?school_id=$schoolId';
-
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get(
+      '/exam-marks/fetch_titles?school_id=$schoolId',
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -504,9 +500,6 @@ class AdminApiService {
     required List<String> date,
     required List<String> session,
   }) async {
-    final url = Uri.parse('$baseUrl/exam-marks/create');
-    final headers = {'Content-Type': 'application/json'};
-
     final data = {
       'school_id': int.parse(schoolId),
       'class_id': int.parse(classId),
@@ -525,7 +518,7 @@ class AdminApiService {
 
     final body = json.encode(data);
 
-    final response = await http.post(url, headers: headers, body: body);
+    final response = await HybridApiService.post('/exam-marks/create', body: body);
 
     if (response.body ==
         '{"clientVersion":"6.12.0","name":"PrismaClientUnknownRequestError"}') {
@@ -561,9 +554,9 @@ class AdminApiService {
     final String fromDateFormatted = formatter.format(fromDate);
     final String toDateFormatted = formatter.format(toDate);
 
-    final uri =
-        '$baseUrl/students/periodical-report-all?schoolId=$schoolId&fromDate=$fromDateFormatted&toDate=$toDateFormatted';
-    final response = await http.get(Uri.parse(uri));
+    final response = await HybridApiService.get(
+      '/students/periodical-report-all?schoolId=$schoolId&fromDate=$fromDateFormatted&toDate=$toDateFormatted',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -578,10 +571,8 @@ class AdminApiService {
   }
 
   static Future<bool> deleteTimetableEntry(String id) async {
-    final url = Uri.parse('$baseUrl/timetable/delete/$id');
-
     try {
-      final response = await http.delete(url);
+      final response = await HybridApiService.delete('/timetable/delete/$id');
 
       if (response.statusCode == 200) {
         return true;
@@ -598,26 +589,26 @@ class AdminApiService {
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse(
-        "$baseUrl/auth/excel-upload/students/$schoolId/non",
+      final request = await HybridApiService.createMultipartRequest(
+        'POST',
+        "/auth/excel-upload/students/$schoolId/non",
       );
-      final request = http.MultipartRequest('POST', uri)
-        ..files.add(
-          await http.MultipartFile.fromPath(
-            'file',
-            file.path,
-            contentType: MediaType(
-              'application',
-              'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ),
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           ),
-        );
+        ),
+      );
 
       final response = await request.send();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final respStr = await response.stream.bytesToString();
-
         return jsonDecode(respStr);
       } else {
         return null;
@@ -633,25 +624,25 @@ class AdminApiService {
     String faculty,
   ) async {
     try {
-      final uri = Uri.parse(
-        '$baseUrl/auth/excel-upload/staff/$schoolId/$faculty',
+      final request = await HybridApiService.createMultipartRequest(
+        'POST',
+        '/auth/excel-upload/staff/$schoolId/$faculty',
       );
-      final request = http.MultipartRequest('POST', uri)
-        ..files.add(
-          await http.MultipartFile.fromPath(
-            'file',
-            file.path,
-            contentType: MediaType(
-              'application',
-              'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ),
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           ),
-        );
+        ),
+      );
 
       final response = await request.send();
       if (response.statusCode == 200 || response.statusCode == 201) {
         final respStr = await response.stream.bytesToString();
-
         return jsonDecode(respStr);
       } else {
         return null;
@@ -666,18 +657,21 @@ class AdminApiService {
     String schoolId,
   ) async {
     try {
-      final uri = Uri.parse("$baseUrl/auth/excel-upload/admin/$schoolId/non");
-      final request = http.MultipartRequest('POST', uri)
-        ..files.add(
-          await http.MultipartFile.fromPath(
-            'file',
-            file.path,
-            contentType: MediaType(
-              'application',
-              'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ),
+      final request = await HybridApiService.createMultipartRequest(
+        'POST',
+        "/auth/excel-upload/admin/$schoolId/non",
+      );
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          contentType: MediaType(
+            'application',
+            'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           ),
-        );
+        ),
+      );
 
       final response = await request.send();
 
@@ -701,16 +695,14 @@ class AdminApiService {
     required DateTime toDate,
     required int schoolId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/attendance/student/betweensummary'
-      '?username=$username'
-      '&fromDate=${fromDate.toIso8601String().split("T").first}'
-      '&toDate=${toDate.toIso8601String().split("T").first}'
-      '&school_id=$schoolId',
-    );
-
     try {
-      final response = await http.get(url);
+      final response = await HybridApiService.get(
+        '/attendance/student/betweensummary'
+        '?username=$username'
+        '&fromDate=${fromDate.toIso8601String().split("T").first}'
+        '&toDate=${toDate.toIso8601String().split("T").first}'
+        '&school_id=$schoolId',
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
@@ -815,12 +807,10 @@ class AdminApiService {
     required String mobile,
     required int schoolId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/staff/fetch-by-mobile?mobile=$mobile&school_id=$schoolId',
-    );
-
     try {
-      final response = await http.get(url);
+      final response = await HybridApiService.get(
+        '/staff/fetch-by-mobile?mobile=$mobile&school_id=$schoolId',
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -846,14 +836,19 @@ class AdminApiService {
     }
   }
 
-  static Future<String> postMessage(String message, int schoolId) async {
-    final url = Uri.parse('$baseUrl/messages/post-message');
-
+  static Future<String> postMessage({
+    required String message,
+    required int schoolId,
+    required String role,
+  }) async {
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'messages': message, 'schoolId': schoolId}),
+      final response = await HybridApiService.post(
+        '/messages/post-message',
+        body: jsonEncode({
+          'messages': message,
+          'schoolId': schoolId,
+          'role': role,
+        }),
       );
 
       final data = jsonDecode(response.body);
@@ -871,8 +866,7 @@ class AdminApiService {
   static Future<String> fetchLatestMessage(String schoolId) async {
     try {
       final int id = int.parse(schoolId);
-      final url = Uri.parse('$baseUrl/messages/last/$id');
-      final response = await http.get(url);
+      final response = await HybridApiService.get('/messages/last/$id');
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         return data['messages']?.toString() ?? '';
@@ -884,17 +878,31 @@ class AdminApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> fetchAllMessage(
+  static Future<String> fetchLatestMessageRole(
     String schoolId,
+    String role,
   ) async {
     try {
       final int id = int.parse(schoolId);
-      final url = Uri.parse('$baseUrl/messages/all/$id');
-      final response = await http.get(url);
+      final response = await HybridApiService.get('/messages/last_role/$id/$role');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return data['messages']?.toString() ?? '';
+      } else {
+        return '';
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  static Future<List<dynamic>> fetchAllMessage(String schoolId) async {
+    try {
+      final int id = int.parse(schoolId);
+      final response = await HybridApiService.get('/messages/all/$id');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-
-        return jsonDecode(response.body.toString());
+        return jsonDecode(response.body);
       } else {
         return [];
       }
@@ -904,10 +912,8 @@ class AdminApiService {
   }
 
   static Future<bool> deleteMessage(String id) async {
-    final url = Uri.parse('$baseUrl/message/delete/$id');
-
     try {
-      final response = await http.delete(url);
+      final response = await HybridApiService.delete('/messages/delete/$id');
 
       if (response.statusCode == 200) {
         return true;
@@ -922,8 +928,7 @@ class AdminApiService {
   static Future<List<Map<String, dynamic>>> fetchAllClasses(
     String schoolId,
   ) async {
-    final url = Uri.parse('$baseUrl/class/all/${int.parse(schoolId)}');
-    final response = await http.get(url);
+    final response = await HybridApiService.get('/class/all/${int.parse(schoolId)}');
     if (response.statusCode != 200) {
       final error = jsonDecode(response.body);
       throw Exception(
@@ -941,11 +946,9 @@ class AdminApiService {
     required int classId,
     required int schoolId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/class/get-name?class_id=$classId&school_id=$schoolId',
+    final response = await HybridApiService.get(
+      '/class/get-name?class_id=$classId&school_id=$schoolId',
     );
-
-    final response = await http.get(url);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['status'] == 'success') {
@@ -966,12 +969,9 @@ class AdminApiService {
     required String schoolId,
     required String classId,
   }) async {
-    final url = Uri.parse('$baseUrl/attendance/post_student_attendance');
-
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.post(
+        '/attendance/post_student_attendance',
         body: jsonEncode({
           'username': username,
           'date': date,
@@ -1008,9 +1008,8 @@ class AdminApiService {
         final bytes = await imageFile.readAsBytes();
         photoBase64 = base64Encode(bytes);
       }
-      final response = await http.patch(
-        Uri.parse('$baseUrl/admin/$username/$schoolId'),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.patch(
+        '/admin/$username/$schoolId',
         body: jsonEncode({
           'name': name,
           'designation': designation,
@@ -1035,16 +1034,11 @@ class AdminApiService {
   ) async {
     int id = int.parse(schoolId);
 
-    final uri = Uri.parse(
-      '$baseUrl/students/fetch_all_student_data_with_class?school_id=$id',
-    );
-
-    final client = http.Client();
-
     try {
-      final response = await client
-          .get(uri)
-          .timeout(const Duration(seconds: 10));
+      final response = await HybridApiService.get(
+        '/students/fetch_all_student_data_with_class?school_id=$id',
+      ).timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -1059,8 +1053,6 @@ class AdminApiService {
       }
     } catch (e) {
       throw Exception("❌ Failed to load students. Reason: $e");
-    } finally {
-      client.close();
     }
   }
 
@@ -1069,12 +1061,11 @@ class AdminApiService {
   ) async {
     int id = int.parse(schoolId);
 
-    final uri = Uri.parse(
-      '$baseUrl/students/fetch_all_student_data',
-    ).replace(queryParameters: {'school_id': id.toString()});
-
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await HybridApiService.get(
+        '/students/fetch_all_student_data?school_id=$id',
+      ).timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -1100,9 +1091,7 @@ class AdminApiService {
   ) async {
     int id = int.parse(schoolId);
     try {
-      final uri = Uri.parse('$baseUrl/staff/all-by-school_id?school_id=$id');
-
-      final response = await http.get(uri);
+      final response = await HybridApiService.get('/staff/all-by-school_id?school_id=$id');
       if (response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data.containsKey('staff')) {
@@ -1122,10 +1111,8 @@ class AdminApiService {
     required String schoolId,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-          '$baseUrl/admin/fetch_admin?username=$username&school_id=$schoolId',
-        ),
+      final response = await HybridApiService.get(
+        '/admin/fetch_admin?username=$username&school_id=$schoolId',
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -1141,13 +1128,77 @@ class AdminApiService {
     return null;
   }
 
+  static Future<Map<String, dynamic>?> fetchAdminAccess({
+    required String username,
+    required String schoolId,
+  }) async {
+    try {
+      final response = await HybridApiService.get(
+        '/admin/fetch_access?username=$username&school_id=$schoolId',
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = json.decode(response.body);
+
+        if (decoded['status'] == 'success' || decoded['data'].isNotEmpty) {
+          return decoded; // Assuming you fetch a single admin
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> fetchAdminRearrange({
+    required String username,
+    required String schoolId,
+  }) async {
+    try {
+      final response = await HybridApiService.get(
+        '/admin/fetch_cat_button?username=$username&school_id=$schoolId',
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = json.decode(response.body);
+
+        if (decoded['status'] == 'success' || decoded['data'].isNotEmpty) {
+          return decoded; // Assuming you fetch a single admin
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> fetchStaffAccess({
+    required String username,
+    required String schoolId,
+  }) async {
+    try {
+      final response = await HybridApiService.get(
+        '/staff/fetch_access?username=$username&school_id=$schoolId',
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = json.decode(response.body);
+
+        if (decoded['status'] == 'success' || decoded['data'].isNotEmpty) {
+          return decoded; // Assuming you fetch a single admin
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
   static Future<List<Map<String, dynamic>>> fetchAllAdmin({
     required String schoolId,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin/fetch_all_admin?school_id=$schoolId'),
-      );
+      final response = await HybridApiService.get('/admin/fetch_all_admin?school_id=$schoolId');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = json.decode(response.body);
@@ -1164,15 +1215,8 @@ class AdminApiService {
 
   //Count usernames
   static Future<int> countStudentUsernames(String schoolId) async {
-    final url = Uri.parse(
-      '$baseUrl/students/count_student?school_id=$schoolId',
-    );
-
     try {
-      final response = await http.get(
-        url,
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await HybridApiService.get('/students/count_student?school_id=$schoolId');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -1188,6 +1232,67 @@ class AdminApiService {
       }
     } catch (e) {
       throw Exception('Failed to count usernames: $e');
+    }
+  }
+
+  static Future<bool> updateAccess({
+    required String username,
+    required Map<String, dynamic> access,
+    required int schoolId,
+  }) async {
+    try {
+      final response = await HybridApiService.patch(
+        '/admin/update_access/$username/$schoolId',
+        body: jsonEncode({'access': access}),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> updateRearrange({
+    required String username,
+    required Map<String, dynamic> cats,
+    required Map<String, dynamic> buttons,
+    required int schoolId,
+  }) async {
+    try {
+      final response = await HybridApiService.patch(
+        '/admin/update_cat_button/$username/$schoolId',
+        body: jsonEncode({'categories': cats, 'buttons': buttons}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> updateStaffAccess({
+    required String username,
+    required Map<String, dynamic> access,
+    required int schoolId,
+  }) async {
+    try {
+      final response = await HybridApiService.patch(
+        '/staff/update_access/$username/$schoolId',
+        body: jsonEncode({'access': access}),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
     }
   }
 }

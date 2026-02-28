@@ -18,6 +18,7 @@ class StudentManagePage extends StatelessWidget {
     required this.message,
     this.schoolPhoto,
     required this.studentRoute,
+    required this.schoolData,
   });
   final String schoolId;
   final String classId;
@@ -27,7 +28,7 @@ class StudentManagePage extends StatelessWidget {
   final String message;
   final String studentRoute;
   final Image? schoolPhoto;
-
+  final Map<String, dynamic>? schoolData;
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -60,76 +61,109 @@ class StudentManagePage extends StatelessWidget {
                 //   ],
                 // ),
                 SizedBox(height: 10),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.black26, width: 2),
-                    boxShadow: [BoxShadow(color: Colors.transparent)],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-
-                            children: [
-                              Text(
-                                'Views',
-                                style: TextStyle(
-                                  color: Colors.blue.shade900,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 25,
-                                ),
-                              ),
-                              Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.blue.shade900,
-                                size: 50,
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                schoolData?['student_access']['events'] == true ||
+                        schoolData?['student_access']['viewHomework'] == true
+                    ? Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.black26, width: 2),
+                        boxShadow: [BoxShadow(color: Colors.transparent)],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
                           children: [
-                            buildElevatedButton(
-                              context,
-                              "View\nHomework",
-                              StudentHomeworkPage(
-                                username: username,
-                                schoolId: schoolId,
-                                classId: classId,
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+
+                                children: [
+                                  Text(
+                                    'Views',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade900,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 25,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.blue.shade900,
+                                    size: 50,
+                                  ),
+                                ],
                               ),
-                              Icons.home_work_outlined,
                             ),
-                            buildElevatedButton(
-                              context,
-                              "Events",
-                              Events(
-                                username: username,
-                                schoolId: schoolId,
-                                classId: classId,
-                              ),
-                              Icons.event,
+                            SizedBox(height: 10),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                schoolData?['student_access'] == null
+                                    ? buildElevatedButton(
+                                      context,
+                                      "View\nHomework",
+                                      StudentHomeworkPage(
+                                        username: username,
+                                        schoolId: schoolId,
+                                        classId: classId,
+                                      ),
+                                      Icons.home_work_outlined,
+                                    )
+                                    : schoolData?['student_access']['viewHomework'] ==
+                                        true
+                                    ? buildElevatedButton(
+                                      context,
+                                      "View\nHomework",
+                                      StudentHomeworkPage(
+                                        username: username,
+                                        schoolId: schoolId,
+                                        classId: classId,
+                                      ),
+                                      Icons.home_work_outlined,
+                                    )
+                                    : SizedBox(),
+
+                                schoolData?['student_access'] == null
+                                    ? buildElevatedButton(
+                                      context,
+                                      "Events",
+                                      Events(
+                                        username: username,
+                                        schoolId: schoolId,
+                                        classId: classId,
+                                      ),
+                                      Icons.event,
+                                    )
+                                    : schoolData?['student_access']['events'] ==
+                                        true
+                                    ? buildElevatedButton(
+                                      context,
+                                      "Events",
+                                      Events(
+                                        username: username,
+                                        schoolId: schoolId,
+                                        classId: classId,
+                                      ),
+                                      Icons.event,
+                                    )
+                                    : SizedBox(),
+
+                                // buildElevatedButton(
+                                //   context,
+                                //   "Location",
+                                //   LocationMapPage(),
+                                //   Icons.location_pin,
+                                // ),
+                              ],
                             ),
-                            // buildElevatedButton(
-                            //   context,
-                            //   "Location",
-                            //   LocationMapPage(),
-                            //   Icons.location_pin,
-                            // ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
+                    )
+                    : SizedBox(),
                 SizedBox(height: 20),
                 Container(
                   decoration: BoxDecoration(

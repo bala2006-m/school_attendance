@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:school_attendance/teacher/widget/mobile_drawer.dart';
 import 'package:school_attendance/teacher/widget/staff_dashboard_mobile.dart';
+import 'package:school_attendance/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../admin/services/admin_api_service.dart';
@@ -45,8 +45,7 @@ class StaffDashboardState extends State<StaffDashboard> {
   int presentStudentFN = 0;
   int presentStudentAN = 0;
 
-  bool _isLoading =
-      true; // Controls initial loading spinner (show on first load only)
+  bool _isLoading = true;
 
   static int selectedIndex = 1;
 
@@ -253,8 +252,6 @@ class StaffDashboardState extends State<StaffDashboard> {
 
   Future<void> _loadStaffData() async {
     try {
-      // Do NOT set _isLoading = true here to avoid blocking UI on refresh
-
       final prefs = await SharedPreferences.getInstance();
 
       final data = await TeacherApiServices.fetchStaffDataUsername(
@@ -266,9 +263,9 @@ class StaffDashboardState extends State<StaffDashboard> {
         throw Exception('Staff data is null for ${widget.username}');
       }
 
-      // Persist essentials locally + cache full staff data as JSON for faster reload later
       await prefs.setString('schoolId', widget.schoolId);
       await prefs.setString('staffName', '${data['name']}');
+      await prefs.setString('class_ids', '${data['class_ids']}');
       await prefs.setString('staffUsername', widget.username);
       await prefs.setString('staffData', jsonEncode(data));
 
@@ -307,7 +304,7 @@ class StaffDashboardState extends State<StaffDashboard> {
 
       // Parallel fetches: latest message + attendance summaries
       final results = await Future.wait([
-        AdminApiService.fetchLatestMessage(schoolId),
+        AdminApiService.fetchLatestMessageRole(schoolId, 'staff'),
         ApiService.fetchTodayStudentAttendanceClass(
           currentDate,
           'fn',
@@ -336,14 +333,11 @@ class StaffDashboardState extends State<StaffDashboard> {
 
       final presentStFn = studentFn.values.where((s) => s == 'P').length;
       final presentSAn = studentAn.values.where((s) => s == 'P').length;
-
-      // Cache to prefs
       await prefs.setString('latestMessage', mes);
       await prefs.setInt('totalStudents', int.tryParse(c.toString()) ?? 0);
       await prefs.setInt('presentStudentFN', presentStFn);
       await prefs.setInt('presentStudentAN', presentSAn);
 
-      // Preserve classIds (empty here) for compatibility
       final List<dynamic> parsedClassIds = [];
 
       if (!mounted) return;
@@ -455,7 +449,7 @@ class StaffDashboardState extends State<StaffDashboard> {
             title: 'Staff Dashboard',
             enableDrawer: true,
             enableBack: false,
-            onBack: () => exit(0),
+            onBack: safeExit,
           ),
         ),
         drawer: MobileDrawer(

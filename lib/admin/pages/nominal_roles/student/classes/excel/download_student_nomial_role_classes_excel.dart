@@ -5,16 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/components/build_profile_card_mobile.dart';
 
-import '../../../../../services/api_service.dart';
-import '../../../../../teacher/services/teacher_api_service.dart';
-import '../../../../appbar/admin_appbar_desktop.dart';
-import '../../../../appbar/admin_appbar_mobile.dart';
-import '../../../../widget/pdf_preview_custom_page.dart';
-import '../download_student_nomial_role.dart';
-import 'build_student_list_class.dart';
+import '../../../../../../services/api_service.dart';
+import '../../../../../../teacher/services/teacher_api_service.dart';
+import '../../../../../appbar/admin_appbar_desktop.dart';
+import '../../../../../appbar/admin_appbar_mobile.dart';
+import '../../../../../widget/excel_preview_page.dart';
+import '../../../../../widget/pdf_preview_custom_page.dart';
+import '../../build_student_list_pdf.dart';
+import '../../download_student_nomial_role.dart';
 
-class DownloadStudentNomialRoleClasses extends StatefulWidget {
-  const DownloadStudentNomialRoleClasses({
+class DownloadStudentNomialRoleClassesExcel extends StatefulWidget {
+  const DownloadStudentNomialRoleClassesExcel({
     super.key,
     required this.username,
     required this.schoolId,
@@ -22,12 +23,12 @@ class DownloadStudentNomialRoleClasses extends StatefulWidget {
   final String username;
   final String schoolId;
   @override
-  State<DownloadStudentNomialRoleClasses> createState() =>
-      _DownloadStudentNomialRoleClassesState();
+  State<DownloadStudentNomialRoleClassesExcel> createState() =>
+      _DownloadStudentNomialRoleClassesExcelState();
 }
 
-class _DownloadStudentNomialRoleClassesState
-    extends State<DownloadStudentNomialRoleClasses> {
+class _DownloadStudentNomialRoleClassesExcelState
+    extends State<DownloadStudentNomialRoleClassesExcel> {
   List<Map<String, dynamic>> classes = [];
   bool isLoading = true;
   String? schoolName;
@@ -182,8 +183,8 @@ class _DownloadStudentNomialRoleClassesState
               buildPdf:
                   () => buildPdf(
                     students: students,
-                    cls: cls,
-                    section: section,
+                    // cls: cls,
+                    // section: section,
                     schoolName: '$schoolName',
                     schoolAddress: '$schoolAddress',
                     schoolPhotoBytes: schoolPhotoBytes,
@@ -193,6 +194,58 @@ class _DownloadStudentNomialRoleClassesState
             ),
       ),
     );
+  }
+
+  Future<void> downloadExcel({
+    required String classId,
+    required String cls,
+    required String section,
+  }) async {
+    setState(() => isLoading = true);
+    final students = await TeacherApiServices.fetchStudentData(
+      schoolId: widget.schoolId,
+      classId: classId,
+    );
+    // Sort students (same as PDF logic)
+    students.sort((a, b) {
+      if (a['gender'] == b['gender']) {
+        var aUsername = a['username'].toString();
+        var bUsername = b['username'].toString();
+        final numA = int.tryParse(aUsername);
+        final numB = int.tryParse(bUsername);
+        if (numA != null && numB != null) return numA.compareTo(numB);
+        return aUsername.compareTo(bUsername);
+      } else if (a['gender'] == 'M') {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+
+    if (mounted) {
+      setState(() => isLoading = false);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => ExcelPreviewPage(
+                students: students,
+                title: 'Student List',
+                fileName: 'Student_List_${cls}_$section',
+                buildPdf:
+                    () => buildPdf(
+                      students: students,
+                      // cls: cls,
+                      // section: section,
+                      schoolName: '$schoolName',
+                      schoolAddress: '$schoolAddress',
+                      schoolPhotoBytes: schoolPhotoBytes,
+                    ),
+              ),
+        ),
+      );
+    }
   }
 
   Future<void> downloadPdf({
@@ -403,7 +456,7 @@ class _DownloadStudentNomialRoleClassesState
                   return InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () {
-                      downloadPdf(
+                      downloadExcel(
                         classId: classId,
                         cls: className,
                         section: section,
@@ -422,14 +475,14 @@ class _DownloadStudentNomialRoleClassesState
                             isKinderGarden ? className : 'Class $className',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: 20,
+                              fontSize: 18,
                               color: Colors.white,
                             ),
                           ),
                           Text(
                             'Sec $section',
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               color: Colors.white,
                             ),
                           ),

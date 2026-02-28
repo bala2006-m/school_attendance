@@ -1,17 +1,19 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
+// import 'package:photo_view/photo_view.dart';
+// import 'package:photo_view/photo_view_gallery.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
 import '../Appbar/student_appbar_mobile.dart';
+import 'event_group_photos_page.dart';
 import 'student_dashboard.dart';
 
 class Events extends StatefulWidget {
@@ -125,9 +127,14 @@ class _EventsState extends State<Events> with TickerProviderStateMixin {
       );
     }
 
+    final groupedImages = groupBy(
+      uploadedImages,
+      (obj) => (obj['title'] as String?)?.trim() ?? 'No Title',
+    );
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: uploadedImages.length,
+      itemCount: groupedImages.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount:
             MediaQuery.of(context).size.width > 900
@@ -140,11 +147,26 @@ class _EventsState extends State<Events> with TickerProviderStateMixin {
         childAspectRatio: 0.8,
       ),
       itemBuilder: (context, index) {
-        final img = uploadedImages[index];
-        final imageUrl = img['link'];
+        final title = groupedImages.keys.elementAt(index);
+        final images = groupedImages[title]!;
+        final firstImg = images.first;
+        final imageUrl = firstImg['link'];
+        final count = images.length;
 
         return GestureDetector(
-          onTap: () => _openFullScreenGallery(index),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => EventGroupPhotosPage(
+                      title: title,
+                      images: images,
+                      schoolId: widget.schoolId,
+                    ),
+              ),
+            );
+          },
           child: Hero(
             tag: imageUrl,
             child: AnimatedContainer(
@@ -189,9 +211,19 @@ class _EventsState extends State<Events> with TickerProviderStateMixin {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
+                            const Color.fromARGB(26, 0, 0, 0),
                             Colors.black.withValues(alpha: 0.7),
                           ],
                         ),
+                      ),
+                    ),
+
+                    // Folder Icon overlay
+                    const Center(
+                      child: Icon(
+                        Icons.folder_open,
+                        color: Colors.white70,
+                        size: 40,
                       ),
                     ),
 
@@ -204,7 +236,7 @@ class _EventsState extends State<Events> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            img['title'] ?? 'Untitled Event',
+                            title.isEmpty ? 'Untitled Event' : title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -220,33 +252,14 @@ class _EventsState extends State<Events> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                          if (img['description'] != null &&
-                              img['description'].toString().isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2.0),
-                              child: Text(
-                                img['description'],
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$count items',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
                             ),
-                          if (img['date'] != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2.0),
-                              child: Text(
-                                DateFormat(
-                                  'dd MMM yyyy',
-                                ).format(DateTime.parse(img['date'])),
-                                style: const TextStyle(
-                                  color: Colors.white60,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -261,48 +274,48 @@ class _EventsState extends State<Events> with TickerProviderStateMixin {
   }
 
   // 🔍 Full-screen gallery
-  void _openFullScreenGallery(int initialIndex) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => Scaffold(
-              backgroundColor: Colors.black,
-              body: Stack(
-                children: [
-                  PhotoViewGallery.builder(
-                    itemCount: uploadedImages.length,
-                    builder:
-                        (context, index) => PhotoViewGalleryPageOptions(
-                          imageProvider: CachedNetworkImageProvider(
-                            uploadedImages[index]['link'],
-                          ),
-                          minScale: PhotoViewComputedScale.contained,
-                          maxScale: PhotoViewComputedScale.covered * 2,
-                        ),
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.black,
-                    ),
-                    pageController: PageController(initialPage: initialIndex),
-                  ),
-                  Positioned(
-                    top: 40,
-                    left: 16,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-      ),
-    );
-  }
+  // void _openFullScreenGallery(int initialIndex) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder:
+  //           (context) => Scaffold(
+  //             backgroundColor: Colors.black,
+  //             body: Stack(
+  //               children: [
+  //                 PhotoViewGallery.builder(
+  //                   itemCount: uploadedImages.length,
+  //                   builder:
+  //                       (context, index) => PhotoViewGalleryPageOptions(
+  //                         imageProvider: CachedNetworkImageProvider(
+  //                           uploadedImages[index]['link'],
+  //                         ),
+  //                         minScale: PhotoViewComputedScale.contained,
+  //                         maxScale: PhotoViewComputedScale.covered * 2,
+  //                       ),
+  //                   backgroundDecoration: const BoxDecoration(
+  //                     color: Colors.black,
+  //                   ),
+  //                   pageController: PageController(initialPage: initialIndex),
+  //                 ),
+  //                 Positioned(
+  //                   top: 40,
+  //                   left: 16,
+  //                   child: IconButton(
+  //                     icon: const Icon(
+  //                       Icons.close,
+  //                       color: Colors.white,
+  //                       size: 30,
+  //                     ),
+  //                     onPressed: () => Navigator.pop(context),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //     ),
+  //   );
+  // }
 
   // 🎥 Videos tab
   Widget _buildVideosTab() {

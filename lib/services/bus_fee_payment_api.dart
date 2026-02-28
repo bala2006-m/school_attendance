@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:school_attendance/services/hybrid_api_service.dart';
 
 import '../utils/utils.dart';
 
@@ -11,8 +11,8 @@ class BusFeePaymentApi {
     int schoolId,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/pending_paid_school/$schoolId"),
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/pending_paid_school/$schoolId",
       );
 
       if (response.statusCode == 200) {
@@ -27,15 +27,15 @@ class BusFeePaymentApi {
   /// 🔹 Create a new payment
   Future<Map<String, dynamic>?> createPayment(Map<String, dynamic> data) async {
     try {
-      final response = await http.post(
-        Uri.parse(base),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.post(
+        "/bus-fee-payment",
         body: jsonEncode(data),
+        forceCloud: true,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
-      } else {}
+      }
     } catch (e) {
       return null;
     }
@@ -59,7 +59,7 @@ class BusFeePaymentApi {
   /// 🔹 Get a single payment by ID
   Future<Map<String, dynamic>?> getPaymentById(int id) async {
     try {
-      final response = await http.get(Uri.parse("$base/$id"));
+      final response = await HybridApiService.get("/bus-fee-payment/$id");
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -76,10 +76,10 @@ class BusFeePaymentApi {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await http.put(
-        Uri.parse("$base/$id"),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.put(
+        "/bus-fee-payment/$id",
         body: jsonEncode(data),
+        forceCloud: true,
       );
 
       if (response.statusCode == 200) {
@@ -94,7 +94,10 @@ class BusFeePaymentApi {
   /// 🔹 Delete a payment
   Future<bool> deletePayment(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$base/$id"));
+      final response = await HybridApiService.delete(
+        "/bus-fee-payment/$id",
+        forceCloud: true,
+      );
       if (response.statusCode == 200) return true;
     } catch (e) {
       return false;
@@ -109,7 +112,9 @@ class BusFeePaymentApi {
   /// 🏫 Get payments by school ID
   static Future<Map<String, dynamic>?> getBySchoolId(int schoolId) async {
     try {
-      final response = await http.get(Uri.parse("$base/school/$schoolId"));
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/school/$schoolId",
+      );
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -125,8 +130,8 @@ class BusFeePaymentApi {
     required String date,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/school_date/$schoolId/$date"),
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/school_date/$schoolId/$date",
       );
 
       if (response.statusCode == 200) {
@@ -144,8 +149,8 @@ class BusFeePaymentApi {
     required String date,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/school_class_date/$schoolId/$classId/$date"),
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/school_class_date/$schoolId/$classId/$date",
       );
 
       if (response.statusCode == 200) {
@@ -163,8 +168,8 @@ class BusFeePaymentApi {
     int classId,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/school/$schoolId/class/$classId"),
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/school/$schoolId/class/$classId",
       );
 
       if (response.statusCode == 200) {
@@ -183,8 +188,8 @@ class BusFeePaymentApi {
     String studentId,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/school/$schoolId/class/$classId/student/$studentId"),
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/school/$schoolId/class/$classId/student/$studentId",
       );
 
       if (response.statusCode == 200) {
@@ -202,14 +207,9 @@ class BusFeePaymentApi {
     int schoolId,
   ) async {
     try {
-      final uri = Uri.parse("$base/student").replace(
-        queryParameters: {
-          'student_id': studentId,
-          'school_id': schoolId.toString(),
-        },
+      final response = await HybridApiService.get(
+        "/bus-fee-payment/student?student_id=$studentId&school_id=$schoolId",
       );
-
-      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);

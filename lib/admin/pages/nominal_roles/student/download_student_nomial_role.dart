@@ -9,11 +9,13 @@ import '../../../../services/api_service.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../services/admin_api_service.dart';
+import '../../../widget/excel_preview_page.dart';
 import '../../../widget/pdf_preview_custom_page.dart';
 import '../../dashboard/admin_dashboard.dart';
-import 'build_student_list_excel.dart';
+// import 'build_student_list_excel.dart';
 import 'build_student_list_pdf.dart';
 import 'classes/download_student_nomial_role_classes.dart';
+import 'classes/excel/download_student_nomial_role_classes_excel.dart';
 
 /// Singleton cache for student data to avoid refetching
 class StudentCache {
@@ -88,6 +90,7 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
       ]);
 
       students = results[1] as List<Map<String, dynamic>>;
+
       students.sort((a, b) => a["class_id"].compareTo(b["class_id"]));
       students.sort((a, b) {
         // Gender: Males ('M') first, then Females
@@ -317,7 +320,8 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                             ),
                           ),
                           SizedBox(height: 10),
-                          ElevatedButton(
+                          ElevatedButton.icon(
+                            icon: Icon(Icons.file_copy),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
                               foregroundColor: Colors.white,
@@ -333,9 +337,29 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            onPressed:
-                                () => generatePreviewShareExcel(students),
-                            child: Text('excel'),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => ExcelPreviewPage(
+                                        students: students,
+                                        title: 'Student List',
+                                        fileName: 'student_list_school',
+                                        buildPdf:
+                                            () => buildPdf(
+                                              students: students,
+                                              schoolName: schoolName ?? '',
+                                              schoolAddress:
+                                                  schoolAddress ?? '',
+                                              schoolPhotoBytes:
+                                                  schoolPhotoBytes,
+                                            ),
+                                      ),
+                                ),
+                              );
+                            },
+                            label: Text('Generate Excel'),
                           ),
                           const SizedBox(height: 60),
                           Text(
@@ -362,7 +386,40 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
                               );
                             },
                             icon: const Icon(Icons.arrow_right_alt_sharp),
-                            label: const Text('Class Wise'),
+                            label: const Text('Class Wise PDF'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 30,
+                                vertical: 15,
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) =>
+                                          DownloadStudentNomialRoleClassesExcel(
+                                            username: widget.username,
+                                            schoolId: widget.schoolId,
+                                          ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.arrow_right_alt_sharp),
+                            label: const Text('Class Wise Excel'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
                               foregroundColor: Colors.white,
@@ -390,16 +447,7 @@ class _DownloadStudentNomialRoleState extends State<DownloadStudentNomialRole>
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
-      ),
-    );
+    Navigator.pop(context);
     return false;
   }
 }

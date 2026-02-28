@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:school_attendance/services/hybrid_api_service.dart';
 
-import 'package:http/http.dart' as http;
 
 import '../utils/utils.dart';
 
@@ -13,8 +13,8 @@ class BusFeeStructureApi {
     required int classId,
   }) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/school_class/$schoolId/$classId"),
+      final response = await HybridApiService.get(
+        "/bus-fee-structure/school_class/$schoolId/$classId",
       );
 
       if (response.statusCode == 200) {
@@ -35,12 +35,9 @@ class BusFeeStructureApi {
     String route,
   ) async {
     try {
-      final encodedRoute = Uri.encodeComponent(
-        route,
-      ); // handle spaces or special chars
-      //  print("$base/route/$schoolId/$encodedRoute");
-      final response = await http.get(
-        Uri.parse("$base/route/$schoolId/$encodedRoute"),
+      final encodedRoute = Uri.encodeComponent(route);
+      final response = await HybridApiService.get(
+        "/bus-fee-structure/route/$schoolId/$encodedRoute",
       );
 
       if (response.statusCode == 200) {
@@ -59,11 +56,9 @@ class BusFeeStructureApi {
     String route,
   ) async {
     try {
-      final encodedRoute = Uri.encodeComponent(
-        route,
-      ); // handle spaces or special chars
-      final response = await http.get(
-        Uri.parse("$base/only_route/$schoolId/$encodedRoute"),
+      final encodedRoute = Uri.encodeComponent(route);
+      final response = await HybridApiService.get(
+        "/bus-fee-structure/only_route/$schoolId/$encodedRoute",
       );
 
       if (response.statusCode == 200) {
@@ -83,11 +78,9 @@ class BusFeeStructureApi {
     required String username,
   }) async {
     try {
-      final encodedRoute = Uri.encodeComponent(
-        route,
-      ); // handle spaces or special chars
-      final response = await http.get(
-        Uri.parse("$base/route_username/$schoolId/$encodedRoute/$username"),
+      final encodedRoute = Uri.encodeComponent(route);
+      final response = await HybridApiService.get(
+        "/bus-fee-structure/route_username/$schoolId/$encodedRoute/$username",
       );
 
       if (response.statusCode == 200) {
@@ -106,10 +99,10 @@ class BusFeeStructureApi {
     String status,
     String updatedBy,
   ) async {
-    final response = await http.put(
-      Uri.parse('$base/$id/toggle-status'),
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.put(
+      '/bus-fee-structure/$id/toggle-status',
       body: jsonEncode({"status": status, "updated_by": updatedBy}),
+      forceCloud: true,
     );
 
     if (response.statusCode == 200) {
@@ -124,10 +117,10 @@ class BusFeeStructureApi {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse(base),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.post(
+        "/bus-fee-structure",
         body: jsonEncode(data),
+        forceCloud: true,
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
@@ -143,7 +136,7 @@ class BusFeeStructureApi {
   /// ✅ Get all bus fee structures
   Future<List<dynamic>> getAllStructures() async {
     try {
-      final response = await http.get(Uri.parse(base));
+      final response = await HybridApiService.get("/bus-fee-structure");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -159,7 +152,7 @@ class BusFeeStructureApi {
   /// ✅ Get all active bus fee structures
   Future<List<dynamic>> getActiveStructures() async {
     try {
-      final response = await http.get(Uri.parse("$base/active"));
+      final response = await HybridApiService.get("/bus-fee-structure/active");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -175,7 +168,7 @@ class BusFeeStructureApi {
   /// ✅ Get all bus fee structures for a specific school
   static Future<List<dynamic>> getStructuresBySchool(int schoolId) async {
     try {
-      final response = await http.get(Uri.parse("$base/school/$schoolId"));
+      final response = await HybridApiService.get("/bus-fee-structure/school/$schoolId");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -192,8 +185,8 @@ class BusFeeStructureApi {
 
   static Future<List<dynamic>> getStructuresBySchoolActive(int schoolId) async {
     try {
-      final response = await http.get(
-        Uri.parse("$base/active_school/$schoolId"),
+      final response = await HybridApiService.get(
+        "/bus-fee-structure/active_school/$schoolId",
       );
 
       if (response.statusCode == 200) {
@@ -212,7 +205,7 @@ class BusFeeStructureApi {
   /// ✅ Get one bus fee structure by ID
   Future<Map<String, dynamic>?> getStructureById(int id) async {
     try {
-      final response = await http.get(Uri.parse("$base/$id"));
+      final response = await HybridApiService.get("/bus-fee-structure/$id");
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -232,10 +225,10 @@ class BusFeeStructureApi {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await http.put(
-        Uri.parse("$base/$id"),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.put(
+        "/bus-fee-structure/$id",
         body: jsonEncode(data),
+        forceCloud: true,
       );
 
       if (response.statusCode == 200) {
@@ -251,7 +244,7 @@ class BusFeeStructureApi {
   /// ✅ Delete a bus fee structure by ID
   Future<bool> deleteStructure(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$base/$id"));
+      final response = await HybridApiService.delete("/bus-fee-structure/$id", forceCloud: true);
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;

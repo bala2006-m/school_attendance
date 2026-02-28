@@ -27,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
   bool isLoading = false;
-  bool rememberMe = true;
+  bool rememberMe = false;
   bool isBlocked = false;
   String? reason;
   bool _isFormValid = false;
@@ -105,43 +105,40 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      List<String> roles = ['student', 'staff', 'admin', 'administrator'];
-      Map<String, dynamic>? user;
-      String foundRole = '';
+      final loginResult = await ApiService.login(
+        username: enteredUsername,
+        password: enteredPassword,
+        schoolId: schoolId,
+      );
 
-      for (String role in roles) {
-        final users = await ApiService.getUsersByRole(
-          role: role,
-          schoolId: schoolId,
-        );
-        user = users.cast<Map<String, dynamic>?>().firstWhere(
-          (u) => u?['username']?.toString() == enteredUsername,
-          orElse: () => null,
-        );
-
-        if (user != null) {
-          foundRole = role;
-          break;
-        }
-      }
-      if (user == null) {
-        showError("Invalid user Id or password");
+      if (loginResult['status'] != 'success') {
+        showError(loginResult['message'] ?? "Invalid user Id or password");
+        setState(() => isLoading = false);
         return;
       }
 
-      final hashedPassword = user['password'].toString();
-      final isPasswordValid = BCrypt.checkpw(enteredPassword, hashedPassword);
+      final user = loginResult['user'];
+      final foundRole = user['role'];
 
-      if (!isPasswordValid) {
-        showError("Invalid user Id or password");
-        return;
-      }
 
       // Save login info
       await prefs.setString('role', foundRole);
       await prefs.setBool('rememberMe', rememberMe);
       await prefs.setString('username', user['username']);
       await prefs.setInt('schoolId', schoolId);
+
+      // Trigger sync after successful login (only for admin and staff)
+      if (foundRole == 'admin' || foundRole == 'staff') {
+        try {
+          await ApiService.triggerInitialSync(
+            schoolId: schoolId,
+            userId: user['username'].toString(),
+          );
+        } catch (e) {
+          // Log error but don't block login
+          debugPrint('Sync trigger failed: $e');
+        }
+      }
 
       // Navigate by role
       switch (foundRole) {
@@ -246,6 +243,12 @@ class _LoginPageState extends State<LoginPage> {
                       opacity: 1.0,
                       child: Column(
                         children: [
+                          // const SizedBox(height: 12),
+                          // Image.asset(
+                          //   'assets/favicon.png',
+                          //   height: 100,
+                          //   fit: BoxFit.contain,
+                          // ),
                           const SizedBox(height: 12),
                           SizedBox(
                             child: SingleChildScrollView(

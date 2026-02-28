@@ -31,7 +31,10 @@ class AdminDesktopDashboard extends StatelessWidget {
     required this.allPendingTermFees,
     required this.allPendingBusFees,
     required this.allPendingRteFees,
+    this.adminAccess,
   });
+
+  final Map<String, dynamic>? adminAccess;
   final String message;
   final String schoolId;
   final String username;
@@ -122,6 +125,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                     adminPhoto: adminPhoto,
                     schoolName: schoolName,
                     schoolAddress: schoolAddress,
+                    adminAccess: adminAccess,
                   ),
                   BuildHomePage.buildHomePage(
                     message: message,
@@ -149,6 +153,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                     schoolId: schoolId,
                     schoolAddress: schoolAddress,
                     schoolName: schoolName,
+                    adminAccess: adminAccess,
                   ),
                 ],
               ),

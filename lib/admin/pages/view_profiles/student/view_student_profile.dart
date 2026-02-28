@@ -125,16 +125,7 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 2;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
-      ),
-    );
+    Navigator.pop(context);
     return false;
   }
 
@@ -162,16 +153,7 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
                     enableBack: true,
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
+                      Navigator.pop(context);
                     },
                   )
                   : AdminAppbarDesktop(
@@ -181,16 +163,7 @@ class _ViewStudentProfileState extends State<ViewStudentProfile> {
 
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => AdminDashboard(
-                                schoolId: widget.schoolId,
-                                username: widget.username,
-                              ),
-                        ),
-                      );
+                      Navigator.pop(context);
                     },
                   ),
         ),

@@ -1,18 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:dio/dio.dart';
-import 'package:school_attendance/utils/utils.dart';
 
-// import './model/homework_model.dart';
+import 'package:http/http.dart' as http;
+import 'package:school_attendance/services/hybrid_api_service.dart';
+import 'package:http_parser/http_parser.dart';
 
 class HomeworkApiService {
-  static final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: Duration(seconds: 12),
-      receiveTimeout: Duration(seconds: 12),
-    ),
-  );
 
   // ────────────────────────────────────────────────
   // FETCH HOMEWORK BY CLASS
@@ -21,9 +15,14 @@ class HomeworkApiService {
     int schoolId,
     int classId,
   ) async {
-    final response = await _dio.get("/homework/class/$schoolId/$classId");
+    final response = await HybridApiService.get("/homework/class/$schoolId/$classId");
 
-    return response.data;
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load homework');
+    }
   }
 
   // ────────────────────────────────────────────────
@@ -34,18 +33,22 @@ class HomeworkApiService {
     required int classId,
     required String staff,
   }) async {
-    final response = await _dio.get(
+    final response = await HybridApiService.get(
       "/homework/staff/$schoolId/$classId/$staff",
     );
 
-    return response.data;
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load homework');
+    }
   }
 
   // ────────────────────────────────────────────────
   // CREATE HOMEWORK WITHOUT FILE
   // ────────────────────────────────────────────────
   Future<void> createHomework(Map<String, dynamic> data) async {
-    await _dio.post("/homework/create", data: data);
+    await HybridApiService.post("/homework/create", body: jsonEncode(data));
   }
 
   // ────────────────────────────────────────────────
@@ -57,24 +60,32 @@ class HomeworkApiService {
     String schoolId,
     String classId,
   ) async {
-    String fileName = file.path.split("/").last;
+    final request = await HybridApiService.createMultipartRequest(
+      'POST',
+      "/homework/create_with_file/$schoolId/$classId",
+    );
 
-    final formData = FormData.fromMap({
-      ...data,
-      "file": await MultipartFile.fromFile(file.path, filename: fileName),
+    // Add other fields from data
+    data.forEach((key, value) {
+      request.fields[key] = value.toString();
     });
 
-    await _dio.post(
-      "/homework/create_with_file/$schoolId/$classId",
-      data: formData,
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: MediaType('application', 'octet-stream'), // Generic stream
+      ),
     );
+
+    await request.send();
   }
 
   // ────────────────────────────────────────────────
   // DELETE HOMEWORK
   // ────────────────────────────────────────────────
   static Future<void> deleteHomework(int id) async {
-    await _dio.delete("/homework/delete/$id");
+    await HybridApiService.delete("/homework/delete/$id");
   }
 
   // ────────────────────────────────────────────────
@@ -85,6 +96,6 @@ class HomeworkApiService {
     String classId,
     String filename,
   ) async {
-    await _dio.delete("/homework/delete-image/$schoolId/$classId/$filename");
+    await HybridApiService.delete("/homework/delete-image/$schoolId/$classId/$filename");
   }
 }

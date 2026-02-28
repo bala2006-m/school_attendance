@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +8,7 @@ import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../utils/utils.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../../components/build_profile_card_mobile.dart';
@@ -117,16 +117,7 @@ class _StudentState extends State<Student> {
 
   Future<bool> onWillPop() async {
     AdminDashboardState.selectedIndex = 0;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
-      ),
-    );
+    Navigator.pop(context);
     return false;
   }
 
@@ -165,16 +156,7 @@ class _StudentState extends State<Student> {
                   enableBack: true,
                   onBack: () {
                     AdminDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AdminDashboard(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
+                    Navigator.pop(context);
                   },
                 )
                 : AdminAppbarDesktop(
@@ -184,16 +166,7 @@ class _StudentState extends State<Student> {
 
                   onBack: () {
                     AdminDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AdminDashboard(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
+                    Navigator.pop(context);
                   },
                 ),
       ),
@@ -386,14 +359,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
   }
 
   Future<bool> onWillPop() async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) =>
-                Student(schoolId: widget.schoolId, username: widget.username),
-      ),
-    );
+    Navigator.pop(context);
     return false;
   }
 
@@ -433,16 +399,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => Student(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
+                    Navigator.pop(context);
                   },
                 )
                 : AdminAppbarDesktop(
@@ -451,16 +408,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                   title: 'Attendance',
 
                   onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => Student(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
+                    Navigator.pop(context);
                   },
                 ),
       ),
@@ -766,10 +714,7 @@ class StudentCard extends StatelessWidget {
                 return;
               }
 
-              if (kIsWeb ||
-                  Platform.isWindows ||
-                  Platform.isMacOS ||
-                  Platform.isLinux) {
+              if (kIsWeb || isDesktopPlatform) {
                 final whatsappUrl = Uri.parse("https://wa.me/$phone");
                 if (await canLaunchUrl(whatsappUrl)) {
                   await launchUrl(
@@ -789,11 +734,12 @@ class StudentCard extends StatelessWidget {
                 final telUrl = Uri.parse("tel:$phone");
                 if (await canLaunchUrl(telUrl)) {
                   await launchUrl(telUrl);
-                } else {if(context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Could not make a call')),
-                  );
-                }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not make a call')),
+                    );
+                  }
                 }
               }
             },

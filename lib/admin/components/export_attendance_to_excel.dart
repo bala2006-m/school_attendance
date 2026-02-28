@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:school_attendance/utils/utils.dart';
 
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,7 @@ Future<void> exportAttendanceToExcel(
   String staffUsername,
 ) async {
   try {
-    if (Platform.isAndroid) {
+    if (isAndroidPlatform) {
       var status = await Permission.storage.status;
       if (!status.isGranted) {
         status = await Permission.storage.request();
@@ -39,7 +40,7 @@ Future<void> exportAttendanceToExcel(
       sheet.appendRow([date, fn, an]);
     }
     String path;
-    if (Platform.isAndroid) {
+    if (isAndroidPlatform) {
       path = '/storage/emulated/0/Download';
     } else {
       final directory = await getApplicationDocumentsDirectory();

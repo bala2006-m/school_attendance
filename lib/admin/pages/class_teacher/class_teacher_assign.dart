@@ -7,8 +7,8 @@ import '../../appbar/admin_appbar_mobile.dart';
 import '../../services/admin_api_service.dart';
 import '../dashboard/admin_dashboard.dart';
 
-class TeacherAccess extends StatefulWidget {
-  const TeacherAccess({
+class ClassTeacherAssign extends StatefulWidget {
+  const ClassTeacherAssign({
     super.key,
     required this.schoolId,
     required this.username,
@@ -16,10 +16,10 @@ class TeacherAccess extends StatefulWidget {
   final String schoolId;
   final String username;
   @override
-  State<TeacherAccess> createState() => _TeacherAccessState();
+  State<ClassTeacherAssign> createState() => _ClassTeacherAssignState();
 }
 
-class _TeacherAccessState extends State<TeacherAccess>
+class _ClassTeacherAssignState extends State<ClassTeacherAssign>
     with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> staff = [];
   List<Map<String, dynamic>> filteredStaff = [];
@@ -160,7 +160,7 @@ class _TeacherAccessState extends State<TeacherAccess>
       isLoadingClasses = true;
     });
 
-    final List<dynamic> classIds = staffMember['class_ids'] ?? [];
+    final List<dynamic> classIds = staffMember['class_teacher'] ?? [];
 
     List<Map<String, dynamic>> classDataList = [];
 
@@ -180,7 +180,7 @@ class _TeacherAccessState extends State<TeacherAccess>
   }
 
   Future<void> updateClass(String username, List<int> classIds) async {
-    final success = await AdminApiService.updateStaffClassIds(
+    final success = await AdminApiService.updateStaffClassTeacher(
       username: username,
       schoolId: widget.schoolId,
       classIds: classIds,
@@ -240,7 +240,7 @@ class _TeacherAccessState extends State<TeacherAccess>
   Future<void> _showAvailableClasses(Map<String, dynamic> member) async {
     final username = member['username'];
 
-    List<int> currentClassIds = List<int>.from(member['class_ids'] ?? []);
+    List<int> currentClassIds = List<int>.from(member['class_teacher'] ?? []);
 
     // Filter classes not already assigned
     List<Map<String, dynamic>> availableClasses =
@@ -435,7 +435,7 @@ class _TeacherAccessState extends State<TeacherAccess>
 
     // Update UI immediately
     setState(() {
-      member['class_ids'] = currentClassIds;
+      member['class_teacher'] = currentClassIds;
       staffClassesMap[username] ??= [];
       staffClassesMap[username]!.add(selectedClass);
     });
@@ -598,7 +598,7 @@ class _TeacherAccessState extends State<TeacherAccess>
     final username = member['username'] ?? 'Unknown';
     final gender = (member['gender'] ?? '').toString();
     final designation = member['designation'] ?? 'Designation';
-    final classCount = (member['class_ids'] as List?)?.length ?? 0;
+    final classCount = (member['class_teacher'] as List?)?.length ?? 0;
     final isExpanded = expandedUsername == username;
 
     final isMale = gender == 'M';
@@ -1000,7 +1000,7 @@ class _TeacherAccessState extends State<TeacherAccess>
 
                       final classIdToRemove = classItem['id'];
                       List<int> currentClassIds = List<int>.from(
-                        member['class_ids'] ?? [],
+                        member['class_teacher'] ?? [],
                       );
 
                       currentClassIds.remove(classIdToRemove);
@@ -1008,7 +1008,7 @@ class _TeacherAccessState extends State<TeacherAccess>
                       await updateClass(username, currentClassIds);
 
                       setState(() {
-                        member['class_ids'] = currentClassIds;
+                        member['class_teacher'] = currentClassIds;
                         staffClassesMap[username]!.removeWhere(
                           (c) => c['id'] == classIdToRemove,
                         );
@@ -1110,7 +1110,7 @@ class _TeacherAccessState extends State<TeacherAccess>
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Teachers Access',
+                    title: 'Class Teacher Assign',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -1130,7 +1130,7 @@ class _TeacherAccessState extends State<TeacherAccess>
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Teachers Access',
+                    title: 'Class Teacher Assign',
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
                       Navigator.push(

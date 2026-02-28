@@ -406,10 +406,12 @@ class _ClassRegistrationState extends State<ClassRegistration> {
                         child: ListTile(
                           leading: const Icon(Icons.class_, color: Colors.blue),
                           title: Text(
-                            'Class: ${classData['class']}',
+                            'Id:${classData['id']} ',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          subtitle: Text('Section: ${classData['section']}'),
+                          subtitle: Text(
+                            'Class: ${classData['class']} - ${classData['section']} ',
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () async {

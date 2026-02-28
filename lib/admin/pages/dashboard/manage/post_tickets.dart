@@ -33,7 +33,7 @@ class _PostTicketsState extends State<PostTickets> {
   bool _isLoading = false;
   bool _isFormValid = false;
 
-  final _apiService = ApiService();
+
 
   @override
   void initState() {
@@ -95,7 +95,7 @@ class _PostTicketsState extends State<PostTickets> {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
       try {
-        await _apiService.storeTickets(
+        await ApiService.storeTickets(
           username: widget.username,
           name: adminName,
           email: email,

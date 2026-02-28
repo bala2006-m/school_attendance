@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:school_attendance/utils/utils.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -40,12 +41,12 @@ class _EventGroupPhotosPageState extends State<EventGroupPhotosPage> {
       final filename = Uri.parse(url).pathSegments.last;
 
       Directory? dir;
-      if (Platform.isAndroid) {
+      if (isAndroidPlatform) {
         dir = Directory('/storage/emulated/0/Download');
         if (!await dir.exists()) {
           dir = await getExternalStorageDirectory();
         }
-      } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      } else if (isDesktopPlatform) {
         dir = await getDownloadsDirectory();
       }
 
@@ -54,9 +55,9 @@ class _EventGroupPhotosPageState extends State<EventGroupPhotosPage> {
       final savePath = p.join(dir.path, filename);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Downloading $filename...')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Downloading $filename...')));
       }
 
       await dio.download(url, savePath);
@@ -74,9 +75,9 @@ class _EventGroupPhotosPageState extends State<EventGroupPhotosPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
       }
     }
   }
@@ -229,7 +230,8 @@ class FullscreenImageViewer extends StatelessWidget {
         minScale: PhotoViewComputedScale.contained,
         maxScale: PhotoViewComputedScale.covered * 2.5,
         loadingBuilder:
-            (context, event) => const Center(child: CircularProgressIndicator()),
+            (context, event) =>
+                const Center(child: CircularProgressIndicator()),
       ),
     );
   }

@@ -34,7 +34,7 @@ int classSortKey(String className) {
   return 100; // unknown classes last
 }
 
-Future<pw.Document> buildPassReportPdf({
+Future<pw.Document> buildFailedReportPdf({
   required String title,
   required List<dynamic> examMarks,
   required String? schoolName,
@@ -175,7 +175,7 @@ Future<pw.Document> buildPassReportPdf({
                     ),
                   ),
                   pw.Text(
-                    'Exam: $title',
+                    'Exam: $title (Failed List)',
                     style: pw.TextStyle(
                       fontSize: 11,
                       fontWeight: pw.FontWeight.bold,
@@ -189,67 +189,73 @@ Future<pw.Document> buildPassReportPdf({
             content.add(pw.SizedBox(height: 10));
 
             final List<List<String>> tableData =
-                sectionRecords.map((student) {
-                  List<dynamic> marksListRaw = student['marks'] ?? [];
-                  List<dynamic> subjectRanksRaw = student['subject_rank'] ?? [];
-                  List<String> rowCells = [];
-                  int total = 0;
-                  bool isPass = true;
+                sectionRecords
+                    .map((student) {
+                      List<dynamic> marksListRaw = student['marks'] ?? [];
+                      List<dynamic> subjectRanksRaw =
+                          student['subject_rank'] ?? [];
+                      List<String> rowCells = [];
+                      int total = 0;
+                      bool hasFailed = false;
 
-                  final int passThreshold = minMarks.isNotEmpty ? minMarks[0] : 0;
+                      final int passThreshold =
+                          minMarks.isNotEmpty ? minMarks[0] : 0;
 
-                  for (int i = 0; i < subjects.length; i++) {
-                    if (i < marksListRaw.length) {
-                      final m = marksListRaw[i];
-                      final mStr = m.toString().toUpperCase();
-                      if (mStr == 'AA') {
-                        rowCells.add('AA');
-                        isPass = false;
-                      } else {
-                        final markVal = int.tryParse(mStr) ?? 0;
-                        int sRank = 0;
-                        if (i < subjectRanksRaw.length) {
-                          sRank = int.tryParse(subjectRanksRaw[i].toString()) ?? 0;
-                        }
+                      for (int i = 0; i < subjects.length; i++) {
+                        if (i < marksListRaw.length) {
+                          final m = marksListRaw[i];
+                          final mStr = m.toString().toUpperCase();
+                          if (mStr == 'AA') {
+                            rowCells.add('AA');
+                            hasFailed = true;
+                          } else {
+                            final markVal = int.tryParse(mStr) ?? 0;
+                            int sRank = 0;
+                            if (i < subjectRanksRaw.length) {
+                              sRank =
+                                  int.tryParse(subjectRanksRaw[i].toString()) ??
+                                  0;
+                            }
 
-                        if (sRank > 0) {
-                          rowCells.add('$markVal ($sRank)');
+                            if (sRank > 0) {
+                              rowCells.add('$markVal ($sRank)');
+                            } else {
+                              rowCells.add(markVal.toString());
+                            }
+
+                            total += markVal;
+
+                            if (markVal < passThreshold) {
+                              hasFailed = true;
+                            }
+                          }
                         } else {
-                          rowCells.add(markVal.toString());
-                        }
-                        
-                        total += markVal;
-
-                        // Check pass condition against threshold
-                        if (markVal < passThreshold) {
-                          isPass = false;
+                          rowCells.add('-');
+                          hasFailed = true;
                         }
                       }
-                    } else {
-                      rowCells.add('-');
-                      isPass = false;
-                    }
-                  }
 
-                  if (!isPass) return null;
+                      if (!hasFailed) return null;
 
-                  String rankStr = student['rank'].toString();
-                  if (rankStr == '-1' || rankStr == '0') rankStr = '-';
+                      String rankStr = student['rank'].toString();
+                      if (rankStr == '-1' || rankStr == '0') rankStr = '-';
 
-                  return [
-                    student['username'].toString(),
-                    student['name'].toString(),
-                    ...rowCells,
-                    total.toString(),
-                    rankStr,
-                  ];
-                }).whereType<List<String>>().toList();
+                      return [
+                        student['username'].toString(),
+                        student['name'].toString(),
+                        ...rowCells,
+                        total.toString(),
+                        // rankStr,
+                      ];
+                    })
+                    .whereType<List<String>>()
+                    .toList();
 
             if (tableData.isEmpty) {
               return [
                 pw.Center(
                   child: pw.Text(
-                    'No students passed in this section.',
+                    'No students failed in this section.',
                     style: pw.TextStyle(font: ttf, fontSize: 12),
                   ),
                 ),
@@ -258,7 +264,7 @@ Future<pw.Document> buildPassReportPdf({
 
             content.add(
               pw.TableHelper.fromTextArray(
-                headers: ['Admn No', 'Name', ...subjects, 'Total', 'Rank'],
+                headers: ['Admn No', 'Name', ...subjects, 'Total'],
                 data: tableData,
                 headerStyle: pw.TextStyle(
                   font: ttfBold,
@@ -267,12 +273,12 @@ Future<pw.Document> buildPassReportPdf({
                 ),
                 cellStyle: pw.TextStyle(font: ttf, fontSize: 8),
                 cellAlignment: pw.Alignment.center,
-                headerDecoration: pw.BoxDecoration(color: PdfColors.blueGrey),
+                headerDecoration: pw.BoxDecoration(color: PdfColors.red900),
                 border: pw.TableBorder.all(),
                 columnWidths: {
                   0: const pw.FixedColumnWidth(50),
                   1: const pw.FlexColumnWidth(3),
-                  for (int i = 0; i < subjects.length; i++) 
+                  for (int i = 0; i < subjects.length; i++)
                     i + 2: const pw.FlexColumnWidth(1.5),
                   subjects.length + 2: const pw.FixedColumnWidth(40),
                   subjects.length + 3: const pw.FixedColumnWidth(40),
@@ -280,7 +286,7 @@ Future<pw.Document> buildPassReportPdf({
                 cellAlignments: {
                   0: pw.Alignment.center,
                   1: pw.Alignment.centerLeft,
-                  for (int i = 0; i < subjects.length; i++) 
+                  for (int i = 0; i < subjects.length; i++)
                     i + 2: pw.Alignment.center,
                   subjects.length + 2: pw.Alignment.center,
                   subjects.length + 3: pw.Alignment.center,
@@ -294,13 +300,13 @@ Future<pw.Document> buildPassReportPdf({
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
-                    children: [
-                      pw.Text("____________________"),
-                      pw.Text("Class Teacher", style: pw.TextStyle(fontSize: 9)),
-                    ],
-                  ),
+                  // pw.Column(
+                  //   crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  //   children: [
+                  //     pw.Text("____________________"),
+                  //     pw.Text("Class Teacher", style: pw.TextStyle(fontSize: 9)),
+                  //   ],
+                  // ),
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [

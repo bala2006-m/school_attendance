@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:school_attendance/student/pages/student_dashboard.dart';
 
 import '../Appbar/student_appbar_desktop.dart';
 import '../Appbar/student_appbar_mobile.dart';
@@ -190,20 +189,9 @@ class _EditProfileState extends State<EditProfile> {
           const SnackBar(content: Text("✅ Profile updated successfully!")),
         );
       }
+
       widget.onSave();
-      StudentDashboardState.selectedIndex = 1;
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => StudentDashboard(
-                  username: widget.username,
-                  schoolId: widget.schoolId,
-                ),
-          ),
-        );
-      }
+      if (mounted) Navigator.pop(context, true);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -242,16 +230,7 @@ class _EditProfileState extends State<EditProfile> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StudentDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
+                    Navigator.pop(context); // ✅ just go back
                   },
                 )
                 : StudentAppbarDesktop(
@@ -259,16 +238,7 @@ class _EditProfileState extends State<EditProfile> {
                   enableDrawer: false,
                   enableBack: true,
                   onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => StudentDashboard(
-                              username: widget.username,
-                              schoolId: widget.schoolId,
-                            ),
-                      ),
-                    );
+                    Navigator.pop(context); // ✅ just go back
                   },
                 ),
       ),

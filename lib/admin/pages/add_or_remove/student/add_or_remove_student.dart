@@ -313,66 +313,168 @@ class _StudentRegistrationState extends State<StudentRegistration> {
                               Text('Mobile: $mobile'),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (context) => AlertDialog(
-                                      title: const Text('Delete Student'),
-                                      content: Text(
-                                        'Are you sure you want to delete "$username"?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.pop(context, false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 🚪 LEFT STUDENT BUTTON
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.person_off,
+                                  color: Colors.orange,
+                                ),
+                                tooltip: 'Mark as Left',
+                                onPressed: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder:
+                                        (context) => AlertDialog(
+                                          title: const Text('Student Left'),
+                                          content: Text(
+                                            'Do you want to mark this student as left?\n\n'
+                                            'Name: $name\n'
+                                            'Class: ${widget.className}\n'
+                                            'Username: $username',
                                           ),
-                                          onPressed:
-                                              () =>
-                                                  Navigator.pop(context, true),
-                                          child: const Text('Delete'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(
+                                                    context,
+                                                    false,
+                                                  ),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.orange,
+                                              ),
+                                              onPressed:
+                                                  () => Navigator.pop(
+                                                    context,
+                                                    true,
+                                                  ),
+                                              child: const Text('Confirm'),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                              );
-                              if (confirm == true) {
-                                int id = int.parse(widget.schoolId);
-                                final success = await ApiService.deleteUser(
-                                  username: username,
-                                  role: 'student',
-                                  schoolId: id,
-                                );
-                                if (!mounted) return;
-                                if (success) {
-                                  await init();
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Deleted $username'),
-                                      ),
-                                    );
+                                  );
+
+                                  if (confirm == true) {
+                                    final success =
+                                        await ApiService.markStudentLeft(
+                                          schoolId: int.parse(widget.schoolId),
+                                          classId: int.parse(
+                                            widget.classId,
+                                          ), // ✅ convert here
+                                          username: username,
+                                        );
+
+                                    if (!mounted) return;
+
+                                    if (success) {
+                                      await init();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '$name marked as left',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Failed to update student status',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
                                   }
-                                } else {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Failed to delete $username\n$username is used in other services',
+                                },
+                              ),
+
+                              // ❌ DELETE BUTTON (your existing one)
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder:
+                                        (context) => AlertDialog(
+                                          title: const Text('Delete Student'),
+                                          content: Text(
+                                            'Are you sure you want to delete "$username"?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(
+                                                    context,
+                                                    false,
+                                                  ),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                              ),
+                                              onPressed:
+                                                  () => Navigator.pop(
+                                                    context,
+                                                    true,
+                                                  ),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
                                         ),
-                                      ),
+                                  );
+                                  if (confirm == true) {
+                                    int id = int.parse(widget.schoolId);
+                                    final success = await ApiService.deleteUser(
+                                      username: username,
+                                      role: 'student',
+                                      schoolId: id,
                                     );
+                                    if (!mounted) return;
+                                    if (success) {
+                                      await init();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Deleted $username'),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Failed to delete $username\n$username is used in other services',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
                                   }
-                                }
-                              }
-                            },
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       );

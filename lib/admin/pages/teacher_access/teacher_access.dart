@@ -7,8 +7,8 @@ import '../../appbar/admin_appbar_mobile.dart';
 import '../../services/admin_api_service.dart';
 import '../dashboard/admin_dashboard.dart';
 
-class ClassTeacherAssignment extends StatefulWidget {
-  const ClassTeacherAssignment({
+class TeacherAccess extends StatefulWidget {
+  const TeacherAccess({
     super.key,
     required this.schoolId,
     required this.username,
@@ -16,10 +16,10 @@ class ClassTeacherAssignment extends StatefulWidget {
   final String schoolId;
   final String username;
   @override
-  State<ClassTeacherAssignment> createState() => _ClassTeacherAssignmentState();
+  State<TeacherAccess> createState() => _TeacherAccessState();
 }
 
-class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
+class _TeacherAccessState extends State<TeacherAccess>
     with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> staff = [];
   List<Map<String, dynamic>> filteredStaff = [];
@@ -32,16 +32,15 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // Premium color palette
-  static const Color _primaryBlue = Color(0xFF2563EB);
-  static const Color _primaryPink = Color(0xFFEC4899);
-  static const Color _maleGradientStart = Color(0xFF3B82F6);
-  static const Color _maleGradientEnd = Color(0xFF1D4ED8);
-  static const Color _femaleGradientStart = Color(0xFFF472B6);
-  static const Color _femaleGradientEnd = Color(0xFFDB2777);
-  static const Color _cardShadow = Color(0x1A000000);
-  static const Color _surfaceColor = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE2E8F0);
+  static const Color primaryBlue = Color(0xFF2563EB);
+  static const Color primaryPink = Color(0xFFEC4899);
+  static const Color maleGradientStart = Color(0xFF3B82F6);
+  static const Color maleGradientEnd = Color(0xFF1D4ED8);
+  static const Color femaleGradientStart = Color(0xFFF472B6);
+  static const Color femaleGradientEnd = Color(0xFFDB2777);
+  static const Color cardShadow = Color(0x1A000000);
+  static const Color surfaceColor = Color(0xFFF8FAFC);
+  static const Color borderColor = Color(0xFFE2E8F0);
 
   @override
   void initState() {
@@ -179,16 +178,16 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
     });
   }
 
-  Future<void> updateClass(String username, List<int> classIds) async {
+  Future<bool> updateClass(String username, List<int> classIds) async {
     final success = await AdminApiService.updateStaffClassIds(
       username: username,
       schoolId: widget.schoolId,
       classIds: classIds,
     );
 
-    if (!mounted) return;
+    if (!mounted) return false;
 
-    if (success) {
+    if (success['status'] != 'error') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -209,6 +208,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
           margin: const EdgeInsets.all(16),
         ),
       );
+      return true;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -216,9 +216,10 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
             children: [
               const Icon(Icons.error_outline, color: Colors.white),
               const SizedBox(width: 12),
-              const Text(
-                "Update failed",
+              Text(
+                "${success['message']}",
                 style: TextStyle(fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -230,6 +231,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
           margin: const EdgeInsets.all(16),
         ),
       );
+      return false;
     }
   }
 
@@ -306,7 +308,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [_primaryBlue, Color(0xFF1D4ED8)],
+                          colors: [primaryBlue, Color(0xFF1D4ED8)],
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -365,7 +367,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              border: Border.all(color: _borderColor),
+                              border: Border.all(color: borderColor),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -373,12 +375,12 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: _primaryBlue.withOpacity(0.1),
+                                    color: primaryBlue.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(
                                     Icons.school_rounded,
-                                    color: _primaryBlue,
+                                    color: primaryBlue,
                                     size: 20,
                                   ),
                                 ),
@@ -408,7 +410,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                                 ),
                                 Icon(
                                   Icons.add_circle_outline_rounded,
-                                  color: _primaryBlue,
+                                  color: primaryBlue,
                                 ),
                               ],
                             ),
@@ -431,14 +433,16 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
     // Add selected class
     currentClassIds.add(selectedClass['id']);
 
-    await updateClass(username, currentClassIds);
+    final bool success = await updateClass(username, currentClassIds);
 
-    // Update UI immediately
-    setState(() {
-      member['class_ids'] = currentClassIds;
-      staffClassesMap[username] ??= [];
-      staffClassesMap[username]!.add(selectedClass);
-    });
+    if (success) {
+      // Update UI immediately
+      setState(() {
+        member['class_ids'] = currentClassIds;
+        staffClassesMap[username] ??= [];
+        staffClassesMap[username]!.add(selectedClass);
+      });
+    }
   }
 
   Widget _buildSearchBar() {
@@ -448,7 +452,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _cardShadow,
+            color: cardShadow,
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -496,14 +500,14 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _primaryBlue.withOpacity(0.08),
-            _primaryPink.withOpacity(0.08),
+            primaryBlue.withValues(alpha: 0.08),
+            primaryPink.withValues(alpha: 0.08),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _borderColor),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -513,7 +517,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
               label: "Male Teachers",
               count: maleCount,
               gradient: const LinearGradient(
-                colors: [_maleGradientStart, _maleGradientEnd],
+                colors: [maleGradientStart, maleGradientEnd],
               ),
             ),
           ),
@@ -524,7 +528,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
               label: "Female Teachers",
               count: femaleCount,
               gradient: const LinearGradient(
-                colors: [_femaleGradientStart, _femaleGradientEnd],
+                colors: [femaleGradientStart, femaleGradientEnd],
               ),
             ),
           ),
@@ -546,7 +550,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _cardShadow,
+            color: cardShadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -604,10 +608,9 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
     final isMale = gender == 'M';
     final gradientColors =
         isMale
-            ? [_maleGradientStart, _maleGradientEnd]
-            : [_femaleGradientStart, _femaleGradientEnd];
-    final lightBg =
-        isMale ? const Color(0xFFEFF6FF) : const Color(0xFFFDF2F8);
+            ? [maleGradientStart, maleGradientEnd]
+            : [femaleGradientStart, femaleGradientEnd];
+    final lightBg = isMale ? const Color(0xFFEFF6FF) : const Color(0xFFFDF2F8);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -621,15 +624,15 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isExpanded ? gradientColors[0] : _borderColor,
+                color: isExpanded ? gradientColors[0] : borderColor,
                 width: isExpanded ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
                   color:
                       isExpanded
-                          ? gradientColors[0].withOpacity(0.15)
-                          : _cardShadow,
+                          ? gradientColors[0].withValues(alpha: 0.15)
+                          : cardShadow,
                   blurRadius: isExpanded ? 20 : 10,
                   offset: const Offset(0, 4),
                 ),
@@ -799,9 +802,9 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _surfaceColor,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _borderColor),
+        border: Border.all(color: borderColor),
       ),
       child:
           isLoadingClasses
@@ -830,7 +833,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: gradientColors[0].withOpacity(0.2),
+                color: gradientColors[0].withValues(alpha: 0.2),
                 blurRadius: 20,
               ),
             ],
@@ -895,7 +898,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _borderColor),
+              border: Border.all(color: borderColor),
             ),
             child: Row(
               children: [
@@ -973,10 +976,13 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed:
+                                      () => Navigator.pop(context, false),
                                   child: Text(
                                     "Cancel",
-                                    style: TextStyle(color: Colors.grey.shade600),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                    ),
                                   ),
                                 ),
                                 ElevatedButton(
@@ -1003,14 +1009,17 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
 
                       currentClassIds.remove(classIdToRemove);
 
-                      await updateClass(username, currentClassIds);
+                      final bool success =
+                          await updateClass(username, currentClassIds);
 
-                      setState(() {
-                        member['class_ids'] = currentClassIds;
-                        staffClassesMap[username]!.removeWhere(
-                          (c) => c['id'] == classIdToRemove,
-                        );
-                      });
+                      if (success) {
+                        setState(() {
+                          member['class_ids'] = currentClassIds;
+                          staffClassesMap[username]!.removeWhere(
+                            (c) => c['id'] == classIdToRemove,
+                          );
+                        });
+                      }
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(8),
@@ -1049,7 +1058,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: gradientColors[0].withOpacity(0.3),
+                  color: gradientColors[0].withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1100,7 +1109,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
         }
       },
       child: Scaffold(
-        backgroundColor: _surfaceColor,
+        backgroundColor: surfaceColor,
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(isMobile ? 190 : 150),
           child:
@@ -1108,7 +1117,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                   ? AdminAppbarMobile(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Assign Class Teacher',
+                    title: 'Teachers Access',
                     enableDrawer: false,
                     enableBack: true,
                     onBack: () {
@@ -1128,7 +1137,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                   : AdminAppbarDesktop(
                     schoolId: widget.schoolId,
                     username: widget.username,
-                    title: 'Assign Class Teacher',
+                    title: 'Teachers Access',
                     onBack: () {
                       AdminDashboardState.selectedIndex = 2;
                       Navigator.push(
@@ -1171,7 +1180,7 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                             height: 24,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [_primaryBlue, _primaryPink],
+                                colors: [primaryBlue, primaryPink],
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                               ),
@@ -1194,13 +1203,13 @@ class _ClassTeacherAssignmentState extends State<ClassTeacherAssignment>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _primaryBlue.withOpacity(0.1),
+                              color: primaryBlue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               "${groupedStaff.length}",
                               style: const TextStyle(
-                                color: _primaryBlue,
+                                color: primaryBlue,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),

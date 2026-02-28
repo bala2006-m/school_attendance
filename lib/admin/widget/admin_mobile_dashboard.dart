@@ -33,7 +33,10 @@ class AdminMobileDashboard extends StatefulWidget {
     required this.allPendingTermFees,
     required this.allPendingBusFees,
     required this.allPendingRteFees,
+    this.adminAccess,
   });
+
+  final Map<String, dynamic>? adminAccess;
 
   final String schoolId;
   final String username;
@@ -183,6 +186,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
             adminPhoto: widget.adminPhoto,
             schoolName: widget.schoolName,
             schoolAddress: widget.schoolAddress,
+            adminAccess: widget.adminAccess,
           ),
           BuildHomePage.buildHomePage(
             allPendingTermFees: widget.allPendingTermFees,
@@ -210,6 +214,7 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
             schoolId: widget.schoolId,
             schoolName: widget.schoolName,
             schoolAddress: widget.schoolAddress,
+            adminAccess: widget.adminAccess,
           ),
         ],
       ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:school_attendance/services/hybrid_api_service.dart';
 
 class SyncStatusWidget extends StatefulWidget {
+  const SyncStatusWidget({super.key});
+
   @override
   _SyncStatusWidgetState createState() => _SyncStatusWidgetState();
 }
@@ -99,38 +101,35 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
                 SizedBox(width: 8),
                 Text(
                   'Database Sync Status',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            
+
             if (isHybridMode) ...[
               _buildStatusRow('Mode', 'Hybrid (Cloud + Local)', Colors.green),
-              _buildStatusRow('Local Server', isLocalAvailable ? 'Connected' : 'Disconnected', 
-                           isLocalAvailable ? Colors.green : Colors.red),
+              _buildStatusRow(
+                'Local Server',
+                isLocalAvailable ? 'Connected' : 'Disconnected',
+                isLocalAvailable ? Colors.green : Colors.red,
+              ),
             ] else ...[
               _buildStatusRow('Mode', 'Cloud Only', Colors.blue),
               _buildStatusRow('Local Server', 'Not Available', Colors.grey),
             ],
-            
+
             SizedBox(height: 16),
-            
+
             if (isHybridMode) ...[
               Text(
                 'Sync Queue',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               SizedBox(height: 8),
               _buildQueueStatus(syncQueue),
               SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   ElevatedButton.icon(
@@ -167,18 +166,13 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Text(
               value,
@@ -201,17 +195,11 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
 
     return Row(
       children: [
-        Expanded(
-          child: _buildQueueItem('Pending', pending, Colors.orange),
-        ),
+        Expanded(child: _buildQueueItem('Pending', pending, Colors.orange)),
         SizedBox(width: 8),
-        Expanded(
-          child: _buildQueueItem('Completed', completed, Colors.green),
-        ),
+        Expanded(child: _buildQueueItem('Completed', completed, Colors.green)),
         SizedBox(width: 8),
-        Expanded(
-          child: _buildQueueItem('Failed', failed, Colors.red),
-        ),
+        Expanded(child: _buildQueueItem('Failed', failed, Colors.red)),
       ],
     );
   }
@@ -220,9 +208,9 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
     return Container(
       padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -234,13 +222,7 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
               color: color,
             ),
           ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: color)),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/pages/view_profiles/student/view_student_profile.dart';
+import 'package:school_attendance/student/pages/edit_profile.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 
 import '../../../../teacher/services/teacher_api_service.dart';
@@ -463,16 +464,57 @@ class _StudentProfileState extends State<StudentProfile> {
                   _infoRow("Section", widget.section),
                 ],
               ),
-
               const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    selectedStudent = null;
-                  });
-                },
-                icon: const Icon(Icons.arrow_back),
-                label: const Text("Back to List"),
+
+              Column(
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.edit),
+                    label: const Text("Edit Profile"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    onPressed: () async {
+                      final updated = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => EditProfile(
+                                schoolId: int.parse(widget.schoolId),
+                                username: studentUsername,
+                                onSave: () {}, // optional now
+                              ),
+                        ),
+                      );
+
+                      if (updated == true) {
+                        // ✅ Re-fetch updated data
+                        fetchStudentData(
+                          widget.schoolId,
+                          widget.classId,
+                          studentUsername,
+                        );
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        selectedStudent = null;
+                      });
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text("Back to List"),
+                  ),
+                ],
               ),
             ],
           ),

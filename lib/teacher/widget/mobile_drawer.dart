@@ -1,8 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../services/api_service.dart';
 import '../../login_page.dart';
 import '../pages/drawer/change_password.dart';
 import '../pages/drawer/edit_profile_screen.dart';
@@ -184,6 +184,18 @@ class MobileDrawer extends StatelessWidget {
 
                                   SharedPreferences prefs =
                                       await SharedPreferences.getInstance();
+
+                                  // Trigger logout sync before clearing preferences (staff role)
+                                  try {
+                                    await ApiService.triggerUserLogout(
+                                      schoolId: int.parse(schoolId ?? '0'),
+                                      userId: username,
+                                    );
+                                  } catch (e) {
+                                    // Log error but don't block logout
+                                    debugPrint('Logout sync failed: $e');
+                                  }
+
                                   await prefs.remove('role');
                                   await prefs.remove('username');
                                   await prefs.remove('rememberMe');

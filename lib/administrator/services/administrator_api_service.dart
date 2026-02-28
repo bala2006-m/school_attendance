@@ -8,7 +8,7 @@ class AdministratorApiService {
   static Future<int> fetchUsageCountStudent(String schoolId) async {
     final uri = Uri.parse('$baseUrl/students/count_usage?school_id=$schoolId');
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: getApiHeaders());
     if (response.statusCode == 200) {
       return int.parse(response.body);
     } else {
@@ -19,7 +19,7 @@ class AdministratorApiService {
   static Future<int> fetchUsageCountStaff(String schoolId) async {
     final uri = Uri.parse('$baseUrl/staff/count_usage?school_id=$schoolId');
 
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: getApiHeaders());
 
     if (response.statusCode == 200) {
       return int.parse(response.body);
@@ -33,7 +33,7 @@ class AdministratorApiService {
     final url = Uri.parse('$baseUrl/Tickets/list?school_id=$id');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url, headers: getApiHeaders());
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List<dynamic> data = jsonDecode(response.body);
 
@@ -56,7 +56,7 @@ class AdministratorApiService {
     final url = Uri.parse("$baseUrl/blocked-schools/is-blocked/$schoolId");
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url, headers: getApiHeaders());
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
@@ -70,7 +70,7 @@ class AdministratorApiService {
 
   static Future<List<Map<String, dynamic>>> fetchAllBlockedSchools() async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/blocked-schools"));
+      final response = await http.get(Uri.parse("$baseUrl/blocked-schools"), headers: getApiHeaders());
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -144,7 +144,7 @@ class AdministratorApiService {
   static Future<void> deleteBlockedSchool(int id) async {
     final url = Uri.parse("$baseUrl/blocked-schools/$id");
 
-    final response = await http.delete(url);
+    final response = await http.delete(url, headers: getApiHeaders());
 
     if (response.statusCode != 200) {
       throw Exception("Failed to delete blocked school: ${response.body}");
@@ -155,7 +155,7 @@ class AdministratorApiService {
   static Future<List<dynamic>> getBlockedSchools() async {
     final url = Uri.parse("$baseUrl/blocked-schools");
 
-    final response = await http.get(url);
+    final response = await http.get(url, headers: getApiHeaders());
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List;
@@ -174,6 +174,7 @@ class AdministratorApiService {
     try {
       var uri = Uri.parse("$baseUrl/school/create");
       var request = http.MultipartRequest("POST", uri);
+      request.headers.addAll(getApiHeaders());
       request.fields['name'] = name.toString();
       request.fields['address'] = address.toString();
       request.fields['schoolId'] = schoolId.toString();
@@ -201,6 +202,7 @@ class AdministratorApiService {
     try {
       final response = await http.get(
         Uri.parse("$baseUrl/school/fetch_all_schools"),
+        headers: getApiHeaders(),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

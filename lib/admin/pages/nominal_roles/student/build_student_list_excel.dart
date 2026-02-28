@@ -1,10 +1,11 @@
-// excel_generator.dart
-
 import 'dart:io';
+import 'package:school_attendance/utils/utils.dart';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// ------------------------------------------------------------
@@ -55,34 +56,41 @@ Future<Uint8List> buildExcel({
 
   // Sort all students (same way as your PDF)
   students.sort((a, b) {
-    final classCompare = classSortKey(
-      a['class'],
-    ).compareTo(classSortKey(b['class']));
+    final classA = (a['class'] ?? '').toString();
+    final classB = (b['class'] ?? '').toString();
+    
+    final classCompare = classSortKey(classA).compareTo(classSortKey(classB));
     if (classCompare != 0) return classCompare;
 
-    final sectionCompare = a['section'].toString().compareTo(
-      b['section'].toString(),
-    );
+    final sectionA = (a['section'] ?? '').toString();
+    final sectionB = (b['section'] ?? '').toString();
+    final sectionCompare = sectionA.compareTo(sectionB);
     if (sectionCompare != 0) return sectionCompare;
 
     // Sort by username/admission no
-    final aNum = int.tryParse(a['username'].toString());
-    final bNum = int.tryParse(b['username'].toString());
+    final aUsername = (a['username'] ?? '').toString();
+    final bUsername = (b['username'] ?? '').toString();
+    final aNum = int.tryParse(aUsername);
+    final bNum = int.tryParse(bUsername);
+    
     if (aNum != null && bNum != null) return aNum.compareTo(bNum);
-
-    return a['username'].toString().compareTo(b['username'].toString());
+    return aUsername.compareTo(bUsername);
   });
 
   // Group students by Class-Section
   final grouped = <String, List<Map<String, dynamic>>>{};
   for (var s in students) {
-    final key = "${s['class']}-${s['section']}";
+    final cls = (s['class'] ?? 'Unknown').toString();
+    final sec = (s['section'] ?? '').toString();
+    final key = sec.isEmpty ? cls : "$cls-$sec";
     grouped.putIfAbsent(key, () => []).add(s);
   }
 
   // Create one sheet per class-section
   for (var entry in grouped.entries) {
     String sheetName = entry.key;
+    // Clean sheet name (Excel doesn't like some characters)
+    sheetName = sheetName.replaceAll(RegExp(r'[:\\/?*\[\]]'), '_');
     if (sheetName.length > 31) {
       sheetName = sheetName.substring(0, 31); // Excel limit
     }
@@ -105,7 +113,7 @@ Future<Uint8List> buildExcel({
             : s['gender'] == 'F'
             ? "Female"
             : "Others",
-        "",
+        s['mobile'] ?? "",
         "",
       ]);
     }
@@ -118,27 +126,51 @@ Future<Uint8List> buildExcel({
 /// STEP 2: SAVE + PREVIEW + SHARE
 /// ------------------------------------------------------------
 
-Future<void> generatePreviewShareExcel(
-  List<Map<String, dynamic>> students,
-) async {
+Future<String> saveExcelFile({
+  required List<Map<String, dynamic>> students,
+  String fileName = 'StudentList',
+}) async {
   Uint8List excelBytes = await buildExcel(students: students);
 
-  // final dir = await getApplicationDocumentsDirectory();
-  final filePath = "/storage/emulated/0/Download/StudentList.xlsx";
+  Directory? dir;
+  if (isAndroidPlatform) {
+    dir = Directory('/storage/emulated/0/Download');
+    if (!await dir.exists()) {
+      dir = await getExternalStorageDirectory();
+    }
+  } else {
+    dir = await getDownloadsDirectory();
+  }
+
+  dir ??= await getApplicationDocumentsDirectory();
+
+  final filePath = p.join(dir.path, "$fileName.xlsx");
   final file = File(filePath);
 
   await file.writeAsBytes(excelBytes);
+  return filePath;
+}
+
+Future<void> generatePreviewShareExcel({
+  required List<Map<String, dynamic>> students,
+  String fileName = 'StudentList',
+}) async {
+  final filePath = await saveExcelFile(
+    students: students,
+    fileName: fileName,
+  );
 
   // Preview
   await OpenFilex.open(filePath);
 
-  // SHARE USING flutter_share
-
-  await Share.shareXFiles([
-    XFile(
-      filePath,
-      mimeType:
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ),
-  ], text: 'Student List');
+  // SHARE USING share_plus (Only on Mobile normally, but safe to call)
+  if (isMobilePlatform) {
+    await Share.shareXFiles([
+      XFile(
+        filePath,
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ),
+    ], text: 'Student List');
+  }
 }

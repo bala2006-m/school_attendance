@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:school_attendance/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../login_page.dart';
+import '../../services/api_service.dart';
 import '../pages/dashboard/admin_dashboard.dart';
 import '../pages/drawer/change_password.dart';
 import '../pages/drawer/edit_profile.dart';
@@ -137,6 +138,25 @@ class AdminMobileDrawer extends StatelessWidget {
                 onTap: () async {
                   SharedPreferences prefs =
                       await SharedPreferences.getInstance();
+
+                  // Trigger logout sync before clearing preferences (admin role)
+                  try {
+                    await ApiService.triggerUserLogout(
+                      schoolId: int.parse(schoolId),
+                      userId: username,
+                    );
+                  } catch (e) {
+                    // Show error but don't block logout
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Logout sync failed: $e'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  }
+
                   await prefs.clear();
                   if (context.mounted) {
                     Navigator.pop(context); // Close drawer

@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-
-import '../../../utils/utils.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:school_attendance/utils/utils.dart';
 
 class GroupPhotosPage extends StatefulWidget {
   final String title;
@@ -31,7 +37,54 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
     _images = List.from(widget.images);
   }
 
-  Future<void> _confirmDeleteImage(String id) async {
+  Future<void> _downloadImage(String url) async {
+    try {
+      final dio = Dio();
+      final filename = Uri.parse(url).pathSegments.last;
+
+      Directory? dir;
+      if (isAndroidPlatform) {
+        dir = Directory('/storage/emulated/0/Download');
+        if (!await dir.exists()) {
+          dir = await getExternalStorageDirectory();
+        }
+      } else if (isDesktopPlatform) {
+        dir = await getDownloadsDirectory();
+      }
+
+      dir ??= await getApplicationDocumentsDirectory();
+
+      final savePath = p.join(dir.path, filename);
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Downloading $filename...')));
+      }
+
+      await dio.download(url, savePath);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Saved to ${dir.path}'),
+            action: SnackBarAction(
+              label: 'Open',
+              onPressed: () => OpenFilex.open(savePath),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteImage(String imageUrl) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder:
@@ -60,17 +113,18 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
           ),
     );
 
-    if (confirm == true) _deleteImage(id);
+    if (confirm == true) _deleteImage(imageUrl);
   }
 
-  Future<void> _deleteImage(String id) async {
-    final uri = Uri.parse('$baseUrl/upload/image/$id');
+  Future<void> _deleteImage(String imageUrl) async {
+    final filename = Uri.parse(imageUrl).pathSegments.last;
+    final uri = Uri.parse('$baseUrl/upload/${widget.schoolId}/$filename');
 
     try {
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
         setState(() {
-          _images.removeWhere((element) => element['id'] == id);
+          _images.removeWhere((element) => element['link'] == imageUrl);
           _isSomethingDeleted = true;
         });
         if (mounted) {
@@ -98,8 +152,12 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.title.isEmpty ? 'Untitled Group' : widget.title),
-          backgroundColor: Colors.blue.shade50,
+          foregroundColor: Colors.white,
+          title: Text(
+            widget.title.isEmpty ? 'Untitled Group' : widget.title,
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF2B7CA8),
         ),
         body:
             _images.isEmpty
@@ -112,7 +170,7 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
                         MediaQuery.of(context).size.width > 900 ? 3 : 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 0.75,
+                    childAspectRatio: 0.7,
                   ),
                   itemBuilder: (context, i) {
                     final imgData = _images[i];
@@ -136,15 +194,29 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
-                            child: CachedNetworkImage(
-                              imageUrl: imgUrl,
-                              fit: BoxFit.cover,
-                              placeholder:
-                                  (_, __) => const Center(
-                                    child: CircularProgressIndicator(),
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => FullscreenImageViewer(
+                                          imageUrl: imgUrl,
+                                          title: title,
+                                        ),
                                   ),
-                              errorWidget:
-                                  (_, __, ___) => const Icon(Icons.error),
+                                );
+                              },
+                              child: CachedNetworkImage(
+                                imageUrl: imgUrl,
+                                fit: BoxFit.cover,
+                                placeholder:
+                                    (_, __) => const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                errorWidget:
+                                    (_, __, ___) => const Icon(Icons.error),
+                              ),
                             ),
                           ),
                           Padding(
@@ -180,16 +252,27 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
                                     color: Colors.grey[500],
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.redAccent,
-                                    size: 20,
-                                  ),
-                                  onPressed:
-                                      () =>
-                                          _confirmDeleteImage(imgData['link']),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.download,
+                                        color: Colors.blueAccent,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _downloadImage(imgUrl),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.redAccent,
+                                        size: 20,
+                                      ),
+                                      onPressed:
+                                          () => _confirmDeleteImage(imgUrl),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -199,6 +282,37 @@ class _GroupPhotosPageState extends State<GroupPhotosPage> {
                     );
                   },
                 ),
+      ),
+    );
+  }
+}
+
+class FullscreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+  final String title;
+
+  const FullscreenImageViewer({
+    super.key,
+    required this.imageUrl,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(title, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: PhotoView(
+        imageProvider: CachedNetworkImageProvider(imageUrl),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 2.5,
+        loadingBuilder:
+            (context, event) =>
+                const Center(child: CircularProgressIndicator()),
       ),
     );
   }

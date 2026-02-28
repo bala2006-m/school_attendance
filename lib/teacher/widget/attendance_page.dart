@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../admin/services/admin_api_service.dart';
 import '../components/build_profile_card_mobile.dart';
 import '../pages/leave_request/leave_applications.dart';
 import '../pages/leave_request/post_leave_request.dart';
@@ -10,13 +13,7 @@ import '../pages/studentAttendance/viewAbsentees/student_absentees.dart';
 import '../pages/studentAttendance/viewAttendance/view_student_attendance.dart';
 import '../pages/view_staff_attendance.dart';
 
-class AttendancePage extends StatelessWidget {
-  final String schoolId;
-  final String username;
-  final List<dynamic> classIds;
-  final String schoolName;
-  final String schoolAddress;
-  final Image? schoolPhoto;
+class AttendancePage extends StatefulWidget {
   const AttendancePage({
     super.key,
     required this.schoolId,
@@ -26,6 +23,66 @@ class AttendancePage extends StatelessWidget {
     required this.schoolAddress,
     this.schoolPhoto,
   });
+  final String schoolId;
+  final String username;
+  final List<dynamic> classIds;
+  final String schoolName;
+  final String schoolAddress;
+  final Image? schoolPhoto;
+  @override
+  State<AttendancePage> createState() => _AttendancePageState();
+}
+
+class _AttendancePageState extends State<AttendancePage> {
+  late Timer _refreshTimer;
+  Map<String, Map<String, dynamic>> staffAccessData = {};
+  @override
+  void initState() {
+    super.initState();
+
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      fetchStaffAccess(widget.username);
+    });
+  }
+
+  Future<void> fetchStaffAccess(String username) async {
+    final response = await AdminApiService.fetchStaffAccess(
+      schoolId: widget.schoolId,
+      username: username,
+    );
+    if (response != null &&
+        response['data'] != null &&
+        response['data']['access'] != null) {
+      Map<String, dynamic>? accessData;
+
+      if (response['data']['access'] is Map) {
+        if (response['data']['access']['access'] is Map) {
+          accessData = Map<String, dynamic>.from(
+            response['data']['access']['access'],
+          );
+        } else {
+          accessData = Map<String, dynamic>.from(response['data']['access']);
+        }
+      }
+
+      if (accessData != null && mounted) {
+        setState(() {
+          staffAccessData[username] = accessData!;
+        });
+      }
+    }
+  }
+
+  bool hasAccess(String title) {
+    final access = staffAccessData[widget.username];
+    return access != null && access[title] == true;
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,218 +96,228 @@ class AttendancePage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             BuildProfileCard(
-              schoolName: schoolName,
-              schoolAddress: schoolAddress,
-              schoolPhoto: schoolPhoto,
+              schoolName: widget.schoolName,
+              schoolAddress: widget.schoolAddress,
+              schoolPhoto: widget.schoolPhoto,
             ),
             SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.black26, width: 2),
-                boxShadow: [BoxShadow(color: Colors.transparent)],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Student',
-                            style: TextStyle(
-                              color: Colors.blue.shade900,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 25,
-                            ),
+            hasAccess('student')
+                ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.black26, width: 2),
+                    boxShadow: [BoxShadow(color: Colors.transparent)],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Student',
+                                style: TextStyle(
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 25,
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.blue.shade900,
+                                size: 50,
+                              ),
+                            ],
                           ),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.blue.shade900,
-                            size: 50,
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
 
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'Mark\nAttendance',
-                          Icons.people,
-                          ClassList(schoolId: schoolId, username: username),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'Mark\nAttendance',
+                              Icons.people,
+                              ClassList(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'View\nAbsentees',
+                              Icons.people_outline_sharp,
+                              StudentAbsent(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'View\nAttendance',
+                              Icons.person_search,
+                              StudentAttendanceClasses(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                          ],
                         ),
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'View\nAbsentees',
-                          Icons.people_outline_sharp,
-                          StudentAbsent(schoolId: schoolId, username: username),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
-                        ),
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'View\nAttendance',
-                          Icons.person_search,
-                          StudentAttendanceClasses(
-                            schoolId: schoolId,
-                            username: username,
-                          ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'Monthly\nAttendance',
+                              Icons.calendar_month,
+                              MonthlyAttendance(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'Periodical\nReport',
+                              Icons.info,
+                              StudentReportBetweenDays(
+                                schoolId: widget.schoolId,
+                                username: widget.username,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'Monthly\nAttendance',
-                          Icons.calendar_month,
-                          MonthlyAttendance(
-                            schoolId: schoolId,
-                            username: username,
-                          ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
-                        ),
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'Periodical\nReport',
-                          Icons.info,
-                          StudentReportBetweenDays(
-                            schoolId: schoolId,
-                            username: username,
-                          ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                )
+                : SizedBox(),
             SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.black26, width: 2),
-                boxShadow: [BoxShadow(color: Colors.transparent)],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Myself',
-                            style: TextStyle(
-                              color: Colors.blue.shade900,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 25,
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.blue.shade900,
-                            size: 50,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
+            hasAccess('myself')
+                ? Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.black26, width: 2),
+                    boxShadow: [BoxShadow(color: Colors.transparent)],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
                       children: [
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'View\nMy\nAttendance',
-                          Icons.insert_chart,
-                          ViewStaffAttendance(
-                            username: username,
-                            schoolId: schoolId,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Myself',
+                                style: TextStyle(
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 25,
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.blue.shade900,
+                                size: 50,
+                              ),
+                            ],
                           ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
                         ),
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'Apply\nLeave\nRequest',
-                          Icons.remove_done,
-                          PostLeaveRequest(
-                            username: username,
-                            schoolId: schoolId,
-                          ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
-                        ),
-                        buildButtons(
-                          context,
-                          screenWidth,
-                          buttonHeight,
-                          'Leave\nApprove\nStatus',
-                          Icons.settings_applications_sharp,
-                          LeaveApplications(
-                            username: username,
-                            schoolId: schoolId,
-                          ),
-                          Colors.cyan,
-                          Colors.black,
-                          Colors.blue,
-                          Colors.white,
+
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'View\nMy\nAttendance',
+                              Icons.insert_chart,
+                              ViewStaffAttendance(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'Apply\nLeave\nRequest',
+                              Icons.remove_done,
+                              PostLeaveRequest(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                            buildButtons(
+                              context,
+                              screenWidth,
+                              buttonHeight,
+                              'Leave\nApprove\nStatus',
+                              Icons.settings_applications_sharp,
+                              LeaveApplications(
+                                username: widget.username,
+                                schoolId: widget.schoolId,
+                              ),
+                              Colors.cyan,
+                              Colors.black,
+                              Colors.blue,
+                              Colors.white,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                )
+                : SizedBox(),
           ],
         ),
       ),

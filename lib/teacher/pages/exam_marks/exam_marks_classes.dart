@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -48,29 +49,45 @@ class _ExamMarksClassesState extends State<ExamMarksClasses> {
     'XII': 12,
   };
 
+  late Timer refreshTimer;
   @override
   void initState() {
     super.initState();
-    fetchDatas();
-  }
-
-  Future<void> fetchDatas() async {
-    try {
-      await Future.wait([initClassData(), fetchSchoolInfo()]);
-    } catch (e) {
-      setState(() => isLoading = false);
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
-  Future<void> initClassData() async {
-    final fetchedClassList = await TeacherApiServices.fetchClassData(
-      widget.schoolId,
-    );
-    setState(() {
-      classList = fetchedClassList;
+    fetchSchoolInfo();
+    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      fetchClasses();
     });
+  }
+
+  @override
+  void dispose() {
+    refreshTimer.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchClasses() async {
+    final classes1 = await TeacherApiServices.fetchClassData(widget.schoolId);
+    final data = await TeacherApiServices.fetchStaffDataUsername(
+      username: widget.username,
+      schoolId: int.tryParse(widget.schoolId) ?? 0,
+    );
+    final ids = data?['class_ids'];
+
+    if (ids != null) {
+      final classIds = jsonDecode(ids.toString());
+
+      // Filter classes based on stored class_ids
+      final filteredList =
+          classes1.where((cls) {
+            return classIds.contains(cls['id']);
+          }).toList();
+
+      setState(() {
+        classList = filteredList;
+        isLoading = false;
+      });
+    }
+    // classes = List.from(cls);
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -187,7 +204,7 @@ class _ExamMarksClassesState extends State<ExamMarksClasses> {
                 ),
               )
               : RefreshIndicator(
-                onRefresh: fetchDatas,
+                onRefresh: fetchClasses,
                 child:
                     classList.isEmpty
                         ? ListView(

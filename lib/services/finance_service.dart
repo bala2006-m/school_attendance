@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../utils/utils.dart' as util;
 
 class FinanceService {
-  static const String baseUrl = '${util.baseUrl}/finance';
+  static final String baseUrl = '${util.baseUrl}/finance';
 
   Future<List<dynamic>> getAllIncome({required String schoolId}) async {
     final response = await http.get(Uri.parse('$baseUrl/income/$schoolId'));

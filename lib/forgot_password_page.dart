@@ -42,11 +42,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         showSnackBar("Please enter a valid School ID");
         return;
       }
-
       List<String> roles = ['student', 'staff', 'admin', 'administrator'];
       Map<String, dynamic>? user;
       String foundRole = '';
-
       for (String role in roles) {
         final users = await ApiService.getUsersByRole(
           schoolId: schoolId,

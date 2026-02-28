@@ -177,9 +177,11 @@ class _RealtimeSyncWidgetState extends State<RealtimeSyncWidget> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Text(
                       'LIVE',
@@ -266,9 +268,9 @@ class _RealtimeSyncWidgetState extends State<RealtimeSyncWidget> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -330,9 +332,9 @@ class _RealtimeSyncWidgetState extends State<RealtimeSyncWidget> {
     return Container(
       padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -389,7 +391,7 @@ class _RealtimeSyncWidgetState extends State<RealtimeSyncWidget> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         SizedBox(height: 8),
-        Container(
+        SizedBox(
           height: 200,
           child: ListView.builder(
             itemCount: _recentChanges.length,

@@ -15,6 +15,7 @@ class StudentHomePage extends StatelessWidget {
     required this.schoolAddress,
     required this.message,
     required this.timetable,
+    required this.schoolData,
   });
 
   final String schoolId;
@@ -25,6 +26,7 @@ class StudentHomePage extends StatelessWidget {
   final String schoolAddress;
   final String message;
   final List<String> timetable;
+  final Map<String, dynamic>? schoolData;
 
   // Widget _buildPeriodTile(String subject, int index) {
   //   if (subject.toLowerCase() == 'break' || subject.toLowerCase() == 'lunch') {
@@ -116,7 +118,11 @@ class StudentHomePage extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Message Box
-            MessageBox(message: message),
+            schoolData?['student_access'] == null
+                ? MessageBox(message: message)
+                : schoolData?['student_access']['message'] == true
+                ? MessageBox(message: message)
+                : SizedBox(),
 
             const SizedBox(height: 20),
 

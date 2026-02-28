@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -30,19 +31,24 @@ class _TimetableClassListState extends State<TimetableClassList> {
   List<Map<String, dynamic>> classes = [];
   bool isLoading = true;
 
+  late Timer refreshTimer;
   @override
   void initState() {
     super.initState();
-    // final now = DateTime.now();
-
     init();
+    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      fetchClasses();
+    });
+  }
+
+  @override
+  void dispose() {
+    refreshTimer.cancel();
+    super.dispose();
   }
 
   Future<void> init() async {
-    await Future.wait([fetchSchoolInfo(), fetchClasses()]);
-    if (mounted) {
-      setState(() => isLoading = false);
-    }
+    await Future.wait([fetchSchoolInfo()]);
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -69,46 +75,28 @@ class _TimetableClassListState extends State<TimetableClassList> {
   }
 
   Future<void> fetchClasses() async {
-    try {
-      final cls = await TeacherApiServices.fetchClassData(widget.schoolId);
-      classes = List<Map<String, dynamic>>.from(cls);
+    final classes1 = await TeacherApiServices.fetchClassData(widget.schoolId);
+    final data = await TeacherApiServices.fetchStaffDataUsername(
+      username: widget.username,
+      schoolId: int.tryParse(widget.schoolId) ?? 0,
+    );
+    final ids = data?['class_ids'];
 
-      classes.sort((a, b) {
-        int getClassValue(dynamic val) {
-          const romanMap = {
-            'I': 1,
-            'II': 2,
-            'III': 3,
-            'IV': 4,
-            'V': 5,
-            'VI': 6,
-            'VII': 7,
-            'VIII': 8,
-            'IX': 9,
-            'X': 10,
-            'XI': 11,
-            'XII': 12,
-            'XIII': 13,
-          };
+    if (ids != null) {
+      final classIds = jsonDecode(ids.toString());
 
-          if (val is int) return val;
-          if (val is String) {
-            final parsed = int.tryParse(val);
-            if (parsed != null) return parsed;
-            return romanMap[val] ?? 999;
-          }
-          return 999;
-        }
+      // Filter classes based on stored class_ids
+      final filteredList =
+          classes1.where((cls) {
+            return classIds.contains(cls['id']);
+          }).toList();
 
-        int classCompare = getClassValue(
-          a['class'],
-        ).compareTo(getClassValue(b['class']));
-        if (classCompare != 0) return classCompare;
-        return a['section'].toString().compareTo(b['section'].toString());
+      setState(() {
+        classes = filteredList;
+        isLoading = false;
       });
-    } catch (e) {
-      return;
     }
+    // classes = List.from(cls);
   }
 
   int? parseClassValue(dynamic val) {

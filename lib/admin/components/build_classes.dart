@@ -275,6 +275,8 @@ class _BuildClassesState extends State<BuildClasses> {
     required BuildContext context,
     required bool isKinderGarden,
   }) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isSmall = MediaQuery.of(context).size.width < 800;
     if (classes.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
@@ -313,7 +315,12 @@ class _BuildClassesState extends State<BuildClasses> {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
+            crossAxisCount:
+                isMobile
+                    ? 3
+                    : isSmall
+                    ? 5
+                    : 6,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             childAspectRatio: 1,
