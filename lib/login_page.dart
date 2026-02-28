@@ -1,4 +1,3 @@
-import 'package:bcrypt/bcrypt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -120,7 +119,6 @@ class _LoginPageState extends State<LoginPage> {
       final user = loginResult['user'];
       final foundRole = user['role'];
 
-
       // Save login info
       await prefs.setString('role', foundRole);
       await prefs.setBool('rememberMe', rememberMe);
@@ -198,6 +196,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       showError("Login failed. Please try again. $e");
+      print("Login failed. Please try again. $e");
     } finally {
       setState(() => isLoading = false);
     }

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 
 // const String baseUrl = "http://194.238.23.250:3000";
 // const String oldUrl = "http://51.20.189.225";
@@ -16,8 +16,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 // Environment-based Base URL
 String get baseUrl {
   if (kIsWeb) {
-    // For web, check if it's a mobile browser or desktop
-    // Simple check: if it's NOT desktop platform, assume mobile-like environment
+    // For web development, hit the local server if in debug mode
+    if (kDebugMode) {
+      return "http://localhost:3003";
+    }
     return "https://smartschoolserver.ramchintech.com";
   } else if (isMobilePlatform) {
     // Android/iOS Native
