@@ -1348,33 +1348,45 @@ class ApiService {
       }
 
       // 2. Legacy Fallback: If server hasn't been updated yet or any error occurs
-      print("Auth Failed (${response.statusCode}): Falling back to legacy client-side role check...");
+      print("Auth Failed (${response.statusCode}): Falling back to legacy client-side role check... (BaseURL: $baseUrl)");
       
       List<String> roles = ['student', 'staff', 'admin', 'administrator'];
 
       for (String role in roles) {
         try {
+          print("Checking role: $role for school $schoolId...");
           final users = await getUsersByRole(role: role, schoolId: schoolId);
+          print("  Role $role: found ${users.length} total users.");
+          
           final user = users.cast<Map<String, dynamic>?>().firstWhere(
-            (u) => u?['username']?.toString() == username,
+            (u) {
+              final match = u?['username']?.toString() == username;
+              if (match) print("  MATCH FOUND entry for $username in role $role");
+              return match;
+            },
             orElse: () => null,
           );
 
           if (user != null) {
             final hashedPassword = user['password']?.toString();
+            print("  User found! Verifying password... (Hashed: ${hashedPassword?.substring(0, 10)}...)");
             if (hashedPassword != null && BCrypt.checkpw(password, hashedPassword)) {
+              print("  SUCCESS: Legacy login matched for $username ($role)");
               return {
                 'status': 'success',
                 'message': 'Legacy login successful',
                 'user': user,
               };
+            } else {
+              print("  FAILED: Password mismatch for $username ($role)");
             }
           }
         } catch (roleError) {
           // If a role check fails, continue to next role
-          print("Role check failed for $role: $roleError");
+          print("  ERROR: Role check failed for $role: $roleError");
         }
       }
+
       
       // If we reach here, either it was a real 401/400 from new server OR legacy check also failed
       try {
