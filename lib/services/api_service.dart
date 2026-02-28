@@ -1380,10 +1380,15 @@ class ApiService {
             
             if (hashedPassword != null && BCrypt.checkpw(password, hashedPassword)) {
               print("     SUCCESS: Legacy password verified!");
+
+              // CRITICAL: Add the role to the user object since legacy server doesn't return it
+              final userWithRole = Map<String, dynamic>.from(user);
+              userWithRole['role'] = role;
+
               return {
                 'status': 'success',
                 'message': 'Legacy login successful',
-                'user': user,
+                'user': userWithRole,
               };
             } else {
               print("     FAILURE: Legacy password mismatch.");
