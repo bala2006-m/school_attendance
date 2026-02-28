@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:bcrypt/bcrypt.dart';
 import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/utils/utils.dart';
 
@@ -1332,6 +1333,7 @@ class ApiService {
     required int schoolId,
   }) async {
     try {
+      // 1. Try High-Speed Centralized Login First
       final response = await HybridApiService.post(
         '/auth/login',
         body: jsonEncode({
@@ -1343,11 +1345,38 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
-      } else {
-        final data = jsonDecode(response.body);
-        throw Exception(data['message'] ?? 'Login failed');
       }
+
+      // 2. Legacy Fallback: If server hasn't been updated yet (404)
+      if (response.statusCode == 404) {
+        print("Auth 404: Falling back to legacy client-side role check...");
+        List<String> roles = ['student', 'staff', 'admin', 'administrator'];
+
+        for (String role in roles) {
+          final users = await getUsersByRole(role: role, schoolId: schoolId);
+          final user = users.cast<Map<String, dynamic>?>().firstWhere(
+            (u) => u?['username']?.toString() == username,
+            orElse: () => null,
+          );
+
+          if (user != null) {
+            final hashedPassword = user['password'].toString();
+            if (BCrypt.checkpw(password, hashedPassword)) {
+              return {
+                'status': 'success',
+                'message': 'Legacy login successful',
+                'user': user,
+              };
+            }
+          }
+        }
+        throw Exception('Invalid user Id or password');
+      }
+
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Login failed');
     } catch (e) {
+      if (e.toString().contains('Invalid user Id or password')) rethrow;
       throw Exception('Login connection error: $e');
     }
   }
