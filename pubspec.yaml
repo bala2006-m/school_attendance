@@ -76,7 +76,6 @@ flutter_launcher_icons:
     image_path: "assets/favicon.png"
     icon_size: 256
 
-
 flutter:
   fonts:
     - family: Good Times

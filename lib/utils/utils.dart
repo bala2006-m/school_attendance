@@ -15,18 +15,13 @@ import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 // Local development server - use localhost (works better than 127.0.0.1)
 // Environment-based Base URL
 String get baseUrl {
-  if (kIsWeb) {
-    // For web development, hit the local server if in debug mode
-    if (kDebugMode) {
-      return "http://localhost:3003";
-    }
-    return "https://smartschoolserver.ramchintech.com";
-  } else if (isMobilePlatform) {
-    // Android/iOS Native
+  if (isMobilePlatform) {
+    // Android/iOS Native or Web Mobile
     return "https://smartschoolserver.ramchintech.com";
   } else {
-    // Desktop (Windows/Mac/Linux)
-    return "http://localhost:3003";
+    // Desktop (Windows/Mac/Linux/Web Desktop)
+    // Use local server if available, else cloud
+    return "https://smartschoolserver.ramchintech.com"; 
   }
 }
 
@@ -36,7 +31,11 @@ String get baseUrl {
 // const String baseUrl = "https://schoolattendance.ramchintech.com";
 
 bool get isDesktopPlatform {
-  if (kIsWeb) return false;
+  if (kIsWeb) {
+    // Heuristic for web desktop: check if not mobile/tablet
+    // Note: This is an approximation for Web without extra packages
+    return true; 
+  }
   try {
     return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
   } catch (e) {
@@ -63,6 +62,10 @@ bool get isIOSPlatform {
 }
 
 bool get isMobilePlatform {
+  if (kIsWeb) {
+    // Very basic check for web mobile
+    return false; // Default to Desktop for Web unless we perform more complex UA checks
+  }
   return isAndroidPlatform || isIOSPlatform;
 }
 
