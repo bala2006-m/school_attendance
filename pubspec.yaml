@@ -35,7 +35,8 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.14.2
   month_year_picker: ^0.5.0+1
-  google_fonts: ^4.0.4
+#  google_fonts: ^4.0.4
+  google_fonts: ^8.0.2
   pool: ^1.5.2
   collection: ^1.19.1
   pull_to_refresh: ^2.0.0
