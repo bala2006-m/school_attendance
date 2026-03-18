@@ -6,6 +6,7 @@ import 'package:school_attendance/admin/pages/print_certificates/student/student
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../services/admin_api_service.dart';
+import '../../../../utils/utils.dart';
 
 class PrintStudentCertificates extends StatefulWidget {
   const PrintStudentCertificates({
@@ -292,7 +293,7 @@ class _PrintStudentCertificatesState extends State<PrintStudentCertificates> {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
+            crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             childAspectRatio: 1,

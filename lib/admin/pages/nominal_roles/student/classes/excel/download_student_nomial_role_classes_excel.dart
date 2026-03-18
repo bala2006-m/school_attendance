@@ -7,6 +7,7 @@ import 'package:school_attendance/admin/components/build_profile_card_mobile.dar
 
 import '../../../../../../services/api_service.dart';
 import '../../../../../../teacher/services/teacher_api_service.dart';
+import '../../../../../../utils/utils.dart';
 import '../../../../../appbar/admin_appbar_desktop.dart';
 import '../../../../../appbar/admin_appbar_mobile.dart';
 import '../../../../../widget/excel_preview_page.dart';
@@ -443,7 +444,7 @@ class _DownloadStudentNomialRoleClassesExcelState
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
+            crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             childAspectRatio: 1,

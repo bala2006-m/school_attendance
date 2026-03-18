@@ -246,19 +246,20 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 /// Title Row
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: color, size: 20),
+                      child: Icon(icon, color: color, size: 18),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,7 +267,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                           Text(
                             title,
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               letterSpacing: -0.5,
                             ),
@@ -274,7 +275,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                           Text(
                             subtitle,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: Colors.grey.shade600,
                             ),
                           ),
@@ -284,12 +285,13 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   ],
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 /// Chart Area with subtle background
-                Container(
-                  height: 220,
-                  padding: const EdgeInsets.only(top: 20, right: 10),
+                Flexible(
+                  child: Container(
+                  constraints: const BoxConstraints(minHeight: 120),
+                  padding: const EdgeInsets.only(top: 10, right: 10),
                   child: LineChart(
                     LineChartData(
                       minX: 1,
@@ -382,6 +384,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                       ],
                     ),
                   ),
+                ),
                 ),
               ],
             ),

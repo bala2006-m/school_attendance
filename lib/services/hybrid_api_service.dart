@@ -407,12 +407,16 @@ class HybridApiService {
       "HYBRID: Init started. Desktop: $isDesktopUser, Mobile: $isMobileUser, Web: $kIsWeb",
     );
 
-    if (isMobileUser) {
-      // Mobile (native or web) → always cloud
+    if (kIsWeb) {
+      // Web → try local if we are on localhost, else cloud
+      print("HYBRID: Web detected. Attempting local server detection...");
+      await _detectLocalServer();
+    } else if (isMobileUser) {
+      // Mobile native → always cloud
       print("HYBRID: Mobile user detected. Forcing CLOUD mode.");
       _isLocalServerAvailable = false;
     } else if (isDesktopUser) {
-      // Desktop (native or web browser) → try local first, else cloud
+      // Desktop native → try local first, else cloud
       print("HYBRID: Desktop user detected. Scanning for local server...");
       await _detectLocalServer(); // sets _isLocalServerAvailable / localBaseUrl
 

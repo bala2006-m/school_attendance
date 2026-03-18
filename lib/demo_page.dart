@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:school_attendance/services/api_service.dart';
+import 'package:school_attendance/student/pages/student_dashboard.dart';
+import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'admin/pages/dashboard/admin_dashboard.dart';
 
 class DemoIdsPage extends StatelessWidget {
   const DemoIdsPage({super.key});
@@ -36,7 +42,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'STUDENT',
                   hospitalId: '1',
-                  userId: '0016',
+                  userId: '1001',
                   password: 'abc123',
 
                   icon: Icons.people,
@@ -68,7 +74,7 @@ class _Header extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(25)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -186,6 +192,140 @@ class DemoIdCard extends StatelessWidget {
     );
   }
 
+  Future<void> login({
+    required String usernameController,
+    required String schoolIdController,
+    required String passwordController,
+    required BuildContext context,
+  }) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    final enteredUsername = usernameController;
+    final enteredPassword = passwordController;
+    final schoolIdText = schoolIdController;
+
+    // Validate inputs
+    if (schoolIdText.isEmpty ||
+        enteredUsername.isEmpty ||
+        enteredPassword.isEmpty) {
+      showError("Please fill in all fields", context);
+
+      return;
+    }
+
+    final schoolId = int.tryParse(schoolIdText);
+    if (schoolId == null) {
+      showError("School ID must be a number", context);
+
+      return;
+    }
+
+    try {
+      final loginResult = await ApiService.login(
+        username: enteredUsername,
+        password: enteredPassword,
+        schoolId: schoolId,
+      );
+
+      if (loginResult['status'] != 'success') {
+        showError(
+          loginResult['message'] ?? "Invalid user Id or password",
+          context,
+        );
+
+        return;
+      }
+
+      final user = loginResult['user'];
+      final foundRole = user['role'];
+
+      // Save login info
+      await prefs.setString('role', foundRole);
+      await prefs.setBool('rememberMe', false);
+      await prefs.setString('username', user['username']);
+      await prefs.setString('schoolId', '$schoolId');
+
+      // Trigger sync after successful login (only for admin and staff)
+      if (foundRole == 'admin' || foundRole == 'staff') {
+        try {
+          await ApiService.triggerInitialSync(
+            schoolId: schoolId,
+            userId: user['username'].toString(),
+          );
+        } catch (e) {
+          // Log error but don't block login
+          debugPrint('Sync trigger failed: $e');
+        }
+      }
+
+      // Navigate by role
+      switch (foundRole) {
+        case 'student':
+          if (context.mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => StudentDashboard(
+                      username: user?['username'],
+                      schoolId: schoolId,
+                    ),
+              ),
+            );
+          }
+          break;
+        case 'staff':
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => StaffDashboard(
+                      username: user!['username'].toString(),
+                      schoolId: '$schoolId',
+                    ),
+              ),
+            );
+          }
+          break;
+        case 'admin':
+          if (context.mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => AdminDashboard(
+                      username: user?['username'],
+                      schoolId: '${user?['school_id']}',
+                    ),
+              ),
+            );
+          }
+          break;
+        // case 'administrator':
+        //   if (mounted) {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder:
+        //             (_) => AdministratorDashboard(userName: user?['username']),
+        //       ),
+        //     );
+        //   }
+        //   break;
+      }
+    } catch (e) {
+      showError("Login failed. Please try again. $e", context);
+      print("Login failed. Please try again. $e");
+    }
+  }
+
+  void showError(String message, BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -224,7 +364,7 @@ class DemoIdCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(.15),
+                        color: color.withValues(alpha: .15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(icon, color: color),
@@ -245,7 +385,7 @@ class DemoIdCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(.15),
+                        color: color.withValues(alpha: .15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -281,11 +421,17 @@ class DemoIdCard extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
-                      Navigator.pop(context, {
-                        "hospitalId": hospitalId,
-                        "userId": userId,
-                        "password": password,
-                      });
+                      // Navigator.pop(context, {
+                      //   "hospitalId": hospitalId,
+                      //   "userId": userId,
+                      //   "password": password,
+                      // });
+                      login(
+                        usernameController: userId,
+                        schoolIdController: hospitalId,
+                        passwordController: password,
+                        context: context,
+                      );
                     },
                     child: const Text(
                       "Use This Account",

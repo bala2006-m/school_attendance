@@ -8,6 +8,7 @@ import 'package:school_attendance/admin/pages/dashboard/admin_dashboard.dart';
 import '../../../services/api_service.dart';
 import '../../../services/term_fee_structure_api.dart';
 import '../../../teacher/services/teacher_api_service.dart';
+import '../../../utils/utils.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../../components/build_profile_card_mobile.dart';
@@ -221,8 +222,11 @@ class _AdminFeeStructureClassesState extends State<AdminFeeStructureClasses> {
                     size: 60.0,
                   ),
                 )
-                : SingleChildScrollView(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
+                : RefreshIndicator(
+                  onRefresh: init,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -273,6 +277,7 @@ class _AdminFeeStructureClassesState extends State<AdminFeeStructureClasses> {
                     ],
                   ),
                 ),
+              ),
       ),
     );
   }
@@ -322,7 +327,7 @@ class _AdminFeeStructureClassesState extends State<AdminFeeStructureClasses> {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
+            crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             childAspectRatio: 1,
@@ -333,8 +338,8 @@ class _AdminFeeStructureClassesState extends State<AdminFeeStructureClasses> {
                   final section = classItem['section'] ?? '';
                   return InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -347,6 +352,7 @@ class _AdminFeeStructureClassesState extends State<AdminFeeStructureClasses> {
                               ),
                         ),
                       );
+                      init();
                     },
                     child: Card(
                       color: Colors.teal,

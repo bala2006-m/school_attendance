@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
-
+import '../../../../utils/utils.dart';
 import '../../../appbar/admin_appbar_desktop.dart';
 import '../../../appbar/admin_appbar_mobile.dart';
 import '../../../components/build_profile_card_mobile.dart';
@@ -288,6 +288,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
     required BuildContext context,
     required bool isKinderGarden,
   }) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
     if (classes.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
@@ -327,7 +328,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
+            crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             childAspectRatio: 1,

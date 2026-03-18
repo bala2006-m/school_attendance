@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 // const String tempUrl = "https://ghj5w9n1-3003.inc1.devtunnels.ms";
 
 const String cloudBaseUrl = "https://smartschoolserver.ramchintech.com";
+// const String cloudBaseUrl = "https://ghj5w9n1-3003.inc1.devtunnels.ms";
 
 String get baseUrl {
   return cloudBaseUrl;
@@ -71,5 +72,17 @@ Map<String, String> getApiHeaders() {
 void safeExit() {
   if (isDesktopPlatform) {
     exit(0);
+  }
+}
+
+int getResponsiveColumnCount(double width) {
+  if (width < 600) {
+    return 2; // Mobile
+  } else if (width < 900) {
+    return 3; // Tablet portrait
+  } else if (width < 1200) {
+    return 4; // Tablet landscape / Small laptop
+  } else {
+    return 6; // Desktop / Large laptop
   }
 }

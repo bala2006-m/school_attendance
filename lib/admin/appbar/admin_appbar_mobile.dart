@@ -42,15 +42,23 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
 
   int unseenCount = 0;
   bool hasUpcomingDue = false; // 👈 new flag for due notification indicator
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
+    _isDisposed = false;
     fetchData();
     _loadUnseenCount();
     if (widget.title == "Admin Dashboard") {
       fetchSchoolInfo();
     }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   Future<void> fetchSchoolInfo() async {
@@ -81,38 +89,54 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
         }
       }
 
-      setState(() {
-        schoolDatas = schoolData;
-        hasUpcomingDue = upcomingFound;
-      });
+      if (mounted && !_isDisposed) {
+        try {
+          setState(() {
+            schoolDatas = schoolData;
+            hasUpcomingDue = upcomingFound;
+          });
+        } catch (e) {
+          // Ignore setState after dispose
+        }
+      }
     } catch (e) {
       debugPrint("Error fetching school info: $e");
     }
   }
 
   Future<void> _loadUnseenCount() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    final seenLeaveIds =
-        (prefs.getStringList("seenLeaveIds") ?? []).map(int.parse).toSet();
-    final seenFeedbackIds =
-        (prefs.getStringList("seenFeedbackIds") ?? []).map(int.parse).toSet();
+      final seenLeaveIds =
+          (prefs.getStringList("seenLeaveIds") ?? []).map(int.parse).toSet();
+      final seenFeedbackIds =
+          (prefs.getStringList("seenFeedbackIds") ?? []).map(int.parse).toSet();
 
-    // Fetch latest data
-    final leave = await AdminApiService.fetchLeaveRequest(widget.schoolId);
-    final feed = await AdminApiService.fetchFeedback(widget.schoolId);
+      // Fetch latest data
+      final leave = await AdminApiService.fetchLeaveRequest(widget.schoolId);
+      final feed = await AdminApiService.fetchFeedback(widget.schoolId);
 
-    // Filter unseen
-    final unseenLeave =
-        leave.where((item) => !seenLeaveIds.contains(item['id'])).length;
-    final unseenFeedback =
-        feed.isNotEmpty
-            ? feed.where((item) => !seenFeedbackIds.contains(item['id'])).length
-            : 0;
+      // Filter unseen
+      final unseenLeave =
+          leave.where((item) => !seenLeaveIds.contains(item['id'])).length;
+      final unseenFeedback =
+          feed.isNotEmpty
+              ? feed.where((item) => !seenFeedbackIds.contains(item['id'])).length
+              : 0;
 
-    setState(() {
-      unseenCount = unseenLeave + unseenFeedback;
-    });
+      if (mounted && !_isDisposed) {
+        try {
+          setState(() {
+            unseenCount = unseenLeave + unseenFeedback;
+          });
+        } catch (e) {
+          // Ignore setState after dispose
+        }
+      }
+    } catch (e) {
+      debugPrint("Error loading unseen count: $e");
+    }
   }
 
   Future<void> fetchData() async {
@@ -129,12 +153,18 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
       }
     }
 
-    setState(() {
-      username =
-          (storedUsername!.length < 15
-              ? storedUsername
-              : '${storedUsername.substring(0, 15)}...');
-    });
+    if (mounted && !_isDisposed) {
+      try {
+        setState(() {
+          username =
+              (storedUsername!.length < 15
+                  ? storedUsername
+                  : '${storedUsername.substring(0, 15)}...');
+        });
+      } catch (e) {
+        // Ignore setState after dispose
+      }
+    }
   }
 
   @override

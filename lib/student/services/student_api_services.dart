@@ -255,7 +255,9 @@ class StudentApiServices {
         throw Exception('HTTP error ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to load holidays: $e');
+      // Gracefully handle holiday load failures (e.g. production server 500)
+      // Return empty list so the app continues working without holidays
+      return [];
     }
   }
 

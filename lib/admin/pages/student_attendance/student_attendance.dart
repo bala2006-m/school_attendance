@@ -173,7 +173,10 @@ class _StudentState extends State<Student> {
       body:
           isLoading
               ? const SpinKitFadingCircle(color: Colors.blueAccent, size: 60.0)
-              : SingleChildScrollView(
+              : RefreshIndicator(
+                onRefresh: init,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -196,8 +199,8 @@ class _StudentState extends State<Student> {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: classes.length,
                           gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
+                               SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10,
                                 childAspectRatio: 1.2,
@@ -209,24 +212,25 @@ class _StudentState extends State<Student> {
                                 attendanceStatusMap[classId] ?? false;
 
                             return GestureDetector(
-                              onTap:
-                                  isMarked
-                                      ? null
-                                      : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => StudentAttendance(
-                                                  classId: classId,
-                                                  className: item['class'],
-                                                  section: item['section'],
-                                                  schoolId: widget.schoolId,
-                                                  username: widget.username,
-                                                ),
-                                          ),
-                                        );
-                                      },
+                                      onTap:
+                                          isMarked
+                                              ? null
+                                              : () async {
+                                                await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (_) => StudentAttendance(
+                                                          classId: classId,
+                                                          className: item['class'],
+                                                          section: item['section'],
+                                                          schoolId: widget.schoolId,
+                                                          username: widget.username,
+                                                        ),
+                                                  ),
+                                                );
+                                                init();
+                                              },
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: isMarked ? Colors.white : Colors.teal,
@@ -273,6 +277,7 @@ class _StudentState extends State<Student> {
                   ],
                 ),
               ),
+            ),
     );
   }
 }

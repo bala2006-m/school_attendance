@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 
 import '../../../../../services/api_service.dart';
+import '../../../../utils/utils.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../dashboard/admin_dashboard.dart';
@@ -284,8 +285,8 @@ class _ClassWiseAttendanceState extends State<ClassWiseAttendance> {
                                   : GridView.builder(
                                     itemCount: classes.length,
                                     gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 3,
+                                         SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
                                           mainAxisSpacing: 10,
                                           crossAxisSpacing: 10,
                                           childAspectRatio: 1.2,

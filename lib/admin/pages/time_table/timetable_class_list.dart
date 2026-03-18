@@ -6,6 +6,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../../../services/api_service.dart';
 import '../../../teacher/services/teacher_api_service.dart';
+import '../../../utils/utils.dart';
 import '../../appbar/admin_appbar_desktop.dart';
 import '../../appbar/admin_appbar_mobile.dart';
 import '../../components/build_profile_card_mobile.dart';
@@ -245,12 +246,15 @@ class _TimetableClassListState extends State<TimetableClassList> {
                     size: 60.0,
                   ),
                 )
-                : SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
+                : RefreshIndicator(
+                  onRefresh: init,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -299,6 +303,7 @@ class _TimetableClassListState extends State<TimetableClassList> {
                     ),
                   ),
                 ),
+              ),
       ),
     );
   }
@@ -338,7 +343,7 @@ class _TimetableClassListState extends State<TimetableClassList> {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
+            crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             childAspectRatio: 1,
@@ -350,8 +355,8 @@ class _TimetableClassListState extends State<TimetableClassList> {
 
                   return InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
@@ -364,6 +369,7 @@ class _TimetableClassListState extends State<TimetableClassList> {
                               ),
                         ),
                       );
+                      init();
                     },
                     child: Card(
                       color: Colors.teal,
