@@ -346,7 +346,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             borderRadius: BorderRadius.circular(12.0),
                           ),
                         ),
-                        value: selectedClass,
+                        initialValue: selectedClass,
                         items:
                             classList.map((cls) {
                               final label =

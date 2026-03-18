@@ -433,7 +433,7 @@ class _StaffAccessState extends State<StaffAccess> {
           ),
         ),
         value: value,
-        activeColor: activeColor,
+        activeThumbColor: activeColor,
         activeTrackColor: activeColor.withValues(alpha: 0.2),
         onChanged: onChanged,
       ),

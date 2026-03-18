@@ -59,6 +59,8 @@ dependencies:
 #  secure_display: ^0.1.0
 #  flutter_windowmanager: ^0.2.0
 #  secure_display: ^0.1.0
+  camera: ^0.10.5
+  google_ml_kit: ^0.18.0
 dependency_overrides:
   vector_math: ^2.2.0
 

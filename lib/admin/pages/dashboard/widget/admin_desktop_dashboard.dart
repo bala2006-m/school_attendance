@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:school_attendance/admin/pages/dashboard/admin_analytics_desktop.dart';
 import 'package:school_attendance/admin/pages/dashboard/attendance/admin_student_desktop.dart';
 import 'package:school_attendance/admin/pages/dashboard/widget/admin_desktop_drawer_small.dart';
 
@@ -147,6 +148,8 @@ class AdminDesktopDashboard extends StatelessWidget {
                     allPendingTermFees: allPendingTermFees,
                     allPendingBusFees: allPendingBusFees,
                     allPendingRteFees: allPendingRteFees,
+                    schoolId: schoolId,
+                    username: username,
                   ),
                   AdminManagementDesktop(
                     adminUsername: username,
@@ -154,6 +157,10 @@ class AdminDesktopDashboard extends StatelessWidget {
                     schoolAddress: schoolAddress,
                     schoolName: schoolName,
                     adminAccess: adminAccess,
+                  ),
+                  AdminAnalyticsDesktop(
+                    schoolId: schoolId,
+                    username: username,
                   ),
                 ],
               ),

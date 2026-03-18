@@ -396,7 +396,7 @@ class _DrawingState extends State<Drawing> with SingleTickerProviderStateMixin {
                 decoration: const InputDecoration(labelText: "Reason"),
               ),
               DropdownButtonFormField(
-                value: type,
+                initialValue: type,
                 decoration: const InputDecoration(labelText: "Type"),
                 items: const [
                   DropdownMenuItem(

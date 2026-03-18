@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:permission_handler/permission_handler.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
+import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'admin/pages/dashboard/admin_dashboard.dart';
 import 'login_page.dart';
-import 'package:school_attendance/services/hybrid_api_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -18,7 +18,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Hybrid API Service as early as possible (checks for local server)
   await HybridApiService.initialize();
   // await Geolocator.isLocationServiceEnabled();
@@ -27,25 +27,11 @@ Future<void> main() async {
   // FORCE RESET: Commented back out after first run.
   // await prefs.clear();
 
-
   bool isLoggedIn = prefs.getBool('rememberMe') ?? false;
   String role = prefs.getString('role') ?? '';
   String username = prefs.getString('username') ?? '';
-  String? schoolId = '';
-  if (role == 'administrator') {
-    try {
-      schoolId = prefs.getInt('schoolId').toString();
-    } catch (e) {
-      schoolId = prefs.getString('schoolId').toString();
-    }
-  } else {
-    try {
-      schoolId = prefs.getString('schoolId').toString();
-    } catch (e) {
-      schoolId = prefs.getInt('schoolId').toString();
-    }
-  }
-  int id = int.tryParse(schoolId.toString()) ?? 0;
+  String schoolId = prefs.get('schoolId')?.toString() ?? '';
+  int id = int.tryParse(schoolId) ?? 0;
   // String schoolName = prefs.getString('schoolName') ?? '';
   // String schoolAddress = prefs.getString('schoolAddress') ?? '';
   // Image? adminPhoto = prefs.getString('adminPhoto') as Image;

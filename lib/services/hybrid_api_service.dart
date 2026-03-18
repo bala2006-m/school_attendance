@@ -1,8 +1,6 @@
 // import 'dart:convert';
 // import 'package:http/http.dart' as http;
 // import 'package:school_attendance/utils/utils.dart';
-// import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
-
 // class HybridApiService {
 //   static String? localBaseUrl;
 //   static bool? _isDesktop;
@@ -358,6 +356,7 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:school_attendance/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -367,32 +366,31 @@ class HybridApiService {
   static bool? _isLocalServerAvailable;
   static bool _isInitialized = false;
   static Future<void>? _initFuture;
-
   static DateTime? _lastLocalScan;
-static bool _localSyncTriggered = false;
+  static bool _localSyncTriggered = false;
+  static Future<void> _triggerLocalInitialSyncIfPossible() async {
+    if (_localSyncTriggered != false) return;
+    if (_isLocalServerAvailable == false || localBaseUrl == null) return;
 
-static Future<void> _triggerLocalInitialSyncIfPossible() async {
-  if (_localSyncTriggered != false) return;
-  if (_isLocalServerAvailable==false || localBaseUrl == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final schoolId = prefs.get('schoolId')?.toString();
+    final username = prefs.get('username')?.toString();
 
-  final prefs = await SharedPreferences.getInstance();
-  final schoolId = prefs.getInt('schoolId');
-  final username = prefs.getString('username');
+    if (schoolId == null || username == null) return;
 
-  if (schoolId == null || username == null) return;
-
-  try {
-    _localSyncTriggered = true;
-    await post(
-      '/offline/trigger-initial-sync',
-      body: jsonEncode({'schoolId': schoolId, 'userId': username}),
-      forceCloud: false, // ensure it hits LOCAL
-    );
-  } catch (_) {
-    // allow retry on next detection if it failed
-    _localSyncTriggered = false;
+    try {
+      _localSyncTriggered = true;
+      await post(
+        '/offline/trigger-initial-sync',
+        body: jsonEncode({'schoolId': schoolId, 'userId': username}),
+        forceCloud: false, // ensure it hits LOCAL
+      );
+    } catch (_) {
+      // allow retry on next detection if it failed
+      _localSyncTriggered = false;
+    }
   }
-}
+
   static Future<void> initialize() async {
     if (_isInitialized) return;
     if (_initFuture != null) return _initFuture;
@@ -406,18 +404,16 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
     final isMobileUser = isMobilePlatform;
 
     print(
-      "HYBRID: Init started. Desktop: $isDesktopUser, Mobile: $isMobileUser",
+      "HYBRID: Init started. Desktop: $isDesktopUser, Mobile: $isMobileUser, Web: $kIsWeb",
     );
 
     if (isMobileUser) {
-      // Mobile → always cloud
+      // Mobile (native or web) → always cloud
       print("HYBRID: Mobile user detected. Forcing CLOUD mode.");
       _isLocalServerAvailable = false;
     } else if (isDesktopUser) {
-      // Desktop → try local first, else cloud
-      print(
-        "HYBRID: Desktop/Web-PC user detected. Scanning for local server...",
-      );
+      // Desktop (native or web browser) → try local first, else cloud
+      print("HYBRID: Desktop user detected. Scanning for local server...");
       await _detectLocalServer(); // sets _isLocalServerAvailable / localBaseUrl
 
       if (_isLocalServerAvailable == true && localBaseUrl != null) {
@@ -474,20 +470,17 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
           .timeout(const Duration(seconds: 3));
 
       // Treat any HTTP 200 here as "local server is ready"
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         localBaseUrl = 'http://$host:$port';
         _isLocalServerAvailable = true;
         print("HYBRID: Local server confirmed at $localBaseUrl");
         await _triggerLocalInitialSyncIfPossible();
       }
     } catch (e) {
-      print("HYBRID: Local test failed for $host:$port: $e");
+      print("HYBRID: Local test failed For $host:$port: $e");
     }
   }
 
-  /// Schedule a non-blocking rescan for a local server (desktop only).
-  /// - If local is already available, does nothing.
-  /// - If not, scans at most once every 15 seconds in the background.
   static void _scheduleLocalRescanIfNeeded() {
     if (!isDesktopPlatform) return;
     if (_isLocalServerAvailable == true && localBaseUrl != null) return;
@@ -556,9 +549,10 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
         encoding: encoding,
       );
     } catch (e) {
-      // Local failed → mark unavailable and fall back to cloud
+      // Local failed → mark unavailable, reset sync flag, and fall back to cloud
       _isLocalServerAvailable = false;
       localBaseUrl = null;
+      _localSyncTriggered = false; // Allow re-sync when server returns
       return callCloud();
     }
   }
@@ -585,8 +579,9 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
     if (isHybridMode && !forceCloud) {
       requestHeaders['x-sync-source'] = 'local';
     }
-    Future<http.Response> callCloud() =>
-        http.get(Uri.parse(cloudUrl), headers: requestHeaders);
+    Future<http.Response> callCloud() => http
+        .get(Uri.parse(cloudUrl), headers: requestHeaders)
+        .timeout(const Duration(seconds: 10));
 
     if (localUrl == null) return callCloud();
 
@@ -595,6 +590,7 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
     } catch (e) {
       _isLocalServerAvailable = false;
       localBaseUrl = null;
+      _localSyncTriggered = false; // Allow re-sync when server returns
       return callCloud();
     }
   }
@@ -642,6 +638,7 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
     } catch (e) {
       _isLocalServerAvailable = false;
       localBaseUrl = null;
+      _localSyncTriggered = false; // Allow re-sync when server returns
       return callCloud();
     }
   }
@@ -689,6 +686,7 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
     } catch (e) {
       _isLocalServerAvailable = false;
       localBaseUrl = null;
+      _localSyncTriggered = false; // Allow re-sync when server returns
       return callCloud();
     }
   }
@@ -736,6 +734,7 @@ static Future<void> _triggerLocalInitialSyncIfPossible() async {
     } catch (e) {
       _isLocalServerAvailable = false;
       localBaseUrl = null;
+      _localSyncTriggered = false; // Allow re-sync when server returns
       return callCloud();
     }
   }

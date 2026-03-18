@@ -828,6 +828,10 @@ class AdminDashboardState extends State<AdminDashboard> {
               icon: Icon(Icons.analytics, size: 30),
               label: 'Manage',
             ),
+            // BottomNavigationBarItem(
+            //   icon: Icon(Icons.bar_chart, size: 30),
+            //   label: 'Analytics',
+            // ),
           ],
         ),
       ),

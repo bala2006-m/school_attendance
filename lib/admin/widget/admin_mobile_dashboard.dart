@@ -208,6 +208,8 @@ class _AdminMobileDashboardState extends State<AdminMobileDashboard> {
             attendanceStatusMapFn: widget.attendanceStatusMapFn,
             attendanceStatusMapAn: widget.attendanceStatusMapAn,
             allPendingRteFees: widget.allPendingRteFees,
+            schoolId: widget.schoolId,
+            username: widget.username,
           ),
           AdminManagementMobile(
             adminUsername: widget.username,

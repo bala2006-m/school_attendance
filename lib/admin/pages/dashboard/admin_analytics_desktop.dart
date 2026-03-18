@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../utils/utils.dart';
 
 class AdminAnalyticsDesktop extends StatefulWidget {
   final String schoolId;
@@ -41,7 +42,7 @@ class _AdminAnalyticsDesktopState extends State<AdminAnalyticsDesktop> {
 
     // Fetch attendance trends
     final attendanceResponse = await http.get(
-      Uri.parse('http://localhost:3000/dashboard/attendance-trends?school_id=${widget.schoolId}&start_date=$startDate&end_date=$endDate'),
+      Uri.parse('$baseUrl/dashboard/attendance-trends?school_id=${widget.schoolId}&start_date=$startDate&end_date=$endDate'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (attendanceResponse.statusCode == 200) {
@@ -50,7 +51,7 @@ class _AdminAnalyticsDesktopState extends State<AdminAnalyticsDesktop> {
 
     // Fetch fee trends
     final feeResponse = await http.get(
-      Uri.parse('http://localhost:3000/dashboard/fee-collection-trends?school_id=${widget.schoolId}&start_date=$startDate&end_date=$endDate'),
+      Uri.parse('$baseUrl/dashboard/fee-collection-trends?school_id=${widget.schoolId}&start_date=$startDate&end_date=$endDate'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (feeResponse.statusCode == 200) {
@@ -59,7 +60,7 @@ class _AdminAnalyticsDesktopState extends State<AdminAnalyticsDesktop> {
 
     // Fetch exam trends
     final examResponse = await http.get(
-      Uri.parse('http://localhost:3000/dashboard/exam-performance-trends?school_id=${widget.schoolId}&start_date=$startDate&end_date=$endDate'),
+      Uri.parse('$baseUrl/dashboard/exam-performance-trends?school_id=${widget.schoolId}&start_date=$startDate&end_date=$endDate'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (examResponse.statusCode == 200) {
@@ -68,7 +69,7 @@ class _AdminAnalyticsDesktopState extends State<AdminAnalyticsDesktop> {
 
     // Fetch class comparisons
     final comparisonResponse = await http.get(
-      Uri.parse('http://localhost:3000/dashboard/class-comparisons?school_id=${widget.schoolId}&date=${DateTime.now().toIso8601String().split('T')[0]}'),
+      Uri.parse('$baseUrl/dashboard/class-comparisons?school_id=${widget.schoolId}&date=${DateTime.now().toIso8601String().split('T')[0]}'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (comparisonResponse.statusCode == 200) {
@@ -77,7 +78,7 @@ class _AdminAnalyticsDesktopState extends State<AdminAnalyticsDesktop> {
 
     // Fetch predictive insights
     final insightsResponse = await http.get(
-      Uri.parse('http://localhost:3000/dashboard/predictive-insights?school_id=${widget.schoolId}'),
+      Uri.parse('$baseUrl/dashboard/predictive-insights?school_id=${widget.schoolId}'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (insightsResponse.statusCode == 200) {

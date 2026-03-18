@@ -9,6 +9,7 @@ import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'demo_page.dart';
 import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -123,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString('role', foundRole);
       await prefs.setBool('rememberMe', rememberMe);
       await prefs.setString('username', user['username']);
-      await prefs.setInt('schoolId', schoolId);
+      await prefs.setString('schoolId', '$schoolId');
 
       // Trigger sync after successful login (only for admin and staff)
       if (foundRole == 'admin' || foundRole == 'staff') {
@@ -142,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
       switch (foundRole) {
         case 'student':
           if (mounted) {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder:
@@ -207,6 +208,381 @@ class _LoginPageState extends State<LoginPage> {
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
+
+  // Future<void> _processFaceLogin(int schoolId, XFile capturedImage) async {
+  //   setState(() => isLoading = true);
+  //
+  //   try {
+  //     // Detect face in captured image
+  //     final faceDetector = GoogleMlKit.vision.faceDetector();
+  //     final inputImage = InputImage.fromFilePath(capturedImage.path);
+  //     final faces = await faceDetector.processImage(inputImage);
+  //
+  //     if (faces.isEmpty) {
+  //       showError('No face detected. Please try again.');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     print('Captured faces: ${faces.length}');
+  //     final capturedFace = faces[0];
+  //     print(
+  //       'Captured left eye: ${capturedFace.landmarks[FaceLandmarkType.leftEye]?.position}',
+  //     );
+  //     print(
+  //       'Captured right eye: ${capturedFace.landmarks[FaceLandmarkType.rightEye]?.position}',
+  //     );
+  //     print(
+  //       'Captured nose: ${capturedFace.landmarks[FaceLandmarkType.noseBase]?.position}',
+  //     );
+  //
+  //     // Fetch admin data for the school
+  //     final adminData = await AdminApiService.fetchAllAdminPic(
+  //       schoolId: schoolId.toString(),
+  //     );
+  //     print(adminData);
+  //
+  //     if (adminData.isEmpty) {
+  //       showError('No admin data found for the school');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     // For simplicity, take the first admin
+  //     final admin = adminData[0];
+  //     if (admin['photo'] == null || admin['photo'].isEmpty) {
+  //       showError('No admin photo found for face matching');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     // Detect face in stored photo
+  //     final storedBytes = List<int>.from(admin['photo'].values);
+  //     final tempDir = await getTemporaryDirectory();
+  //     final tempFile = File('${tempDir.path}/stored_face.jpg');
+  //     await tempFile.writeAsBytes(storedBytes);
+  //     final storedInputImage = InputImage.fromFilePath(tempFile.path);
+  //     final storedFaces = await faceDetector.processImage(storedInputImage);
+  //
+  //     if (storedFaces.isEmpty) {
+  //       showError('No face found in stored admin photo');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     print('Stored faces: ${storedFaces.length}');
+  //     final storedFace = storedFaces[0];
+  //     print(
+  //       'Stored left eye: ${storedFace.landmarks[FaceLandmarkType.leftEye]?.position}',
+  //     );
+  //     print(
+  //       'Stored right eye: ${storedFace.landmarks[FaceLandmarkType.rightEye]?.position}',
+  //     );
+  //     print(
+  //       'Stored nose: ${storedFace.landmarks[FaceLandmarkType.noseBase]?.position}',
+  //     );
+  //
+  //     // Compare faces
+  //     bool facesMatch = false;
+  //     final capturedLeftEye = capturedFace.landmarks[FaceLandmarkType.leftEye];
+  //     final capturedRightEye =
+  //         capturedFace.landmarks[FaceLandmarkType.rightEye];
+  //     final storedLeftEye = storedFace.landmarks[FaceLandmarkType.leftEye];
+  //     final storedRightEye = storedFace.landmarks[FaceLandmarkType.rightEye];
+  //
+  //     final capturedNose = capturedFace.landmarks[FaceLandmarkType.noseBase];
+  //     final storedNose = storedFace.landmarks[FaceLandmarkType.noseBase];
+  //
+  //     if (capturedLeftEye != null &&
+  //         capturedRightEye != null &&
+  //         storedLeftEye != null &&
+  //         storedRightEye != null) {
+  //       // Compare eye distances
+  //       final capturedEyeDistance = _calculateDistance(
+  //         capturedLeftEye.position,
+  //         capturedRightEye.position,
+  //       );
+  //       final storedEyeDistance = _calculateDistance(
+  //         storedLeftEye.position,
+  //         storedRightEye.position,
+  //       );
+  //
+  //       // If eye distances are similar (within 20% difference), consider match
+  //       final difference =
+  //           (capturedEyeDistance - storedEyeDistance).abs() / storedEyeDistance;
+  //       if (difference <= 0.2) {
+  //         facesMatch = true;
+  //       }
+  //     } else if (capturedNose != null && storedNose != null) {
+  //       // Fallback: compare relative nose position in bounding box
+  //       final capturedBox = capturedFace.boundingBox;
+  //       final storedBox = storedFace.boundingBox;
+  //
+  //       final capturedNoseRelX =
+  //           (capturedNose.position.x - capturedBox.left) / capturedBox.width;
+  //       final capturedNoseRelY =
+  //           (capturedNose.position.y - capturedBox.top) / capturedBox.height;
+  //
+  //       final storedNoseRelX =
+  //           (storedNose.position.x - storedBox.left) / storedBox.width;
+  //       final storedNoseRelY =
+  //           (storedNose.position.y - storedBox.top) / storedBox.height;
+  //
+  //       print('Captured nose rel: $capturedNoseRelX, $capturedNoseRelY');
+  //       print('Stored nose rel: $storedNoseRelX, $storedNoseRelY');
+  //
+  //       final noseDiffX = (capturedNoseRelX - storedNoseRelX).abs();
+  //       final noseDiffY = (capturedNoseRelY - storedNoseRelY).abs();
+  //
+  //       if (noseDiffX <= 0.1 && noseDiffY <= 0.1) {
+  //         // Within 10% relative difference
+  //         facesMatch = true;
+  //       }
+  //     } else {
+  //       // No reliable landmarks detected, do not match
+  //       facesMatch = false;
+  //     }
+  //
+  //     if (!facesMatch) {
+  //       showError('Face does not match stored admin photo');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     // Faces match
+  //     final username = admin['username'] ?? 'admin';
+  //
+  //     // Save login info
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.setString('role', 'admin');
+  //     await prefs.setBool('rememberMe', false); // Face ID doesn't remember
+  //     await prefs.setString('username', username);
+  //     await prefs.setInt('schoolId', schoolId);
+  //
+  //     // Trigger sync
+  //     try {
+  //       await ApiService.triggerInitialSync(
+  //         schoolId: schoolId,
+  //         userId: username,
+  //       );
+  //     } catch (e) {
+  //       debugPrint('Sync trigger failed: $e');
+  //     }
+  //
+  //     // Navigate to admin dashboard
+  //     if (mounted) {
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder:
+  //               (_) => AdminDashboard(
+  //                 username: username,
+  //                 schoolId: schoolId.toString(),
+  //               ),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     showError('Face recognition failed: $e');
+  //     print('Face recognition failed: $e');
+  //   } finally {
+  //     setState(() => isLoading = false);
+  //   }
+  // }
+  //
+  // void _handleFaceIdLogin() async {
+  //   // Show dialog to enter school ID
+  //   final schoolIdController = TextEditingController();
+  //   String? schoolId = await showDialog<String>(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Enter School ID'),
+  //           content: TextField(
+  //             controller: schoolIdController,
+  //             keyboardType: TextInputType.number,
+  //             decoration: const InputDecoration(hintText: 'School ID'),
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('Cancel'),
+  //             ),
+  //             TextButton(
+  //               onPressed:
+  //                   () => Navigator.of(context).pop(schoolIdController.text),
+  //               child: const Text('Next'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  //
+  //   if (schoolId == null || schoolId.isEmpty) return;
+  //
+  //   final schoolIdInt = int.tryParse(schoolId);
+  //   if (schoolIdInt == null) {
+  //     showError('Invalid School ID');
+  //     return;
+  //   }
+  //
+  //   // Open camera to scan face
+  //   try {
+  //     // Request camera permission
+  //     final status = await Permission.camera.request();
+  //     if (status != PermissionStatus.granted) {
+  //       showError(
+  //         'Camera permission denied. Please grant permission for face scanning.',
+  //       );
+  //       return;
+  //     }
+  //
+  //     final cameras = await availableCameras();
+  //     if (cameras.isEmpty) {
+  //       showError('No camera available');
+  //       return;
+  //     }
+  //
+  //     final frontCamera = cameras.firstWhere(
+  //       (camera) => camera.lensDirection == CameraLensDirection.front,
+  //       orElse: () => cameras.first,
+  //     );
+  //
+  //     // Fetch admin data for the school
+  //     final adminData = await AdminApiService.fetchAllAdminPic(
+  //       schoolId: schoolId.toString(),
+  //     );
+  //
+  //     if (adminData.isEmpty) {
+  //       showError('No admin data found for the school');
+  //       return;
+  //     }
+  //
+  //     // For simplicity, take the first admin
+  //     final admin = adminData[0];
+  //     if (admin['photo'] == null || admin['photo'].isEmpty) {
+  //       showError('No admin photo found for face matching');
+  //       return;
+  //     }
+  //
+  //     // Navigate to camera screen for live scan
+  //     final result = await Navigator.push(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (_) => FaceScanScreen(camera: frontCamera, admin: admin),
+  //       ),
+  //     );
+  //
+  //     if (result == true) {
+  //       // Login successful
+  //       final username = admin['username'] ?? 'admin';
+  //
+  //       // Save login info
+  //       final prefs = await SharedPreferences.getInstance();
+  //       await prefs.setString('role', 'admin');
+  //       await prefs.setBool('rememberMe', false);
+  //       await prefs.setString('username', username);
+  //       await prefs.setInt('schoolId', schoolIdInt);
+  //
+  //       // Trigger sync
+  //       try {
+  //         await ApiService.triggerInitialSync(
+  //           schoolId: schoolIdInt,
+  //           userId: username,
+  //         );
+  //       } catch (e) {
+  //         debugPrint('Sync trigger failed: $e');
+  //       }
+  //
+  //       // Navigate to admin dashboard
+  //       if (mounted) {
+  //         Navigator.push(
+  //           context,
+  //           MaterialPageRoute(
+  //             builder:
+  //                 (_) => AdminDashboard(
+  //                   username: username,
+  //                   schoolId: schoolIdInt.toString(),
+  //                 ),
+  //           ),
+  //         );
+  //       }
+  //     }
+  //   } catch (e) {
+  //     showError('Camera error: $e');
+  //     print('Camera error: $e');
+  //   }
+  // }
+  //
+  //     if (faces.isEmpty) {
+  //       showError('No face detected. Please try again.');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     // Fetch admin data for the school
+  //     final adminData = await ApiService.fetchAdminAndSchoolData(
+  //       username: '', // We don't have username, so fetch all admins
+  //       schoolId: schoolId.toString(),
+  //     );
+  //
+  //     if (adminData['status'] != 'success') {
+  //       showError('Failed to fetch admin data');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     final data = adminData['data'];
+  //     final admin = data?['adminData'];
+  //
+  //     if (admin == null || admin['photo'] == null || admin['photo'].isEmpty) {
+  //       showError('No admin photo found for face matching');
+  //       setState(() => isLoading = false);
+  //       return;
+  //     }
+  //
+  //     // For simplicity, since full face matching requires advanced ML,
+  //     // we'll check if face is detected in captured image and admin has photo
+  //     // In a real app, you'd compare face embeddings
+  //
+  //     // Placeholder: assume match if face detected and admin photo exists
+  //     final username = admin['name'] ?? 'admin';
+  //
+  //     // Save login info
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.setString('role', 'admin');
+  //     await prefs.setBool('rememberMe', false); // Face ID doesn't remember
+  //     await prefs.setString('username', username);
+  //     await prefs.setInt('schoolId', schoolId);
+  //
+  //     // Trigger sync
+  //     try {
+  //       await ApiService.triggerInitialSync(
+  //         schoolId: schoolId,
+  //         userId: username,
+  //       );
+  //     } catch (e) {
+  //       debugPrint('Sync trigger failed: $e');
+  //     }
+  //
+  //     // Navigate to admin dashboard
+  //     if (mounted) {
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder:
+  //               (_) => AdminDashboard(
+  //                 username: username,
+  //                 schoolId: schoolId.toString(),
+  //               ),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     showError('Face recognition failed: $e');
+  //   } finally {
+  //     setState(() => isLoading = false);
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -337,6 +713,27 @@ class _LoginPageState extends State<LoginPage> {
 
                           Row(
                             children: [
+                              Checkbox(
+                                value: rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: const Color(0xFF2B7CA8),
+                              ),
+                              const Text(
+                                'Remember Me',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Row(
+                            children: [
                               const Spacer(),
                               TextButton(
                                 onPressed: () {
@@ -390,11 +787,66 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                             ),
                           ),
+                          const SizedBox(height: 10),
+
+                          Row(
+                            children: [
+                              Spacer(),
+                              TextButton.icon(
+                                icon: Icon(
+                                  Icons.arrow_forward,
+                                  color: Color(0xFF2B7CA8),
+                                  size: 20,
+                                  weight: 3,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const DemoIdsPage(),
+                                    ),
+                                  );
+                                },
+                                label: Text(
+                                  'Explore Demo',
+                                  style: TextStyle(
+                                    color: Color(0xFF2B7CA8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                iconAlignment: IconAlignment.end,
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
 
+                    // Face ID Button
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   height: 50,
+                    //   child: OutlinedButton.icon(
+                    //     icon: const Icon(Icons.face, color: Colors.white),
+                    //     label: const Text(
+                    //       'Face ID Login',
+                    //       style: TextStyle(
+                    //         color: Colors.white,
+                    //         fontSize: 16,
+                    //         fontWeight: FontWeight.bold,
+                    //       ),
+                    //     ),
+                    //     style: OutlinedButton.styleFrom(
+                    //       side: const BorderSide(color: Colors.white),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(30),
+                    //       ),
+                    //     ),
+                    //     onPressed: _handleFaceIdLogin,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 20),
                     Text(
                       '© ${DateTime.now().year.toString()} Ramchin Technologies Pvt. Ltd.',
                       style: const TextStyle(
@@ -412,6 +864,10 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
+  // double _calculateDistance(Point<int> p1, Point<int> p2) {
+  //   return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+  // }
 
   Widget _buildInputField({
     required TextEditingController controller,

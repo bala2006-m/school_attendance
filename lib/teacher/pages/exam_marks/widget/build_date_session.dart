@@ -181,7 +181,7 @@ class _CustomDateSessionPickerState extends State<CustomDateSessionPicker> {
         const SizedBox(width: 12),
         Expanded(
           child: DropdownButtonFormField<String>(
-            value:
+            initialValue:
                 widget.sessionController.text.isNotEmpty
                     ? widget.sessionController.text
                     : null,

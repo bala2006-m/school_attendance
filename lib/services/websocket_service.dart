@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:school_attendance/services/hybrid_api_service.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class WebSocketService {
   static WebSocketService? _instance;
@@ -10,7 +10,7 @@ class WebSocketService {
 
   WebSocketService._();
 
-  IO.Socket? _socket;
+  io.Socket? _socket;
   StreamController<Map<String, dynamic>>? _syncStatusController;
   StreamController<Map<String, dynamic>>? _syncUpdateController;
   StreamController<Map<String, dynamic>>? _databaseChangeController;
@@ -51,7 +51,7 @@ class WebSocketService {
 
       debugPrint('Connecting to WebSocket at: $wsUrl');
 
-      _socket = IO.io(wsUrl, <String, dynamic>{
+      _socket = io.io(wsUrl, <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': true,
         'reconnection': true,

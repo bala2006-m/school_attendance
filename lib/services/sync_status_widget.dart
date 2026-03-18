@@ -39,20 +39,24 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
   Future<void> _triggerFullSync() async {
     final success = await HybridApiService.triggerFullSync();
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Full sync triggered successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Full sync triggered successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
       _loadSyncStatus(); // Refresh status
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to trigger full sync'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to trigger full sync'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

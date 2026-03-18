@@ -105,154 +105,130 @@ class _AdminAnalyticsMobileState extends State<AdminAnalyticsMobile> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Analytics Dashboard')),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Attendance Trends',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 200,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots:
-                                  attendanceTrends.entries
-                                      .map(
-                                        (e) => FlSpot(
-                                          double.parse(e.key.split('-')[1]),
-                                          e.value['present'],
-                                        ),
-                                      )
-                                      .toList(),
-                              isCurved: true,
-                              color: Colors.blue,
-                              barWidth: 4,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Attendance Trends',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots:
+                      attendanceTrends.entries
+                          .map(
+                            (e) => FlSpot(
+                              double.parse(e.key.split('-')[1]),
+                              e.value['present'].toDouble(),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Fee Collection Trends',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 200,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots:
-                                  feeTrends.entries
-                                      .map(
-                                        (e) => FlSpot(
-                                          double.parse(e.key.split('-')[1]),
-                                          e.value['collected'],
-                                        ),
-                                      )
-                                      .toList(),
-                              isCurved: true,
-                              color: Colors.green,
-                              barWidth: 4,
+                          )
+                          .toList(),
+                  isCurved: true,
+                  color: Colors.blue,
+                  barWidth: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Fee Collection Trends',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots:
+                      feeTrends.entries
+                          .map(
+                            (e) => FlSpot(
+                              double.parse(e.key.split('-')[1]),
+                              e.value['collected'].toDouble(),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Exam Performance Trends',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 200,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots:
-                                  examTrends.entries
-                                      .map(
-                                        (e) => FlSpot(
-                                          double.parse(e.key.split('-')[1]),
-                                          e.value['average'],
-                                        ),
-                                      )
-                                      .toList(),
-                              isCurved: true,
-                              color: Colors.red,
-                              barWidth: 4,
+                          )
+                          .toList(),
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Exam Performance Trends',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots:
+                      examTrends.entries
+                          .map(
+                            (e) => FlSpot(
+                              double.parse(e.key.split('-')[1]),
+                              e.value['average'].toDouble(),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Class Comparisons',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ...classComparisons.map(
-                      (comp) => ListTile(
-                        title: Text(comp['class']),
-                        subtitle: Text(
-                          'Attendance: ${comp['attendance_rate']}%, Fees: ${comp['fee_rate']}%, Avg Marks: ${comp['avg_marks']}',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Predictive Insights',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ...predictiveInsights
-                        .take(10)
-                        .map(
-                          (insight) => ListTile(
-                            title: Text(insight['name']),
-                            subtitle: Text(
-                              'Engagement: ${insight['engagement_score'].toStringAsFixed(2)}',
-                            ),
-                          ),
-                        ),
-                  ],
+                          )
+                          .toList(),
+                  isCurved: true,
+                  color: Colors.red,
+                  barWidth: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Class Comparisons',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ...classComparisons.map(
+          (comp) => ListTile(
+            title: Text(comp['class']),
+            subtitle: Text(
+              'Attendance: ${comp['attendance_rate'].toStringAsFixed(2)}%, Fees: ${comp['fee_rate'].toStringAsFixed(2)}%, Avg Marks: ${comp['avg_marks'].toStringAsFixed(2)}',
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Predictive Insights',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ...predictiveInsights
+            .take(10)
+            .map(
+              (insight) => ListTile(
+                title: Text(insight['name']),
+                subtitle: Text(
+                  'Engagement: ${insight['engagement_score'].toStringAsFixed(2)}',
                 ),
               ),
+            ),
+      ],
     );
   }
 }
