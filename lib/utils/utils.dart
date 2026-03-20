@@ -9,8 +9,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 // const String tempUrl = "https://ghj5w9n1-3003.inc1.devtunnels.ms";
 
-// const String cloudBaseUrl = "https://smartschoolserver.ramchintech.com";
-const String cloudBaseUrl = "https://ghj5w9n1-3003.inc1.devtunnels.ms";
+const String cloudBaseUrl = "https://smartschoolserver.ramchintech.com";
+// const String cloudBaseUrl = "https://ghj5w9n1-3003.inc1.devtunnels.ms";
 
 String get baseUrl {
   return cloudBaseUrl;
