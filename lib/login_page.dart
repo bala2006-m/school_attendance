@@ -788,7 +788,10 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 10),
-
+                          const Text(
+                            "v1.0.0+12 (Latest Update)",
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
                           Row(
                             children: [
                               Spacer(),
