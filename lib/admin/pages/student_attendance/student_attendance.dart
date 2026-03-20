@@ -177,107 +177,111 @@ class _StudentState extends State<Student> {
                 onRefresh: init,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    BuildProfileCard(
-                      schoolPhoto: schoolPhoto,
-                      schoolAddress: '$schoolAddress',
-                      schoolName: '$schoolName',
-                    ),
-                    const SizedBox(height: 16),
-                    classes.isEmpty
-                        ? const Center(
-                          child: Text(
-                            "No Classes Found",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        )
-                        : GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: classes.length,
-                          gridDelegate:
-                               SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: getResponsiveColumnCount(MediaQuery.sizeOf(context).width),
-                                mainAxisSpacing: 10,
-                                crossAxisSpacing: 10,
-                                childAspectRatio: 1.2,
-                              ),
-                          itemBuilder: (context, index) {
-                            final item = classes[index];
-                            final classId = item['id'].toString();
-                            final isMarked =
-                                attendanceStatusMap[classId] ?? false;
-
-                            return GestureDetector(
-                                      onTap:
-                                          isMarked
-                                              ? null
-                                              : () async {
-                                                await Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder:
-                                                        (_) => StudentAttendance(
-                                                          classId: classId,
-                                                          className: item['class'],
-                                                          section: item['section'],
-                                                          schoolId: widget.schoolId,
-                                                          username: widget.username,
-                                                        ),
-                                                  ),
-                                                );
-                                                init();
-                                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isMarked ? Colors.white : Colors.teal,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 4,
-                                    ),
-                                  ],
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      BuildProfileCard(
+                        schoolPhoto: schoolPhoto,
+                        schoolAddress: '$schoolAddress',
+                        schoolName: '$schoolName',
+                      ),
+                      const SizedBox(height: 16),
+                      classes.isEmpty
+                          ? const Center(
+                            child: Text(
+                              "No Classes Found",
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          )
+                          : GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: classes.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: getResponsiveColumnCount(
+                                    MediaQuery.sizeOf(context).width,
+                                  ),
+                                  mainAxisSpacing: 10,
+                                  crossAxisSpacing: 10,
+                                  childAspectRatio: 1.2,
                                 ),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "${item['class']} Std",
-                                        style: TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                          color:
-                                              isMarked
-                                                  ? Colors.black
-                                                  : Colors.white,
-                                        ),
-                                      ),
-                                      Text(
-                                        "${item['section']} Sec",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color:
-                                              isMarked
-                                                  ? Colors.black54
-                                                  : Colors.white,
-                                        ),
+                            itemBuilder: (context, index) {
+                              final item = classes[index];
+                              final classId = item['id'].toString();
+                              final isMarked =
+                                  attendanceStatusMap[classId] ?? false;
+
+                              return GestureDetector(
+                                onTap:
+                                    isMarked
+                                        ? null
+                                        : () async {
+                                          await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => StudentAttendance(
+                                                    classId: classId,
+                                                    className: item['class'],
+                                                    section: item['section'],
+                                                    schoolId: widget.schoolId,
+                                                    username: widget.username,
+                                                  ),
+                                            ),
+                                          );
+                                          init();
+                                        },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isMarked ? Colors.white : Colors.teal,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 4,
                                       ),
                                     ],
                                   ),
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "${item['class']} Std",
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color:
+                                                isMarked
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          "${item['section']} Sec",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color:
+                                                isMarked
+                                                    ? Colors.black54
+                                                    : Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                  ],
+                              );
+                            },
+                          ),
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 }

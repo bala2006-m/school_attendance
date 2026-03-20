@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
+import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/utils/utils.dart';
 
 class StudentApiServices {
@@ -9,11 +9,9 @@ class StudentApiServices {
     required int schoolId,
     required int classId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/homework/fetch_homework_by_class_id/$schoolId/$classId',
+    final response = await HybridApiService.get(
+      '/homework/fetch_homework_by_class_id/$schoolId/$classId',
     );
-
-    final response = await http.get(url);
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
       if (data != []) {
@@ -59,11 +57,8 @@ class StudentApiServices {
         if (route != null) "route": route,
       };
 
-      final res = await http.put(
-        Uri.parse(
-          "$baseUrl/students/update?username=$username&school_id=$schoolId",
-        ),
-        headers: {'Content-Type': 'application/json'},
+      final res = await HybridApiService.put(
+        "/students/update?username=$username&school_id=$schoolId",
         body: jsonEncode(body),
       );
 
@@ -88,11 +83,8 @@ class StudentApiServices {
     required String schoolId,
     required String classId,
   }) async {
-    final apiUrl = '$baseUrl/feedback';
-
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.post(
+      '/feedback',
       body: jsonEncode({
         'name': name,
         'username': username,
@@ -114,11 +106,9 @@ class StudentApiServices {
     required int schoolId,
   }) async {
     try {
-      final uri = Uri.parse(
-        '$baseUrl/students/by-username?username=$username&school_id=$schoolId',
+      final response = await HybridApiService.get(
+        '/students/by-username?username=$username&school_id=$schoolId',
       );
-
-      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -141,8 +131,8 @@ class StudentApiServices {
 
   //FetchSchoolData
   static Future<List<Map<String, dynamic>>> fetchSchoolData(String id) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/school/fetch_school_data?id=$id'),
+    final response = await HybridApiService.get(
+      '/school/fetch_school_data?id=$id',
     );
 
     if (response.statusCode == 200) {
@@ -173,10 +163,8 @@ class StudentApiServices {
     String classId,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-          '$baseUrl/class/get_class_data?school_id=$schoolId&class_id=$classId',
-        ),
+      final response = await HybridApiService.get(
+        '/class/get_class_data?school_id=$schoolId&class_id=$classId',
       );
 
       if (response.statusCode == 200) {
@@ -198,18 +186,10 @@ class StudentApiServices {
     required String classId,
     required String username,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/attendance/student/fetch_stu_attendance_by_class_id',
-    ).replace(
-      queryParameters: {
-        'school_id': schoolId,
-        'class_id': classId,
-        'username': username,
-      },
-    );
-
     try {
-      final response = await http.get(url);
+      final response = await HybridApiService.get(
+        '/attendance/student/fetch_stu_attendance_by_class_id?school_id=$schoolId&class_id=$classId&username=$username',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -228,12 +208,10 @@ class StudentApiServices {
     required String schoolId,
     required String classId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/holidays/class?school_id=$schoolId&class_id=$classId',
-    );
-
     try {
-      final response = await http.get(url);
+      final response = await HybridApiService.get(
+        '/holidays/class?school_id=$schoolId&class_id=$classId',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -265,10 +243,9 @@ class StudentApiServices {
     required String schoolId,
     required String classId,
   }) async {
-    final uri = Uri.parse(
-      '$baseUrl/timetable?schoolId=$schoolId&classId=$classId',
+    final response = await HybridApiService.get(
+      '/timetable?schoolId=$schoolId&classId=$classId',
     );
-    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
@@ -294,10 +271,9 @@ class StudentApiServices {
     required String schoolId,
     required String classId,
   }) async {
-    final uri = Uri.parse(
-      '$baseUrl/timetable?schoolId=$schoolId&classId=$classId',
+    final response = await HybridApiService.get(
+      '/timetable?schoolId=$schoolId&classId=$classId',
     );
-    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);

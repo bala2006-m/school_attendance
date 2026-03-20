@@ -177,8 +177,8 @@ class ApiService {
     String schoolId,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/school/$schoolId/with-payments'),
+      final response = await HybridApiService.get(
+        '/school/$schoolId/with-payments',
       );
 
       if (response.statusCode == 200) {

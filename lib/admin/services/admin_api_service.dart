@@ -1001,7 +1001,9 @@ class AdminApiService {
           'class_id': classId,
         }),
       );
+
       final res = jsonDecode(response.body);
+      print('res$res');
       if (response.statusCode == 200 || res['status'] == 'success') {
         return jsonDecode(response.body);
       } else {

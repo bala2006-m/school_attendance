@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:http/http.dart' as http;
+import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/utils/utils.dart';
 
 import '../models/staff_models.dart';
@@ -64,11 +63,8 @@ class TeacherApiServices {
     required DateTime toDate,
     String? reason,
   }) async {
-    final url = Uri.parse("$baseUrl/leave-request/create");
-
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
+    final response = await HybridApiService.post(
+      "/leave-request/create",
       body: jsonEncode({
         "username": username,
         "role": role,
@@ -91,11 +87,8 @@ class TeacherApiServices {
   }
 
   static Future<String> updateLeaveStatus(int id, String status) async {
-    final url = Uri.parse('$baseUrl/leave-request/$id/status');
-
-    final response = await http.patch(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.patch(
+      '/leave-request/$id/status',
       body: jsonEncode({'status': status}),
     );
 
@@ -113,9 +106,8 @@ class TeacherApiServices {
     required Map<String, dynamic> data,
     required int schoolId,
   }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/staff/update/$username/$schoolId'),
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.put(
+      '/staff/update/$username/$schoolId',
       body: jsonEncode(data),
     );
 
@@ -128,10 +120,9 @@ class TeacherApiServices {
     required String username,
     required int schoolId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/staff/fetch-staffs?username=$username&school_id=$schoolId',
+    final response = await HybridApiService.get(
+      '/staff/fetch-staffs?username=$username&school_id=$schoolId',
     );
-    final response = await http.get(url);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['status'] == 'success' && data['staff'] != null) {
@@ -150,11 +141,8 @@ class TeacherApiServices {
     required String confirmPassword,
     required int schoolId,
   }) async {
-    final url = Uri.parse('$baseUrl/students/change-password');
-
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
+    final response = await HybridApiService.post(
+      '/students/change-password',
       body: jsonEncode({
         'username': username,
         'newPassword': newPassword,
@@ -174,8 +162,6 @@ class TeacherApiServices {
   static Future<bool> saveTimetable(
     List<Map<String, dynamic>> timetables,
   ) async {
-    final String url = '$baseUrl/timetable/create';
-
     // Convert the list to the required plain-text format
     String timetableString = timetables
         .map((entry) {
@@ -184,9 +170,8 @@ class TeacherApiServices {
         .join('\n');
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.post(
+        '/timetable/create',
         body: jsonEncode({"data": timetableString}),
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -200,10 +185,8 @@ class TeacherApiServices {
   }
 
   static Future<bool> deleteTimetableEntry(String id) async {
-    final url = Uri.parse('$baseUrl/timetable/delete/$id');
-
     try {
-      final response = await http.delete(url);
+      final response = await HybridApiService.delete('/timetable/delete/$id');
 
       if (response.statusCode == 200) {
         return true;
@@ -221,10 +204,9 @@ class TeacherApiServices {
     required int schoolId,
   }) async {
     try {
-      final uri = Uri.parse(
-        '$baseUrl/staff/fetch-by-username?username=$username&school_id=$schoolId',
+      final response = await HybridApiService.get(
+        '/staff/fetch-by-username?username=$username&school_id=$schoolId',
       );
-      final response = await http.get(uri);
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -247,12 +229,10 @@ class TeacherApiServices {
     String? schoolId,
     String? classId,
   }) async {
-    final uri = Uri.parse(
-      '$baseUrl/students/fetch-student-data?school_id=$schoolId&class_id=$classId',
-    );
-
     try {
-      final response = await http.get(uri);
+      final response = await HybridApiService.get(
+        '/students/fetch-student-data?school_id=$schoolId&class_id=$classId',
+      );
       final res = jsonDecode(response.body);
 
       if (response.statusCode == 200 || res['status'] == 'success') {
@@ -277,12 +257,10 @@ class TeacherApiServices {
     String? schoolId,
     String? classId,
   }) async {
-    final uri = Uri.parse(
-      '$baseUrl/students/fetch-non_rte_student-data?school_id=$schoolId&class_id=$classId',
-    );
-
     try {
-      final response = await http.get(uri);
+      final response = await HybridApiService.get(
+        '/students/fetch-non_rte_student-data?school_id=$schoolId&class_id=$classId',
+      );
       final res = jsonDecode(response.body);
 
       if (response.statusCode == 200 || res['status'] == 'success') {
@@ -308,8 +286,8 @@ class TeacherApiServices {
     String schoolId,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/class/fetch_class_data?school_id=$schoolId'),
+      final response = await HybridApiService.get(
+        '/class/fetch_class_data?school_id=$schoolId',
       );
 
       if (response.statusCode == 200) {
@@ -334,9 +312,8 @@ class TeacherApiServices {
     required String classId,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/attendance/post_student_attendance'),
-        headers: {'Content-Type': 'application/json'},
+      final response = await HybridApiService.post(
+        '/attendance/post_student_attendance',
         body: jsonEncode({
           'username': username,
           'date': date,
@@ -348,6 +325,7 @@ class TeacherApiServices {
       );
 
       final res = jsonDecode(response.body);
+      print(res);
 
       if (response.statusCode == 200 || res['status'] == 'success') {
         return true;

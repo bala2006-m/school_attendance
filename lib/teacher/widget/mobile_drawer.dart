@@ -58,18 +58,16 @@ class MobileDrawer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  photo!.isNotEmpty
-                      ? CircleAvatar(
-                        radius: 30,
-                        backgroundImage: MemoryImage(photo!),
-                      )
-                      : CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(
-                          'https://siscomsystems.com/mpng.png',
-                        ),
-                      ),
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    backgroundImage: photo != null && photo!.isNotEmpty
+                        ? MemoryImage(photo!)
+                        : null,
+                    child: (photo == null || photo!.isEmpty)
+                        ? const Icon(Icons.person, size: 40, color: Color(0xFF2B7CA8))
+                        : null,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Welcome, $name',

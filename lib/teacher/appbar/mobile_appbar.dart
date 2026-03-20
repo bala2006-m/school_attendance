@@ -31,9 +31,7 @@ class _MobileAppbarState extends State<MobileAppbar> {
   String username = 'Staff';
   ImageProvider? staffPhoto;
 
-  final ImageProvider defaultImage = const NetworkImage(
-    'https://siscomsystems.com/mpng.png',
-  );
+  // Removed failing network image fallback
 
   @override
   void initState() {
@@ -167,9 +165,12 @@ class _MobileAppbarState extends State<MobileAppbar> {
               Padding(
                 padding: const EdgeInsets.only(right: 20),
                 child: CircleAvatar(
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: Colors.white,
                   radius: 30,
-                  backgroundImage: staffPhoto ?? defaultImage,
+                  backgroundImage: staffPhoto,
+                  child: staffPhoto == null
+                      ? const Icon(Icons.person, size: 40, color: Color(0xFF2B7CA8))
+                      : null,
                 ),
               ),
               Column(

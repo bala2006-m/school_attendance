@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:school_attendance/utils/utils.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/student/services/student_api_services.dart';
 import 'package:school_attendance/student/widget/student_mobile_dashboard.dart';
 import 'package:school_attendance/student/widget/student_mobile_drawer.dart';
+import 'package:school_attendance/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../admin/services/admin_api_service.dart';
@@ -368,7 +368,7 @@ class StudentDashboardState extends State<StudentDashboard> {
                   )
                   : StudentAppbarDesktop(
                     title: 'Student Dashboard',
-                    enableDrawer: false,
+                    enableDrawer: true,
                     enableBack: false,
                     onBack: safeExit,
                   ),

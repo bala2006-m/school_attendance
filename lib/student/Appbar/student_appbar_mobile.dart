@@ -31,9 +31,7 @@ class _StudentAppbarMobileState extends State<StudentAppbarMobile> {
   String username = 'Student';
   ImageProvider? adminPhoto;
 
-  final ImageProvider defaultImage = const NetworkImage(
-    'https://img.favpng.com/9/16/11/student-cartoon-avatar-png-favpng-T0KuPNVPyfp00uNTwQVK2yk7D.jpg',
-  );
+  final ImageProvider defaultImage = const AssetImage('assets/favicon.png');
 
   @override
   void initState() {
