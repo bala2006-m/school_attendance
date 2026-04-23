@@ -89,7 +89,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
   Future<void> _loadMenuOrder() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Read the FULL maps from global cache
     final String? globalCatsJson = prefs.getString(
       'admin_global_categories_order_${widget.schoolId}',
     );
@@ -106,7 +105,9 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       }
 
       if (globalButtonsJson != null) {
-        final fullButtons = Map<String, dynamic>.from(jsonDecode(globalButtonsJson));
+        final fullButtons = Map<String, dynamic>.from(
+          jsonDecode(globalButtonsJson),
+        );
         if (fullButtons.containsKey('student')) {
           _categoryButtonOrders = Map<String, List<String>>.from(
             (fullButtons['student'] as Map).map(
@@ -144,7 +145,8 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
           if (buttons != null && buttons['student'] != null) {
             _categoryButtonOrders = Map<String, List<String>>.from(
               (buttons['student'] as Map).map(
-                (key, value) => MapEntry(key as String, List<String>.from(value)),
+                (key, value) =>
+                    MapEntry(key as String, List<String>.from(value)),
               ),
             );
             updated = true;
@@ -154,7 +156,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
             setState(() {
               _initButtons();
             });
-            // Update global cache with FULL maps from DB
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(
               'admin_global_categories_order_${widget.schoolId}',
@@ -175,9 +176,12 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
   Future<void> _saveMenuOrder() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // 1. Read the FULL maps from global cache
-    String? globalCatsJson = prefs.getString('admin_global_categories_order_${widget.schoolId}');
-    String? globalButtonsJson = prefs.getString('admin_global_buttons_order_${widget.schoolId}');
+    String? globalCatsJson = prefs.getString(
+      'admin_global_categories_order_${widget.schoolId}',
+    );
+    String? globalButtonsJson = prefs.getString(
+      'admin_global_buttons_order_${widget.schoolId}',
+    );
 
     Map<String, dynamic> fullCats = {};
     Map<String, dynamic> fullButtons = {};
@@ -189,11 +193,9 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       fullButtons = Map<String, dynamic>.from(jsonDecode(globalButtonsJson));
     }
 
-    // 2. Update ONLY the current section ('student') in the full maps
     fullCats['student'] = _orderedCategories;
     fullButtons['student'] = _categoryButtonOrders;
 
-    // 3. Save the updated FULL maps back to global cache
     await prefs.setString(
       'admin_global_categories_order_${widget.schoolId}',
       jsonEncode(fullCats),
@@ -203,7 +205,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       jsonEncode(fullButtons),
     );
 
-    // 4. Send the FULL maps to the database
     await AdminApiService.updateRearrange(
       schoolId: int.parse(widget.schoolId),
       username: widget.adminUsername,
@@ -316,7 +317,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       ),
     ];
 
-    // Initialize keys and focus nodes
     _buttonKeys.clear();
     _focusNodes.clear();
     for (var btn in _allButtons) {
@@ -324,7 +324,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       _focusNodes[btn.index] = FocusNode();
     }
 
-    // Filter allowed buttons
     _allowedButtons =
         _allButtons.where((btn) {
           if (btn.category == 'Staff') return hasStaffAccess;
@@ -332,7 +331,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
           return false;
         }).toList();
 
-    // Ensure all allowed categories are in _orderedCategories
     final Set<String> allowedCats =
         _allowedButtons.map((e) => e.category).toSet();
     for (var cat in allowedCats) {
@@ -341,10 +339,8 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       }
     }
 
-    // Remove categories that are no longer present in allowed buttons (optional, but cleaner)
     _orderedCategories.removeWhere((cat) => !allowedCats.contains(cat));
 
-    // Ensure all allowed buttons for each category are in _categoryButtonOrders
     for (var cat in _orderedCategories) {
       final List<String> currentButtonTitles =
           _allowedButtons
@@ -357,13 +353,11 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
         _categoryButtonOrders[cat] = currentButtonTitles;
       } else {
         final existingOrder = _categoryButtonOrders[cat]!;
-        // Add any missing buttons to the end of the order
         for (var title in currentButtonTitles) {
           if (!existingOrder.contains(title)) {
             existingOrder.add(title);
           }
         }
-        // Remove buttons that are no longer available
         existingOrder.removeWhere(
           (title) => !currentButtonTitles.contains(title),
         );
@@ -373,7 +367,6 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
 
   @override
   void dispose() {
-    // Save scroll position only if attached
     if (_scrollController.hasClients) {
       savedScrollOffset = _scrollController.offset;
     }
@@ -400,13 +393,24 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
             access['student'] == "1");
   }
 
+  // Helper to calculate consistent button width for desktop
+  double _getButtonWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 638) {
+      return screenWidth / 6.1;
+    } else if (screenWidth > 510) {
+      return screenWidth / 7;
+    } else {
+      return screenWidth / 7.5;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return buildMainUI(context);
   }
 
   Widget buildMainUI(BuildContext context) {
-    // final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     final profileCard = BuildProfileCard(
@@ -491,40 +495,46 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       }
       final String item = _orderedCategories.removeAt(oldIndex);
       _orderedCategories.insert(newIndex, item);
-      _saveMenuOrder(); // Save changes immediately
+      _saveMenuOrder();
     });
   }
 
   List<Widget> _buildAllCategories() {
-    return _orderedCategories.where((category) {
-      return _allowedButtons.any((b) => b.category == category);
-    }).map((category) {
-      final buttons =
-          _allowedButtons.where((b) => b.category == category).toList();
+    return _orderedCategories
+        .where((category) {
+          return _allowedButtons.any((b) => b.category == category);
+        })
+        .map((category) {
+          final buttons =
+              _allowedButtons.where((b) => b.category == category).toList();
 
-      // Order buttons within category
-      if (_categoryButtonOrders.containsKey(category)) {
-        final order = _categoryButtonOrders[category]!;
-        buttons.sort((a, b) {
-          int indexA = order.indexOf(a.title);
-          int indexB = order.indexOf(b.title);
-          if (indexA == -1) indexA = 999;
-          if (indexB == -1) indexB = 999;
-          return indexA.compareTo(indexB);
-        });
-      }
+          if (_categoryButtonOrders.containsKey(category)) {
+            final order = _categoryButtonOrders[category]!;
+            buttons.sort((a, b) {
+              int indexA = order.indexOf(a.title);
+              int indexB = order.indexOf(b.title);
+              if (indexA == -1) indexA = 999;
+              if (indexB == -1) indexB = 999;
+              return indexA.compareTo(indexB);
+            });
+          }
 
-      return Column(
-        key: ValueKey(category),
-        children: [
-          _buildCategoryContainer(category, buttons),
-          const SizedBox(height: 30),
-        ],
-      );
-    }).toList();
+          return Column(
+            key: ValueKey(category),
+            children: [
+              _buildCategoryContainer(category, buttons),
+              const SizedBox(height: 30),
+            ],
+          );
+        })
+        .toList();
   }
 
   Widget _buildCategoryContainer(String title, List<MenuButtonData> buttons) {
+    // Calculate a responsive height for the reorderable list
+    final double reorderableHeight =
+        MediaQuery.of(context).size.height * 0.22 + 20;
+
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
@@ -563,7 +573,7 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
                 // Grid or List of buttons
                 isRearrangeMode
                     ? SizedBox(
-                      height: 170,
+                      height: reorderableHeight,
                       child: ReorderableListView(
                         scrollDirection: Axis.horizontal,
                         onReorder:
@@ -631,7 +641,7 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
       _categoryButtonOrders[category] = order;
 
       _initButtons();
-      _saveMenuOrder(); // Save changes immediately
+      _saveMenuOrder();
     });
   }
 
@@ -643,23 +653,17 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
     required int buttonIndex,
   }) {
     bool isClicked = _clickedButtonIndex == buttonIndex;
+
+    // FIX: Use consistent width for both ConstrainedBox and ElevatedButton
+    final double buttonWidth = _getButtonWidth(context);
+
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 8, right: 8, bottom: 12),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.22,
-          minWidth:
-              MediaQuery.of(context).size.width > 638
-                  ? MediaQuery.of(context).size.width / 6.1
-                  : MediaQuery.of(context).size.width > 510
-                  ? MediaQuery.of(context).size.width / 7
-                  : MediaQuery.of(context).size.width / 7.5,
-          maxWidth:
-              MediaQuery.of(context).size.width > 638
-                  ? MediaQuery.of(context).size.width / 6.1
-                  : MediaQuery.of(context).size.width > 510
-                  ? MediaQuery.of(context).size.width / 7
-                  : MediaQuery.of(context).size.width / 7.5,
+          minWidth: buttonWidth,
+          maxWidth: buttonWidth,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -667,8 +671,9 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: isClicked ? Colors.cyan.shade800 : Colors.cyan,
+                // FIX: Use the same buttonWidth so it doesn't overflow the constraint
                 minimumSize: Size(
-                  MediaQuery.of(context).size.width / 4.5,
+                  buttonWidth,
                   MediaQuery.of(context).size.height * 0.09,
                 ),
                 shape: RoundedRectangleBorder(
@@ -689,13 +694,13 @@ class _AdminStudentDesktopState extends State<AdminStudentDesktop> {
               },
               child: Icon(icon, size: 40, color: Colors.white),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               text,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.black, fontSize: 13),
+              style: const TextStyle(color: Colors.black, fontSize: 13),
             ),
           ],
         ),

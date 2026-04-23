@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -434,7 +435,133 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
     );
   }
 
+  // Widget _buildImage(String imgUrl) {
+  //   // Fix 1: Ensure URL is valid
+  //   String fixedUrl = imgUrl.trim();
+  //
+  //   // Fix 2: Convert HTTP → HTTPS (IMPORTANT for web)
+  //   if (fixedUrl.startsWith("http://")) {
+  //     fixedUrl = fixedUrl.replaceFirst("http://", "https://");
+  //   }
+  //
+  //   // Fix 3: If URL is relative → prepend baseUrl
+  //   if (!fixedUrl.startsWith("http")) {
+  //     fixedUrl = "$baseUrl/$fixedUrl";
+  //   }
+  //
+  //   return Image.network(
+  //     fixedUrl,
+  //     fit: BoxFit.cover,
+  //
+  //     // Loading indicator
+  //     loadingBuilder: (context, child, progress) {
+  //       if (progress == null) return child;
+  //       return const Center(child: CircularProgressIndicator());
+  //     },
+  //
+  //     // Error handling
+  //     errorBuilder: (context, error, stackTrace) {
+  //       debugPrint("❌ Image load failed: $fixedUrl");
+  //       debugPrint("Error: $error");
+  //
+  //       return Container(
+  //         color: Colors.grey[300],
+  //         child: const Center(
+  //           child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
   // ------------------- UI -------------------
+  String _resolveImageUrl(dynamic rawUrl) {
+    var url = rawUrl?.toString().trim() ?? '';
+    if (url.isEmpty) return '';
+    url = url.replaceAll('\\', '/');
+
+    final base = Uri.parse(baseUrl);
+
+    if (url.startsWith('//')) {
+      url = '${base.scheme}:$url';
+    }
+
+    var parsed = Uri.tryParse(url);
+    if (parsed != null && parsed.hasScheme) {
+      final looksLikeMediaPath =
+          parsed.path.contains('/upload') || parsed.path.contains('/uploads');
+      final hostMismatch = parsed.host.isNotEmpty && parsed.host != base.host;
+      final shouldUseBaseHost = hostMismatch && looksLikeMediaPath;
+
+      if (shouldUseBaseHost ||
+          (kIsWeb && parsed.scheme == 'http' && base.scheme == 'https')) {
+        parsed = base.replace(
+          path: parsed.path,
+          query: parsed.query.isEmpty ? null : parsed.query,
+          fragment: parsed.fragment.isEmpty ? null : parsed.fragment,
+        );
+      }
+
+      url = parsed.toString();
+    } else {
+      final drivePath = RegExp(r'^[A-Za-z]:/');
+      if (drivePath.hasMatch(url)) {
+        final lower = url.toLowerCase();
+        final uploadsIndex = lower.lastIndexOf('/uploads/');
+        if (uploadsIndex >= 0) {
+          url = url.substring(uploadsIndex);
+        }
+      }
+
+      final normalizedPath = url.startsWith('/') ? url : '/$url';
+      url = base.resolve(normalizedPath).toString();
+    }
+
+    // Browsers block mixed content (https app loading http images).
+    if (kIsWeb && url.startsWith('http://')) {
+      url = url.replaceFirst('http://', 'https://');
+    }
+
+    return url;
+  }
+
+  Widget _buildImageErrorTile() {
+    return Container(
+      color: Colors.grey.shade200,
+      alignment: Alignment.center,
+      child: const Icon(Icons.broken_image, size: 36, color: Colors.grey),
+    );
+  }
+
+  Widget _buildPhotoPreview(dynamic rawUrl) {
+    final imageUrl = _resolveImageUrl(rawUrl);
+    if (imageUrl.isEmpty) return _buildImageErrorTile();
+
+    if (kIsWeb) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (_, error, __) {
+          debugPrint('Image load failed on web: $imageUrl');
+          debugPrint('Image error: $error');
+          return _buildImageErrorTile();
+        },
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
+      errorWidget: (_, __, ___) => _buildImageErrorTile(),
+    );
+  }
+
   Widget _buildEmptyState(String message, IconData icon) => Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -515,16 +642,7 @@ class _UploadImagesVideosState extends State<UploadImagesVideos>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          CachedNetworkImage(
-                            imageUrl: imgUrl,
-                            fit: BoxFit.cover,
-                            placeholder:
-                                (_, __) => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                            errorWidget:
-                                (_, __, ___) => const Icon(Icons.error),
-                          ),
+                          _buildPhotoPreview(imgUrl),
                           Container(
                             color: Colors.black26,
                             child: const Center(

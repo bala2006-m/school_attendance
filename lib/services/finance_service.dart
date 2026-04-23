@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:school_attendance/services/hybrid_api_service.dart';
 
 import '../utils/utils.dart' as util;
 
 class FinanceService {
-  static final String baseUrl = '${util.baseUrl}/finance';
+  static final String financeBase = '${util.baseUrl}/finance';
 
   Future<List<dynamic>> getAllIncome({required String schoolId}) async {
-    final response = await http.get(Uri.parse('$baseUrl/income/$schoolId'));
+    final response = await HybridApiService.get('/finance/income/$schoolId');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body);
@@ -19,7 +19,7 @@ class FinanceService {
   }
 
   Future<List<dynamic>> getAllExpense({required String schoolId}) async {
-    final response = await http.get(Uri.parse('$baseUrl/expense/$schoolId'));
+    final response = await HybridApiService.get('/finance/expense/$schoolId');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body);
@@ -30,7 +30,7 @@ class FinanceService {
   }
 
   Future<List<dynamic>> getAllDrawingIN({required String schoolId}) async {
-    final response = await http.get(Uri.parse('$baseUrl/drawing_in/$schoolId'));
+    final response = await HybridApiService.get('/finance/drawing_in/$schoolId');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body);
@@ -41,8 +41,8 @@ class FinanceService {
   }
 
   Future<List<dynamic>> getAllDrawingOUT({required String schoolId}) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/drawing_out/$schoolId'),
+    final response = await HybridApiService.get(
+      '/finance/drawing_out/$schoolId',
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -54,8 +54,8 @@ class FinanceService {
   }
 
   Future<bool> createFinance(Map<String, dynamic> data) async {
-    final response = await http.post(
-      Uri.parse(baseUrl),
+    final response = await HybridApiService.post(
+      '/finance',
       headers: {'Content-Type': 'application/json'},
       body: json.encode(data),
     );
@@ -67,8 +67,8 @@ class FinanceService {
   }
 
   Future<bool> updateFinance(int id, Map<String, dynamic> data) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/$id'),
+    final response = await HybridApiService.put(
+      '/finance/$id',
       headers: {'Content-Type': 'application/json'},
       body: json.encode(data),
     );
@@ -80,7 +80,7 @@ class FinanceService {
   }
 
   Future<void> deleteFinance(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+    final response = await HybridApiService.delete('/finance/$id');
     if (response.statusCode != 200) {
       throw Exception('Failed to delete finance');
     }

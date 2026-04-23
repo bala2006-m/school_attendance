@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:school_attendance/student/pages/bus_fees/bus_fees.dart';
 
 import '../components/build_profile_card_mobile.dart';
-import '../pages/events.dart';
+import '../pages/events/events.dart';
 import '../pages/exam_marks/student_exam_marks.dart';
 import '../pages/homework/student_homework_page.dart';
 import '../pages/student_fees/student_fees_screen.dart';

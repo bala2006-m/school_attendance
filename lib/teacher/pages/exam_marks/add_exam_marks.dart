@@ -761,7 +761,7 @@ class _AddExamMarksState extends State<AddExamMarks> {
           subjects: [subject],
           marks: [markValue],
           subjectRank: [subjectRankValue],
-          minMaxMarks: [minMark, maxMark],
+          minMaxMarks: [minMark.toString(), maxMark.toString()],
           rank: '',
           createdBy: widget.username,
           updatedBy: widget.username,

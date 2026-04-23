@@ -503,7 +503,7 @@ class AdminApiService {
     required String classId,
     required String username,
     required String title,
-    required List<int> minMaxMarks,
+    required List<String> minMaxMarks,
     required List<String> marks,
     required List<String> subjects,
     required List<int> subjectRank,
@@ -535,7 +535,7 @@ class AdminApiService {
       '/exam-marks/create',
       body: body,
     );
-
+    print(response.body);
     if (response.body ==
         '{"clientVersion":"6.12.0","name":"PrismaClientUnknownRequestError"}') {
       return 'Failure';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:school_attendance/admin/pages/dashboard/admin_dashboard.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
@@ -7,6 +7,7 @@ import 'package:school_attendance/administrator/services/administrator_api_servi
 import 'package:school_attendance/services/api_service.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
+import 'package:school_attendance/utils/privacy_policy_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'demo_page.dart';
@@ -23,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _schoolIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
+  // final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
 
   bool _obscurePassword = true;
   bool isLoading = false;
@@ -120,6 +121,7 @@ class _LoginPageState extends State<LoginPage> {
       final user = loginResult['user'];
       final foundRole = user['role'];
 
+      print('foundRole$foundRole');
       // Save login info
       await prefs.setString('role', foundRole);
       await prefs.setBool('rememberMe', rememberMe);
@@ -789,7 +791,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            "v1.0.0+12 (Latest Update)",
+                            "v1.0.0+13 (Latest Update)",
                             style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                           Row(
@@ -850,13 +852,36 @@ class _LoginPageState extends State<LoginPage> {
                     //   ),
                     // ),
                     // const SizedBox(height: 20),
-                    Text(
-                      '© ${DateTime.now().year.toString()} Ramchin Technologies Pvt. Ltd.',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
+                    Column(
+                      children: [
+                        Text(
+                          '© ${DateTime.now().year.toString()} Ramchin Technologies Pvt. Ltd.',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PrivacyPolicyScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Privacy Policy',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

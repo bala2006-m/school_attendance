@@ -1,6 +1,6 @@
 import 'dart:convert';
+
 import 'package:school_attendance/services/hybrid_api_service.dart';
-import 'package:school_attendance/utils/utils.dart';
 
 import '../models/staff_models.dart';
 
@@ -325,7 +325,6 @@ class TeacherApiServices {
       );
 
       final res = jsonDecode(response.body);
-      print(res);
 
       if (response.statusCode == 200 || res['status'] == 'success') {
         return true;

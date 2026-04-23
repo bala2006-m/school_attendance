@@ -1,6 +1,9 @@
+
 import 'package:flutter/material.dart';
 // import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:school_attendance/administrator/pages/dashboard.dart';
+import 'package:school_attendance/services/academic_year_provider.dart';
 import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/student/pages/student_dashboard.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
@@ -71,7 +74,12 @@ Future<void> main() async {
   // tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
   // // Initialize
   // await flutterLocalNotificationsPlugin.initialize(initSettings);
-  runApp(MyApp(startPage: startPage));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AcademicYearProvider(),
+      child: MyApp(startPage: startPage),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

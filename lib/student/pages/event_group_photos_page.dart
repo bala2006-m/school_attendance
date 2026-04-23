@@ -3,6 +3,7 @@ import 'package:school_attendance/utils/utils.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
@@ -28,6 +29,86 @@ class EventGroupPhotosPage extends StatefulWidget {
 
 class _EventGroupPhotosPageState extends State<EventGroupPhotosPage> {
   late List<Map<String, dynamic>> _images;
+
+  String _resolveImageUrl(dynamic rawUrl) {
+    var url = rawUrl?.toString().trim() ?? '';
+    if (url.isEmpty) return '';
+    url = url.replaceAll('\\', '/');
+
+    final base = Uri.parse(baseUrl);
+
+    if (url.startsWith('//')) {
+      url = '${base.scheme}:$url';
+    }
+
+    var parsed = Uri.tryParse(url);
+    if (parsed != null && parsed.hasScheme) {
+      final looksLikeMediaPath =
+          parsed.path.contains('/upload') || parsed.path.contains('/uploads');
+      final hostMismatch = parsed.host.isNotEmpty && parsed.host != base.host;
+      final shouldUseBaseHost = hostMismatch && looksLikeMediaPath;
+
+      if (shouldUseBaseHost ||
+          (kIsWeb && parsed.scheme == 'http' && base.scheme == 'https')) {
+        parsed = base.replace(
+          path: parsed.path,
+          query: parsed.query.isEmpty ? null : parsed.query,
+          fragment: parsed.fragment.isEmpty ? null : parsed.fragment,
+        );
+      }
+
+      url = parsed.toString();
+    } else {
+      final drivePath = RegExp(r'^[A-Za-z]:/');
+      if (drivePath.hasMatch(url)) {
+        final lower = url.toLowerCase();
+        final uploadsIndex = lower.lastIndexOf('/uploads/');
+        if (uploadsIndex >= 0) {
+          url = url.substring(uploadsIndex);
+        }
+      }
+
+      final normalizedPath = url.startsWith('/') ? url : '/$url';
+      url = base.resolve(normalizedPath).toString();
+    }
+
+    if (kIsWeb && url.startsWith('http://')) {
+      url = url.replaceFirst('http://', 'https://');
+    }
+
+    return url;
+  }
+
+  Widget _buildPhotoImage(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return Container(
+        color: Colors.grey.shade200,
+        alignment: Alignment.center,
+        child: const Icon(Icons.broken_image, color: Colors.grey, size: 36),
+      );
+    }
+
+    if (kIsWeb) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder:
+            (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
+      errorWidget: (_, __, ___) => const Icon(Icons.error),
+    );
+  }
 
   @override
   void initState() {
@@ -108,7 +189,7 @@ class _EventGroupPhotosPageState extends State<EventGroupPhotosPage> {
                 ),
                 itemBuilder: (context, i) {
                   final imgData = _images[i];
-                  final imgUrl = imgData['link'] ?? '';
+                  final imgUrl = _resolveImageUrl(imgData['link']);
                   final title = imgData['title'] ?? 'No Title';
                   final desc = imgData['description'] ?? '';
                   final date =
@@ -141,16 +222,7 @@ class _EventGroupPhotosPageState extends State<EventGroupPhotosPage> {
                                 ),
                               );
                             },
-                            child: CachedNetworkImage(
-                              imageUrl: imgUrl,
-                              fit: BoxFit.cover,
-                              placeholder:
-                                  (_, __) => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                              errorWidget:
-                                  (_, __, ___) => const Icon(Icons.error),
-                            ),
+                            child: _buildPhotoImage(imgUrl),
                           ),
                         ),
                         Padding(
@@ -218,6 +290,33 @@ class FullscreenImageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: Text(title, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: InteractiveViewer(
+          minScale: 0.8,
+          maxScale: 4,
+          child: Center(
+            child: Image.network(
+              imageUrl,
+              webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+              errorBuilder:
+                  (_, __, ___) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white54,
+                    size: 48,
+                  ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(

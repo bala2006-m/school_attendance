@@ -77,11 +77,11 @@ void safeExit() {
 
 int getResponsiveColumnCount(double width) {
   if (width < 600) {
-    return 2; // Mobile
+    return 3; // Mobile
   } else if (width < 900) {
-    return 3; // Tablet portrait
+    return 4; // Tablet portrait
   } else if (width < 1200) {
-    return 4; // Tablet landscape / Small laptop
+    return 5; // Tablet landscape / Small laptop
   } else {
     return 6; // Desktop / Large laptop
   }

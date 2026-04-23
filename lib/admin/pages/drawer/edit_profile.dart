@@ -72,20 +72,20 @@ class _EditProfileState extends State<EditProfile> {
 
     final anyFieldEmpty =
         _nameController.text.trim().isEmpty ||
-        _mobileController.text.trim().isEmpty ||
-        _designationController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty ||
-        adminGender.isEmpty;
+            _mobileController.text.trim().isEmpty ||
+            _designationController.text.trim().isEmpty ||
+            _emailController.text.trim().isEmpty ||
+            adminGender.isEmpty;
 
     setState(() {
       _hasChanges =
           !anyFieldEmpty &&
-          (nameChanged ||
-              mobileChanged ||
-              designationChanged ||
-              emailChanged ||
-              genderChanged ||
-              imageChanged);
+              (nameChanged ||
+                  mobileChanged ||
+                  designationChanged ||
+                  emailChanged ||
+                  genderChanged ||
+                  imageChanged);
     });
   }
 
@@ -170,6 +170,13 @@ class _EditProfileState extends State<EditProfile> {
     }
   }
 
+  void _removeImage() {
+    setState(() {
+      _newImageFile = null;
+      _checkForChanges();
+    });
+  }
+
   void _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
@@ -222,9 +229,9 @@ class _EditProfileState extends State<EditProfile> {
       MaterialPageRoute(
         builder:
             (context) => AdminDashboard(
-              schoolId: widget.schoolId,
-              username: widget.username,
-            ),
+          schoolId: widget.schoolId,
+          username: widget.username,
+        ),
       ),
     );
     return false;
@@ -234,7 +241,7 @@ class _EditProfileState extends State<EditProfile> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     final ImageProvider? imageProvider =
-        _newImageFile != null ? FileImage(_newImageFile!) : _adminPhoto;
+    _newImageFile != null ? FileImage(_newImageFile!) : _adminPhoto;
 
     if (_isLoading) {
       return Scaffold(
@@ -249,44 +256,44 @@ class _EditProfileState extends State<EditProfile> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
-            isMobile
-                ? AdminAppbarMobile(
-                  username: widget.username,
+        isMobile
+            ? AdminAppbarMobile(
+          username: widget.username,
+          schoolId: widget.schoolId,
+          title: 'Edit Profile',
+          enableDrawer: false,
+          enableBack: true,
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => AdminDashboard(
                   schoolId: widget.schoolId,
-                  title: 'Edit Profile',
-                  enableDrawer: false,
-                  enableBack: true,
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AdminDashboard(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
-                  },
-                )
-                : AdminAppbarDesktop(
                   username: widget.username,
-                  schoolId: widget.schoolId,
-                  title: 'Edit Profile',
-
-                  onBack: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AdminDashboard(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
-                  },
                 ),
+              ),
+            );
+          },
+        )
+            : AdminAppbarDesktop(
+          username: widget.username,
+          schoolId: widget.schoolId,
+          title: 'Edit Profile',
+
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => AdminDashboard(
+                  schoolId: widget.schoolId,
+                  username: widget.username,
+                ),
+              ),
+            );
+          },
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -305,17 +312,29 @@ class _EditProfileState extends State<EditProfile> {
                       alignment: Alignment.bottomRight,
                       children: [
                         CircleAvatar(
-                          radius: 60,
+                          radius: 70,
                           backgroundImage: imageProvider,
                           child:
-                              imageProvider == null
-                                  ? const Icon(Icons.person, size: 60)
-                                  : null,
+                          imageProvider == null
+                              ? const Icon(Icons.person, size: 70)
+                              : null,
                         ),
                         Positioned(
-                          bottom: 4,
-                          right: 4,
-                          child: InkWell(
+                          bottom: 8,
+                          right: 8,
+                          child: _newImageFile != null
+                              ? InkWell(
+                            onTap: _removeImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.redAccent,
+                              ),
+                              child: const Icon(Icons.clear, size: 20, color: Colors.white),
+                            ),
+                          )
+                              : InkWell(
                             onTap: _pickImage,
                             child: Container(
                               padding: const EdgeInsets.all(6),
@@ -330,12 +349,17 @@ class _EditProfileState extends State<EditProfile> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Center(child: Text("Upload image up to 80 KB")),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+                  const Center(
+                    child: Text(
+                      "Upload image up to 80 KB",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
                   _buildTextField(_nameController, 'Full Name', Icons.person),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   _buildTextField(
                     _mobileController,
@@ -343,14 +367,14 @@ class _EditProfileState extends State<EditProfile> {
                     Icons.phone,
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   _buildTextField(
                     _designationController,
                     'Designation',
                     Icons.work,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   _buildTextField(
                     _emailController,
@@ -359,50 +383,55 @@ class _EditProfileState extends State<EditProfile> {
                     keyboardType: TextInputType.emailAddress,
                     isEmail: true,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
                   const Text(
                     "Gender",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
                   Wrap(
-                    spacing: 12,
+                    spacing: 16,
+                    runSpacing: 12,
                     children: [
                       _buildGenderChip("Male", "M"),
                       _buildGenderChip("Female", "F"),
                       _buildGenderChip("Other", "O"),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
 
                   ElevatedButton.icon(
                     onPressed: _hasChanges && !_isSaving ? _saveProfile : null,
                     icon:
-                        _isSaving
-                            ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: Center(
-                                child: SpinKitFadingCircle(
-                                  color: Colors.blueAccent,
-                                  size: 60.0,
-                                ),
-                              ),
-                            )
-                            : const Icon(Icons.save),
-                    label: Text(_isSaving ? 'Saving...' : 'Save Changes'),
+                    _isSaving
+                        ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Center(
+                        child: SpinKitFadingCircle(
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
+                      ),
+                    )
+                        : const Icon(Icons.save, size: 20),
+                    label: Text(
+                      _isSaving ? 'Saving...' : 'Save Changes',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      backgroundColor: _hasChanges ? Colors.teal : Colors.grey,
+                      minimumSize: const Size.fromHeight(56),
+                      backgroundColor: _hasChanges ? Colors.teal : Colors.grey[300]!,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: _hasChanges && !_isSaving ? 2 : 0,
                     ),
                   ),
-                  SizedBox(height: 50),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -413,7 +442,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Widget _buildGenderChip(String label, String value) {
-    return ChoiceChip(
+    return FilterChip(
       label: Text(label),
       selected: adminGender == value,
       onSelected: (_) {
@@ -424,27 +453,94 @@ class _EditProfileState extends State<EditProfile> {
       labelStyle: TextStyle(
         color: adminGender == value ? Colors.white : Colors.black87,
       ),
+      avatar: const CircleAvatar(
+        backgroundColor: Colors.transparent,
+        radius: 0,
+      ),
+      showCheckmark: false,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      side: BorderSide(
+        color: adminGender == value ? Colors.teal.shade600 : Colors.grey[300]!,
+        width: 1.5,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
     );
   }
 
   Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-    bool readOnly = false,
-    bool isEmail = false,
-  }) {
+      TextEditingController controller,
+      String label,
+      IconData icon, {
+        TextInputType keyboardType = TextInputType.text,
+        int maxLines = 1,
+        bool readOnly = false,
+        bool isEmail = false,
+      }) {
     return TextFormField(
       controller: controller,
       readOnly: readOnly,
       keyboardType: keyboardType,
       maxLines: maxLines,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon),
+        prefixIcon: Icon(icon, color: Colors.teal[700]),
         labelText: label,
-        border: const OutlineInputBorder(),
+        labelStyle: TextStyle(
+          color: Colors.grey[700],
+          fontSize: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.teal,
+            width: 2.0,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.redAccent,
+            width: 1.5,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: Colors.redAccent,
+            width: 2.0,
+          ),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        suffixIcon: controller.text.isNotEmpty && !readOnly
+            ? IconButton(
+          icon: const Icon(Icons.clear, size: 20),
+          color: Colors.grey[400],
+          onPressed: () {
+            controller.clear();
+            _checkForChanges();
+          },
+        )
+            : null,
       ),
       validator: (value) {
         if (!readOnly && (value == null || value.trim().isEmpty)) {
@@ -458,6 +554,8 @@ class _EditProfileState extends State<EditProfile> {
         }
         return null;
       },
+      style: const TextStyle(fontSize: 16),
+      cursorColor: Colors.teal,
     );
   }
 }

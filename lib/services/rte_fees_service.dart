@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/utils.dart' as app_config;
 
@@ -24,7 +25,23 @@ class RteFeesService {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
+          // Inject academic year headers from SharedPreferences
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final academicStart = prefs.getString('x_academic_start') ?? '';
+            final academicEnd = prefs.getString('x_academic_end') ?? '';
+            final academicId = prefs.getString('x_academic_id') ?? '';
+            if (academicStart.isNotEmpty) {
+              options.headers['x-academic-start'] = academicStart;
+            }
+            if (academicEnd.isNotEmpty) {
+              options.headers['x-academic-end'] = academicEnd;
+            }
+            if (academicId.isNotEmpty) {
+              options.headers['x-academic-id'] = academicId;
+            }
+          } catch (_) {}
           return handler.next(options);
         },
         onResponse: (resp, handler) {
@@ -36,6 +53,7 @@ class RteFeesService {
       ),
     );
   }
+
 
   Future<Map<String, dynamic>?> getBySchoolIdClassAndDate({
     required int schoolId,

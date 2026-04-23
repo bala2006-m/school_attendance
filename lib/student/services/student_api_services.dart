@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:school_attendance/services/hybrid_api_service.dart';
-import 'package:school_attendance/utils/utils.dart';
 
 class StudentApiServices {
   static Future<List<dynamic>> fetchHomeworkByClassId({

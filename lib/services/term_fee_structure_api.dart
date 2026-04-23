@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:school_attendance/utils/utils.dart';
+import 'package:school_attendance/services/hybrid_api_service.dart';
 
 class TermFeeStructureApi {
   static Future<Map<String, dynamic>> countAllPendingTermFees(
@@ -11,8 +12,8 @@ class TermFeeStructureApi {
       '$baseUrl/student-fees/pending_paid_school/$schoolId',
     );
 
-    final response = await http.get(
-      url,
+    final response = await HybridApiService.get(
+      url.path + '?' + url.query,
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -26,8 +27,8 @@ class TermFeeStructureApi {
   static Future<Map<String, dynamic>> getAllPendingFees(int schoolId) async {
     final url = Uri.parse('$baseUrl/student-fees/pending?school_id=$schoolId');
 
-    final response = await http.get(
-      url,
+    final response = await HybridApiService.get(
+      url.path + '?' + url.query,
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -46,8 +47,8 @@ class TermFeeStructureApi {
       '$baseUrl/student-fees/pending_class?school_id=$schoolId&class_id=$classId',
     );
 
-    final response = await http.get(
-      url,
+    final response = await HybridApiService.get(
+      url.path + '?' + url.query,
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -71,7 +72,7 @@ class TermFeeStructureApi {
         '?schoolId=$schoolId',
       );
 
-      final response = await http.get(url);
+      final response = await HybridApiService.get(url.path + '?' + url.query);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -104,7 +105,7 @@ class TermFeeStructureApi {
         '?schoolId=$schoolId&classId=$classId',
       );
 
-      final response = await http.get(url);
+      final response = await HybridApiService.get(url.path + '?' + url.query);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -130,7 +131,7 @@ class TermFeeStructureApi {
     final url = Uri.parse(
       '$baseUrl/student-fees/daily_paid/$date?schoolId=$schoolId',
     );
-    final response = await http.get(url);
+    final response = await HybridApiService.get(url.path + '?' + url.query);
 
     if (response.statusCode == 200) {
       try {
@@ -160,7 +161,7 @@ class TermFeeStructureApi {
     final url = Uri.parse(
       '$baseUrl/student-fees/daily_paid_class/$date?schoolId=$schoolId&classId=$classId',
     );
-    final response = await http.get(url);
+    final response = await HybridApiService.get(url.path + '?' + url.query);
 
     if (response.statusCode == 200) {
       try {
@@ -190,7 +191,7 @@ class TermFeeStructureApi {
       '$baseUrl/student-fees/paid_class/$classId?schoolId=$schoolId',
     );
     // print(url);
-    final response = await http.get(url);
+    final response = await HybridApiService.get(url.path + '?' + url.query);
     if (response.statusCode == 200) {
       try {
         final data = jsonDecode(response.body);
@@ -220,7 +221,7 @@ class TermFeeStructureApi {
       '$baseUrl/student-fees/student?username=$username&schoolId=$schoolId&classId=$classId',
     );
 
-    final response = await http.get(url);
+    final response = await HybridApiService.get(url.path + '?' + url.query);
     if (response.statusCode == 200) {
       try {
         final data = jsonDecode(response.body);
@@ -242,7 +243,7 @@ class TermFeeStructureApi {
   }
 
   static Future<List<Map<String, dynamic>>> fetchFeePayments() async {
-    final response = await http.get(Uri.parse('$baseUrl/fee-payments'));
+    final response = await HybridApiService.get('/fee-payments');
     if (response.statusCode == 200) {
       List jsonList = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(jsonList);
@@ -254,8 +255,8 @@ class TermFeeStructureApi {
   static Future<Map<String, dynamic>> createFeePayment(
     Map<String, dynamic> data,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/fee-payments'),
+    final response = await HybridApiService.post(
+      '/fee-payments',
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
@@ -267,7 +268,7 @@ class TermFeeStructureApi {
   }
 
   static Future<List<Map<String, dynamic>>> fetchStudentFees() async {
-    final response = await http.get(Uri.parse('$baseUrl/student-fees'));
+    final response = await HybridApiService.get('/student-fees');
     if (response.statusCode == 200) {
       List jsonList = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(jsonList);
@@ -278,7 +279,7 @@ class TermFeeStructureApi {
 
   // Fetch one student fee by id
   static Future<Map<String, dynamic>> fetchStudentFee(int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/student-fees/$id'));
+    final response = await HybridApiService.get('/student-fees/$id');
     if (response.statusCode == 200) {
       return Map<String, dynamic>.from(jsonDecode(response.body));
     } else {
@@ -290,8 +291,8 @@ class TermFeeStructureApi {
   static Future<Map<String, dynamic>> createStudentFee(
     Map<String, dynamic> data,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/student-fees-payments'),
+    final response = await HybridApiService.post(
+      '/student-fees-payments',
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
@@ -308,8 +309,8 @@ class TermFeeStructureApi {
     int id,
     Map<String, dynamic> data,
   ) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/student-fees/$id'),
+    final response = await HybridApiService.put(
+      '/student-fees/$id',
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );

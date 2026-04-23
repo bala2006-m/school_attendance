@@ -56,17 +56,13 @@ android {
 //        }
 //    }
     buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-            isShrinkResources = false
-        }
         release {
             // Uses the "release" signing config (must be defined in signingConfigs block)
             signingConfig = signingConfigs.getByName("release")
 
-            // Code shrinking & obfuscation
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Code shrinking & obfuscation (ENABLED for Play Store)
+            isMinifyEnabled = true
+            isShrinkResources = true
 
             // ProGuard/R8 rules files
             proguardFiles(
@@ -80,6 +76,8 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Removed Google Play Core 1.10.0 - incompatible with targetSdkVersion 34
+    // Deferred components are disabled in gradle.properties
 }
 
 flutter {

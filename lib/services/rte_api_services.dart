@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
+import 'package:school_attendance/services/hybrid_api_service.dart';
 import '../utils/utils.dart';
 
 class RteApiServices {
@@ -12,8 +11,8 @@ class RteApiServices {
       final url = Uri.parse(
         "$baseUrl/students/fetch_rte_student_school?school_id=$schoolId",
       );
-      final response = await http.get(
-        url,
+      final response = await HybridApiService.get(
+        "/students/fetch_rte_student_school?school_id=$schoolId",
         headers: {"Content-Type": "application/json"},
       );
 
@@ -39,8 +38,8 @@ class RteApiServices {
       final url = Uri.parse(
         "$baseUrl/students/fetch_bus_student_school?school_id=$schoolId",
       );
-      final response = await http.get(
-        url,
+      final response = await HybridApiService.get(
+        "/students/fetch_bus_student_school?school_id=$schoolId",
         headers: {"Content-Type": "application/json"},
       );
 

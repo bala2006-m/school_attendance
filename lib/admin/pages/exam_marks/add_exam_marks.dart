@@ -202,7 +202,7 @@ class _AddExamMarksState extends State<AddExamMarks> {
           classId: widget.classId,
           username: widget.studentUsername,
           title: enteredTitle,
-          minMaxMarks: [min, max],
+          minMaxMarks: [min.toString(), max.toString()],
           marks: marks,
           subjects: subjects,
           subjectRank: ranks,

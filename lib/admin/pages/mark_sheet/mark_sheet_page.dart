@@ -653,31 +653,46 @@ class _EditableMarksheetState extends State<EditableMarksheet> {
 
   Future<void> _viewUpdateMarks(ExamTimeTable exam) async {
     setState(() => isLoading = true);
+
     try {
       final allStudents = await TeacherApiServices.fetchStudentData(
         schoolId: widget.schoolId,
         classId: widget.classId,
       );
+
       final existingMarksRaw = await AdminApiService.fetchExamMarkClassTitle(
         schoolId: widget.schoolId,
         classId: widget.classId,
         title: exam.examTitle,
       );
+
       final Map<String, dynamic> marksMap = {};
       int? minMarkVal;
       int? maxMarkVal;
 
+      // ✅ Build marks map safely
       for (var em in existingMarksRaw) {
-        marksMap[em['username'].toString()] = em;
+        final username = em['username']?.toString();
+        if (username == null) continue;
+
+        marksMap[username] = em;
+
         if (minMarkVal == null && em['min_max_marks'] != null) {
           final mm = em['min_max_marks'] as List;
-          if (mm.isNotEmpty) minMarkVal = int.tryParse(mm[0].toString());
-          if (mm.length > 1) maxMarkVal = int.tryParse(mm[1].toString());
+          if (mm.isNotEmpty) {
+            minMarkVal = int.tryParse(mm[0].toString());
+          }
+          if (mm.length > 1) {
+            maxMarkVal = int.tryParse(mm[1].toString());
+          }
         }
       }
+
       List<Map<String, dynamic>> parsedList = [];
+
+      // ✅ Loop all students
       for (var student in allStudents) {
-        final admnNo = student['username'].toString();
+        final admnNo = student['username']?.toString() ?? '';
         final name = student['name'] ?? 'Unknown';
 
         List<dynamic> studentMarksList;
@@ -686,15 +701,37 @@ class _EditableMarksheetState extends State<EditableMarksheet> {
 
         if (marksMap.containsKey(admnNo)) {
           final mData = marksMap[admnNo];
-          studentMarksList =
-              mData['marks'] ?? List.filled(exam.subjects.length, "AA");
-          studentSubjRanks =
-              (mData['subject_rank'] as List<dynamic>?)
-                  ?.map((e) => int.tryParse(e.toString()) ?? 0)
-                  .toList() ??
-              List.filled(exam.subjects.length, 0);
+
+          /// 🔥 SAFE MARKS HANDLING
+          List<dynamic> rawMarks = mData['marks'] ?? [];
+
+          if (rawMarks.length != exam.subjects.length) {
+            debugPrint(
+              "⚠️ Marks mismatch for $admnNo → "
+              "marks=${rawMarks.length}, subjects=${exam.subjects.length}",
+            );
+          }
+
+          studentMarksList = List.generate(
+            exam.subjects.length,
+            (i) => i < rawMarks.length ? rawMarks[i] : "AA",
+          );
+
+          /// 🔥 SAFE SUBJECT RANK HANDLING
+          List<dynamic> rawRanks =
+              (mData['subject_rank'] as List<dynamic>?) ?? [];
+
+          studentSubjRanks = List.generate(
+            exam.subjects.length,
+            (i) =>
+                i < rawRanks.length
+                    ? int.tryParse(rawRanks[i].toString()) ?? 0
+                    : 0,
+          );
+
           overallRank = mData['rank'];
         } else {
+          /// ✅ No data case
           studentMarksList = List.filled(exam.subjects.length, "AA");
           studentSubjRanks = List.filled(exam.subjects.length, 0);
           overallRank = "-";
@@ -712,30 +749,29 @@ class _EditableMarksheetState extends State<EditableMarksheet> {
         });
       }
 
-      // 4. Update State
+      // ✅ Update state safely
       setState(() {
         _selectedExam = exam;
         _currentSubjects = List<String>.from(exam.subjects);
         _parsedStudents = parsedList;
 
-        // Restore min/max marks
-        // The API stores [min, max] globally (usually).
-        // We need to expand this to lists for the UI state variables
         int defaultsMax = maxMarkVal ?? 100;
         int defaultsMin = minMarkVal ?? 35;
 
         _maxMarks = List.filled(_currentSubjects.length, defaultsMax);
         _minMarks = List.filled(_currentSubjects.length, defaultsMin);
 
-        _calculateRanks(); // ensure everything is calculated initially
+        _calculateRanks();
 
         _initialMarksJson = jsonEncode(
           parsedList.map((s) => s['marks']).toList(),
         );
+
         _isUploadingView = true;
       });
     } catch (e) {
-      debugPrint("Error viewing marks: $e");
+      debugPrint("❌ Error viewing marks: $e");
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -805,7 +841,7 @@ class _EditableMarksheetState extends State<EditableMarksheet> {
           classId: widget.classId,
           username: username,
           title: _selectedExam!.examTitle,
-          minMaxMarks: [defaultMin, defaultMax],
+          minMaxMarks: [defaultMin.toString(), defaultMax.toString()],
           marks: marksStr,
           subjects: _currentSubjects,
           subjectRank: subjRanks,
@@ -1277,66 +1313,69 @@ class _EditableMarksheetState extends State<EditableMarksheet> {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _selectedExam?.examTitle ?? "Mark Sheet",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _selectedExam?.examTitle ?? "Mark Sheet",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "Review and edit marks before saving",
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey,
+                    Text(
+                      "Review and edit marks before saving",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isUploadingView = false;
-                        _selectedExam = null;
-                        _parsedStudents = [];
-                        _currentSubjects = [];
-                      });
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: (isLoading || !_hasChanges()) ? null : submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
+                  ],
+                ),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _isUploadingView = false;
+                          _selectedExam = null;
+                          _parsedStudents = [];
+                          _currentSubjects = [];
+                        });
+                      },
+                      child: const Text("Cancel"),
                     ),
-                    child:
-                        isLoading
-                            ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                            : const Text("Save Marks"),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: (isLoading || !_hasChanges()) ? null : submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Text("Save Marks"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         Expanded(

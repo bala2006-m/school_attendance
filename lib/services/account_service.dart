@@ -1,15 +1,14 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:school_attendance/services/hybrid_api_service.dart';
 
 import '../utils/utils.dart';
 
 class AccountService {
   static Future<Map<String, dynamic>> fetchAll({required int schoolId}) async {
     try {
-      final url = Uri.parse("$baseUrl/accounts/fetch_all/$schoolId");
-      final response = await http.get(
-        url,
+      final response = await HybridApiService.get(
+        "/accounts/fetch_all/$schoolId",
         headers: {"Content-Type": "application/json"},
       );
 
@@ -34,12 +33,8 @@ class AccountService {
     required DateTime to,
   }) async {
     try {
-      final url = Uri.parse(
-        "$baseUrl/accounts/fetch_all_periodical/$schoolId/$from/$to",
-      );
-
-      final response = await http.get(
-        url,
+      final response = await HybridApiService.get(
+        "/accounts/fetch_all_periodical/$schoolId/$from/$to",
         headers: {"Content-Type": "application/json"},
       );
 

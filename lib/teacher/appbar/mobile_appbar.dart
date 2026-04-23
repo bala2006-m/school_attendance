@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:school_attendance/teacher/pages/staff_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../admin/components/academic_year_dropdown.dart';
+
 class MobileAppbar extends StatefulWidget {
   const MobileAppbar({
     super.key,
@@ -189,6 +191,8 @@ class _MobileAppbarState extends State<MobileAppbar> {
                 ],
               ),
               const Spacer(),
+              AcademicYearDropdown(schoolId: widget.schoolId),
+              const SizedBox(width: 6),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,

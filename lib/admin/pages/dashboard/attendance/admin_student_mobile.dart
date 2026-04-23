@@ -76,6 +76,9 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
   List<MenuButtonData> _allowedButtons = [];
   final Map<int, GlobalKey> _buttonKeys = {};
   final Map<int, FocusNode> _focusNodes = {};
+
+  bool _isMenuOrderLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -89,7 +92,6 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
   Future<void> _loadMenuOrder() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Read the FULL maps from global cache
     final String? globalCatsJson = prefs.getString(
       'admin_global_categories_order_${widget.schoolId}',
     );
@@ -106,7 +108,9 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       }
 
       if (globalButtonsJson != null) {
-        final fullButtons = Map<String, dynamic>.from(jsonDecode(globalButtonsJson));
+        final fullButtons = Map<String, dynamic>.from(
+          jsonDecode(globalButtonsJson),
+        );
         if (fullButtons.containsKey('student')) {
           _categoryButtonOrders = Map<String, List<String>>.from(
             (fullButtons['student'] as Map).map(
@@ -117,8 +121,10 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       }
 
       _initButtons();
-      fetchMenuOrder();
     });
+
+    await fetchMenuOrder();
+    setState(() => _isMenuOrderLoaded = true);
   }
 
   Future<void> fetchMenuOrder() async {
@@ -144,7 +150,8 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
           if (buttons != null && buttons['student'] != null) {
             _categoryButtonOrders = Map<String, List<String>>.from(
               (buttons['student'] as Map).map(
-                (key, value) => MapEntry(key as String, List<String>.from(value)),
+                (key, value) =>
+                    MapEntry(key as String, List<String>.from(value)),
               ),
             );
             updated = true;
@@ -154,7 +161,6 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
             setState(() {
               _initButtons();
             });
-            // Update global cache with FULL maps from DB
             final prefs = await SharedPreferences.getInstance();
             await prefs.setString(
               'admin_global_categories_order_${widget.schoolId}',
@@ -175,9 +181,12 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
   Future<void> _saveMenuOrder() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // 1. Read the FULL maps from global cache
-    String? globalCatsJson = prefs.getString('admin_global_categories_order_${widget.schoolId}');
-    String? globalButtonsJson = prefs.getString('admin_global_buttons_order_${widget.schoolId}');
+    String? globalCatsJson = prefs.getString(
+      'admin_global_categories_order_${widget.schoolId}',
+    );
+    String? globalButtonsJson = prefs.getString(
+      'admin_global_buttons_order_${widget.schoolId}',
+    );
 
     Map<String, dynamic> fullCats = {};
     Map<String, dynamic> fullButtons = {};
@@ -189,11 +198,9 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       fullButtons = Map<String, dynamic>.from(jsonDecode(globalButtonsJson));
     }
 
-    // 2. Update ONLY the current section ('student') in the full maps
     fullCats['student'] = _orderedCategories;
     fullButtons['student'] = _categoryButtonOrders;
 
-    // 3. Save the updated FULL maps back to global cache
     await prefs.setString(
       'admin_global_categories_order_${widget.schoolId}',
       jsonEncode(fullCats),
@@ -203,7 +210,6 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       jsonEncode(fullButtons),
     );
 
-    // 4. Send the FULL maps to the database
     await AdminApiService.updateRearrange(
       schoolId: int.parse(widget.schoolId),
       username: widget.adminUsername,
@@ -316,7 +322,6 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       ),
     ];
 
-    // Initialize keys and focus nodes
     _buttonKeys.clear();
     _focusNodes.clear();
     for (var btn in _allButtons) {
@@ -324,7 +329,6 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
       _focusNodes[btn.index] = FocusNode();
     }
 
-    // Filter allowed buttons
     _allowedButtons =
         _allButtons.where((btn) {
           if (btn.category == 'Staff') return hasStaffAccess;
@@ -332,19 +336,17 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
           return false;
         }).toList();
 
-    // Ensure all allowed categories are in _orderedCategories
-    final Set<String> allowedCats =
-        _allowedButtons.map((e) => e.category).toSet();
-    for (var cat in allowedCats) {
-      if (!_orderedCategories.contains(cat)) {
-        _orderedCategories.add(cat);
+    // Set default category order if none exists
+    if (_orderedCategories.isEmpty) {
+      if (hasStaffAccess && hasStudentAccess) {
+        _orderedCategories = ['Student', 'Staff'];
+      } else if (hasStudentAccess) {
+        _orderedCategories = ['Student'];
+      } else if (hasStaffAccess) {
+        _orderedCategories = ['Staff'];
       }
     }
 
-    // Remove categories that are no longer present in allowed buttons (optional, but cleaner)
-    _orderedCategories.removeWhere((cat) => !allowedCats.contains(cat));
-
-    // Ensure all allowed buttons for each category are in _categoryButtonOrders
     for (var cat in _orderedCategories) {
       final List<String> currentButtonTitles =
           _allowedButtons
@@ -357,13 +359,11 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
         _categoryButtonOrders[cat] = currentButtonTitles;
       } else {
         final existingOrder = _categoryButtonOrders[cat]!;
-        // Add any missing buttons to the end of the order
         for (var title in currentButtonTitles) {
           if (!existingOrder.contains(title)) {
             existingOrder.add(title);
           }
         }
-        // Remove buttons that are no longer available
         existingOrder.removeWhere(
           (title) => !currentButtonTitles.contains(title),
         );
@@ -373,7 +373,6 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
 
   @override
   void dispose() {
-    // Save scroll position only if attached
     if (_scrollController.hasClients) {
       savedScrollOffset = _scrollController.offset;
     }
@@ -402,6 +401,12 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isMenuOrderLoaded) {
+      return Scaffold(
+        backgroundColor: Colors.blue.shade50,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return buildMainUI(context);
   }
 
@@ -506,32 +511,35 @@ class _AdminStudentMobileState extends State<AdminStudentMobile> {
   }
 
   List<Widget> _buildAllCategories() {
-    return _orderedCategories.where((category) {
-      return _allowedButtons.any((b) => b.category == category);
-    }).map((category) {
-      final buttons =
-          _allowedButtons.where((b) => b.category == category).toList();
+    return _orderedCategories
+        .where((category) {
+          return _allowedButtons.any((b) => b.category == category);
+        })
+        .map((category) {
+          final buttons =
+              _allowedButtons.where((b) => b.category == category).toList();
 
-      // Order buttons within category
-      if (_categoryButtonOrders.containsKey(category)) {
-        final order = _categoryButtonOrders[category]!;
-        buttons.sort((a, b) {
-          int indexA = order.indexOf(a.title);
-          int indexB = order.indexOf(b.title);
-          if (indexA == -1) indexA = 999;
-          if (indexB == -1) indexB = 999;
-          return indexA.compareTo(indexB);
-        });
-      }
+          // Order buttons within category
+          if (_categoryButtonOrders.containsKey(category)) {
+            final order = _categoryButtonOrders[category]!;
+            buttons.sort((a, b) {
+              int indexA = order.indexOf(a.title);
+              int indexB = order.indexOf(b.title);
+              if (indexA == -1) indexA = 999;
+              if (indexB == -1) indexB = 999;
+              return indexA.compareTo(indexB);
+            });
+          }
 
-      return Column(
-        key: ValueKey(category),
-        children: [
-          _buildCategoryContainer(category, buttons),
-          const SizedBox(height: 30),
-        ],
-      );
-    }).toList();
+          return Column(
+            key: ValueKey(category),
+            children: [
+              _buildCategoryContainer(category, buttons),
+              const SizedBox(height: 30),
+            ],
+          );
+        })
+        .toList();
   }
 
   Widget _buildCategoryContainer(String title, List<MenuButtonData> buttons) {

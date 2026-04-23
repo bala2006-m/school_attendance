@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:school_attendance/services/academic_year_provider.dart';
 import 'package:school_attendance/teacher/appbar/mobile_appbar.dart';
 import 'package:school_attendance/teacher/services/teacher_api_service.dart';
 import 'package:school_attendance/teacher/widget/mobile_drawer.dart';
@@ -72,6 +74,28 @@ class StaffDashboardState extends State<StaffDashboard> {
       }
       _loadStaffData();
     });
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Listen for academic year changes
+      Provider.of<AcademicYearProvider>(context, listen: false).addListener(_onAcademicYearChanged);
+    });
+  }
+
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      // Small delay to allow provider to settle
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _loadStaffData();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    Provider.of<AcademicYearProvider>(context, listen: false).removeListener(_onAcademicYearChanged);
+    super.dispose();
   }
 
   Future<void> _loadFromCache() async {

@@ -66,7 +66,10 @@ class _SchoolRegistrationState extends State<SchoolRegistration> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      requestFullMetadata: false,
+    );
 
     if (image != null) {
       setState(() {

@@ -27,14 +27,9 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  String adminName = '';
-  String adminMobileNumber = '';
-  String adminDesignation = '';
-  String adminEmail = '';
-  String adminGender = '';
-  Image? adminPhoto;
   Map<String, dynamic>? adminData;
   bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -44,59 +39,50 @@ class _ProfileState extends State<Profile> {
   Future<void> initializeInitialData() async {
     try {
       setState(() => _isLoading = true);
-      adminData = await AdminApiService.fetchAdminData(
+      final data = await AdminApiService.fetchAdminData(
         username: widget.username,
         schoolId: widget.schoolId,
       );
       setState(() {
-        adminName = adminData?['name'] ?? '';
-        adminMobileNumber = adminData?['mobile'] ?? '';
-        adminDesignation = adminData?['designation'] ?? '';
-        adminEmail = adminData?['email'];
-        adminGender = adminData?['gender'];
-        if (adminData?['photo'] != null) {
-          adminPhoto = Image.memory(base64Decode(adminData!['photo']));
-        }
-
+        adminData = data;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to load profile data")),
+      );
     }
   }
 
-  Future<bool> onWillPop() async {
+  void _navigateToDashboard() {
     AdminDashboardState.selectedIndex = 0;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => AdminDashboard(
-                schoolId: widget.schoolId,
-                username: widget.username,
-              ),
-        ),
-      );
-    });
-
-    return false;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => AdminDashboard(
+              schoolId: widget.schoolId,
+              username: widget.username,
+            ),
+      ),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 700;
+
     if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: SpinKitFadingCircle(color: Colors.blueAccent, size: 60.0),
-        ),
+      return const Scaffold(
+        body: Center(child: SpinKitFoldingCube(color: Colors.blue, size: 40)),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isMobile ? 190 : 150),
         child:
@@ -107,121 +93,218 @@ class _ProfileState extends State<Profile> {
                   title: 'My Profile',
                   enableDrawer: false,
                   enableBack: true,
-                  onBack: () {
-                    AdminDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AdminDashboard(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
-                  },
+                  onBack: _navigateToDashboard,
                 )
                 : AdminAppbarDesktop(
                   schoolId: widget.schoolId,
                   username: widget.username,
                   title: 'My Profile',
-
-                  onBack: () {
-                    AdminDashboardState.selectedIndex = 0;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => AdminDashboard(
-                              schoolId: widget.schoolId,
-                              username: widget.username,
-                            ),
-                      ),
-                    );
-                  },
+                  onBack: _navigateToDashboard,
                 ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  CircleAvatar(
-                    radius: 65,
-                    backgroundImage: adminPhoto?.image,
-                    child:
-                        adminPhoto == null
-                            ? const Icon(Icons.person, size: 65)
-                            : null,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildHeader(isMobile),
+            const SizedBox(height: 20),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: [
+                      _buildInfoSection(
+                        title: "Personal Information",
+                        items: [
+                          _ProfileTile(
+                            icon: Icons.phone_android,
+                            label: "Mobile",
+                            value: adminData?['mobile'] ?? 'N/A',
+                          ),
+                          _ProfileTile(
+                            icon: Icons.email_outlined,
+                            label: "Email Address",
+                            value: adminData?['email'] ?? 'N/A',
+                          ),
+                          _ProfileTile(
+                            icon: Icons.wc,
+                            label: "Gender",
+                            value: _parseGender(adminData?['gender']),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoSection(
+                        title: "School Details",
+                        items: [
+                          _ProfileTile(
+                            icon: Icons.account_balance,
+                            label: "Institution",
+                            value: widget.schoolName,
+                          ),
+                          _ProfileTile(
+                            icon: Icons.location_on_outlined,
+                            label: "Address",
+                            value: widget.schoolAddress,
+                          ),
+                          _ProfileTile(
+                            icon: Icons.badge_outlined,
+                            label: "System ID",
+                            value: widget.schoolId,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                    ],
                   ),
-
-                  const SizedBox(height: 20),
-                  Text(
-                    adminName,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '@${widget.username}',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    adminDesignation,
-                    style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 24),
-                  Divider(color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  _buildProfileDetailRow(Icons.phone, adminMobileNumber),
-                  const SizedBox(height: 12),
-                  _buildProfileDetailRow(Icons.email, adminEmail),
-                  const SizedBox(height: 12),
-                  _buildProfileDetailRow(
-                    Icons.person,
-                    adminGender == 'M'
-                        ? 'Male'
-                        : adminGender == 'F'
-                        ? 'Female'
-                        : 'Other',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildProfileDetailRow(Icons.school, widget.schoolName),
-                  const SizedBox(height: 12),
-                  _buildProfileDetailRow(
-                    Icons.location_on,
-                    widget.schoolAddress,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileDetailRow(IconData icon, String text) {
-    return Row(
+  Widget _buildHeader(bool isMobile) {
+    MemoryImage? profileImg;
+    if (adminData?['photo'] != null) {
+      profileImg = MemoryImage(base64Decode(adminData!['photo']));
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.blue.shade900,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          CircleAvatar(
+            radius: 64,
+            backgroundColor: Colors.white24,
+            child: CircleAvatar(
+              radius: 60,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: profileImg,
+              child:
+                  profileImg == null
+                      ? Icon(
+                        Icons.person,
+                        size: 60,
+                        color: Colors.blue.shade900,
+                      )
+                      : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            adminData?['name'] ?? 'Admin User',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            adminData?['designation'] ?? 'Administrator',
+            style: TextStyle(color: Colors.blue.shade100, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "@${widget.username}",
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoSection({
+    required String title,
+    required List<Widget> items,
+  }) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.blue.shade900, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(text, style: const TextStyle(fontSize: 16, height: 1.4)),
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+          child: Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Column(children: items),
         ),
       ],
+    );
+  }
+
+  String _parseGender(String? code) {
+    if (code == 'M') return 'Male';
+    if (code == 'F') return 'Female';
+    return 'Other';
+  }
+}
+
+class _ProfileTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _ProfileTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Colors.blue.shade900, size: 20),
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      ),
+      subtitle: Text(
+        value,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+      ),
     );
   }
 }

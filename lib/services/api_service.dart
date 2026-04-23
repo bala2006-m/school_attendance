@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:bcrypt/bcrypt.dart';
 import 'package:school_attendance/services/hybrid_api_service.dart';
 import 'package:school_attendance/utils/utils.dart';
@@ -1350,8 +1349,10 @@ class ApiService {
       }
 
       // 2. Legacy Fallback: If server hasn't been updated yet or any error occurs
-      print("FALLBACK START: Status ${response.statusCode}. Trying legacy role-check... (URL: $baseUrl)");
-      
+      print(
+        "FALLBACK START: Status ${response.statusCode}. Trying legacy role-check via hybrid routing (LOCAL first, CLOUD fallback)...",
+      );
+
       List<String> roles = ['student', 'staff', 'admin', 'administrator'];
       bool userFoundInLegacy = false;
 
@@ -1359,26 +1360,36 @@ class ApiService {
         try {
           print("  -> Checking role: $role...");
           final users = await getUsersByRole(
-            role: role, 
+            role: role,
             schoolId: schoolId,
-            forceCloud: true, // Always hit cloud for legacy fallback on hosted apps
+            forceCloud:
+                false, // Use hybrid routing (local first, cloud fallback)
           );
-          print("  <- Role $role: ${users.length} users returned.");
-          
-          final user = users.cast<Map<String, dynamic>?>().firstWhere(
-            (u) {
-              final uname = u?['username']?.toString();
-              return uname == username;
-            },
-            orElse: () => null,
-          );
+          List<dynamic> effectiveUsers = users;
+          if (effectiveUsers.isEmpty) {
+            // Some legacy/local datasets may miss school_id mapping.
+            // Fallback to all-users-by-role endpoint, then filter by username.
+            try {
+              final usersAll = await getUsersByRoleAll(role: role);
+              effectiveUsers = usersAll;
+            } catch (_) {}
+          }
+          print("  <- Role $role: ${effectiveUsers.length} users returned.");
+
+          final user = effectiveUsers.cast<Map<String, dynamic>?>().firstWhere((u) {
+            final uname = u?['username']?.toString();
+            return uname == username;
+          }, orElse: () => null);
 
           if (user != null) {
             userFoundInLegacy = true;
             final hashedPassword = user['password']?.toString();
-            print("     MATCH: Found $username in $role. Verifying password...");
-            
-            if (hashedPassword != null && BCrypt.checkpw(password, hashedPassword)) {
+            print(
+              "     MATCH: Found $username in $role. Verifying password...",
+            );
+
+            if (hashedPassword != null &&
+                BCrypt.checkpw(password, hashedPassword)) {
               print("     SUCCESS: Legacy password verified!");
 
               // CRITICAL: Add the role to the user object since legacy server doesn't return it
@@ -1398,17 +1409,16 @@ class ApiService {
           print("     ERROR in $role check: $roleError");
         }
       }
-      
+
       if (!userFoundInLegacy) {
         print("FALLBACK COMPLETE: No matching user found in any role.");
       }
-      
+
       throw Exception('Invalid user Id or password');
     } catch (e) {
       if (e.toString().contains('Invalid user Id or password')) rethrow;
       print("FATAL LOGIN ERROR: $e");
       throw Exception('Login connection error: $e');
     }
-
   }
 }

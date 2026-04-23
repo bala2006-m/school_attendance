@@ -10,32 +10,6 @@ class HybridApiService {
   static bool _isInitialized = false;
   static Future<void>? _initFuture;
   static DateTime? _lastLocalScan;
-  static bool _localSyncTriggered = false;
-
-  static Future<void> _triggerLocalInitialSyncIfPossible() async {
-    if (_localSyncTriggered) return;
-    if (_isLocalServerAvailable != true || localBaseUrl == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final schoolId = prefs.get('schoolId')?.toString();
-    final username = prefs.get('username')?.toString();
-
-    if (schoolId == null || username == null) return;
-
-    print("HYBRID: Triggering initial sync for School: $schoolId, User: $username");
-    try {
-      _localSyncTriggered = true;
-      await post(
-        '/offline/trigger-initial-sync',
-        body: jsonEncode({'schoolId': schoolId, 'userId': username}),
-        forceCloud: false, // ensure it hits LOCAL
-      );
-    } catch (e) {
-      print("HYBRID: Initial sync trigger failed: $e");
-      // Allow retry if it failed
-      _localSyncTriggered = false;
-    }
-  }
 
   static Future<void> initialize() async {
     if (_isInitialized) return;
@@ -52,8 +26,15 @@ class HybridApiService {
     print("HYBRID: Init started. Desktop: $isDesktopUser, Mobile: $isMobileUser, Web: $kIsWeb");
 
     if (kIsWeb) {
-      print("HYBRID: Web detected. Attempting local server detection...");
+      print("HYBRID: Web detected. Trying LOCAL first, fallback CLOUD.");
       await _detectLocalServer();
+      if (_isLocalServerAvailable == true && localBaseUrl != null) {
+        print("HYBRID: Web app connected to LOCAL server at $localBaseUrl.");
+      } else {
+        print("HYBRID: No local server on web. Using CLOUD mode.");
+        _isLocalServerAvailable = false;
+        localBaseUrl = null;
+      }
     } else if (isMobileUser) {
       print("HYBRID: Mobile user detected. Forcing CLOUD mode.");
       _isLocalServerAvailable = false;
@@ -111,7 +92,6 @@ class HybridApiService {
         localBaseUrl = 'http://$host:$port';
         _isLocalServerAvailable = true;
         print("HYBRID: Local server confirmed at $localBaseUrl");
-        _triggerLocalInitialSyncIfPossible();
       } else {
         print("HYBRID: Connection to $host:$port returned status ${response.statusCode}");
       }
@@ -142,6 +122,20 @@ class HybridApiService {
     return baseUrl;
   }
 
+  static Future<Map<String, String>> _getAcademicHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final start = prefs.getString('x_academic_start');
+    final end = prefs.getString('x_academic_end');
+    final id = prefs.getString('x_academic_id');
+    
+    final headers = <String, String>{};
+    if (start != null && start.isNotEmpty) headers['x-academic-start'] = start;
+    if (end != null && end.isNotEmpty) headers['x-academic-end'] = end;
+    if (id != null && id.isNotEmpty) headers['x-academic-id'] = id;
+    
+    return headers;
+  }
+
   static bool get isHybridMode => _isLocalServerAvailable == true;
 
   static bool get isLocalAvailable => _isLocalServerAvailable ?? false;
@@ -161,9 +155,12 @@ class HybridApiService {
             ? '$localBaseUrl$endpoint'
             : null;
 
+    final academicHeaders = await _getAcademicHeaders();
+
     final requestHeaders = {
       "Content-Type": "application/json",
       ...getApiHeaders(),
+      ...academicHeaders,
       ...?headers,
     };
 
@@ -191,7 +188,6 @@ class HybridApiService {
       print("HYBRID: Local POST failed, falling back to cloud. Error: $e");
       _isLocalServerAvailable = false;
       localBaseUrl = null;
-      _localSyncTriggered = false;
       return callCloud();
     }
   }
@@ -209,9 +205,12 @@ class HybridApiService {
             ? '$localBaseUrl$endpoint'
             : null;
 
+    final academicHeaders = await _getAcademicHeaders();
+
     final requestHeaders = {
       "Content-Type": "application/json",
       ...getApiHeaders(),
+      ...academicHeaders,
       ...?headers,
     };
 
@@ -231,7 +230,6 @@ class HybridApiService {
       print("HYBRID: Local GET failed, falling back to cloud. Error: $e");
       _isLocalServerAvailable = false;
       localBaseUrl = null;
-      _localSyncTriggered = false;
       return callCloud();
     }
   }
@@ -251,9 +249,12 @@ class HybridApiService {
             ? '$localBaseUrl$endpoint'
             : null;
 
+    final academicHeaders = await _getAcademicHeaders();
+
     final requestHeaders = {
       "Content-Type": "application/json",
       ...getApiHeaders(),
+      ...academicHeaders,
       ...?headers,
     };
 
@@ -281,7 +282,6 @@ class HybridApiService {
       print("HYBRID: Local PUT failed, falling back to cloud. Error: $e");
       _isLocalServerAvailable = false;
       localBaseUrl = null;
-      _localSyncTriggered = false;
       return callCloud();
     }
   }
@@ -301,9 +301,12 @@ class HybridApiService {
             ? '$localBaseUrl$endpoint'
             : null;
 
+    final academicHeaders = await _getAcademicHeaders();
+
     final requestHeaders = {
       "Content-Type": "application/json",
       ...getApiHeaders(),
+      ...academicHeaders,
       ...?headers,
     };
 
@@ -331,7 +334,6 @@ class HybridApiService {
       print("HYBRID: Local PATCH failed, falling back to cloud. Error: $e");
       _isLocalServerAvailable = false;
       localBaseUrl = null;
-      _localSyncTriggered = false;
       return callCloud();
     }
   }
@@ -351,9 +353,12 @@ class HybridApiService {
             ? '$localBaseUrl$endpoint'
             : null;
 
+    final academicHeaders = await _getAcademicHeaders();
+
     final requestHeaders = {
       "Content-Type": "application/json",
       ...getApiHeaders(),
+      ...academicHeaders,
       ...?headers,
     };
 
@@ -381,7 +386,6 @@ class HybridApiService {
       print("HYBRID: Local DELETE failed, falling back to cloud. Error: $e");
       _isLocalServerAvailable = false;
       localBaseUrl = null;
-      _localSyncTriggered = false;
       return callCloud();
     }
   }
@@ -472,7 +476,8 @@ class HybridApiService {
 
     final request = http.MultipartRequest(method, Uri.parse(url));
 
-    final requestHeaders = {...getApiHeaders(), ...?headers};
+    final academicHeaders = await _getAcademicHeaders();
+    final requestHeaders = {...getApiHeaders(), ...academicHeaders, ...?headers};
     if (isHybridMode && !forceCloud) {
       requestHeaders['x-sync-source'] = 'local';
     }

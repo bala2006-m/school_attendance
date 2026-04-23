@@ -158,10 +158,7 @@ class AdminDesktopDashboard extends StatelessWidget {
                     schoolName: schoolName,
                     adminAccess: adminAccess,
                   ),
-                  AdminAnalyticsDesktop(
-                    schoolId: schoolId,
-                    username: username,
-                  ),
+                  AdminAnalyticsDesktop(schoolId: schoolId, username: username),
                 ],
               ),
             ),

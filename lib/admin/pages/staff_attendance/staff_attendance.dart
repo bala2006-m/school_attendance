@@ -59,9 +59,14 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await fetchHolidays();
       final now = DateTime.now();
       final hour = now.hour;
+
+      // Run async operations in parallel for better performance
+      await Future.wait([fetchHolidays(), fetchSchoolInfo(), fetchStaff()]);
+
+      // Set session after fetching data
+      if (!mounted) return;
       if (hour < 13 && !isHolidayFn) {
         setState(() => session = AttendanceSession.fN);
       } else if (hour >= 13 && !isHolidayAn) {
@@ -71,8 +76,6 @@ class _StaffAttendanceState extends State<StaffAttendance> {
       } else if (!isHolidayAn) {
         setState(() => session = AttendanceSession.aN);
       }
-      await fetchSchoolInfo();
-      await fetchStaff();
     });
   }
 
@@ -148,7 +151,7 @@ class _StaffAttendanceState extends State<StaffAttendance> {
     }
   }
 
-  // Group staff by gender and sort each group alphabetically by name
+  // Group staff by gender and sort: males first, then alphabetically by username within each gender
   List<Map<String, dynamic>> groupAndSortStaffByGender(
     List<Map<String, dynamic>> staff,
   ) {
@@ -161,13 +164,13 @@ class _StaffAttendanceState extends State<StaffAttendance> {
             .where((data) => (data['gender'] ?? '').toUpperCase() == 'F')
             .toList();
 
-    int nameComparator(a, b) => (a['name'] ?? '')
+    int usernameComparator(a, b) => (a['username'] ?? '')
         .toString()
         .toLowerCase()
-        .compareTo((b['name'] ?? '').toString().toLowerCase());
+        .compareTo((b['username'] ?? '').toString().toLowerCase());
 
-    males.sort(nameComparator);
-    females.sort(nameComparator);
+    males.sort(usernameComparator);
+    females.sort(usernameComparator);
 
     return [...males, ...females];
   }
@@ -384,19 +387,6 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   Widget teaching() {
     final teachingStaff =
         staffList.where((s) => s['faculty'] == 'teaching').toList();
-    teachingStaff.sort((a, b) {
-      final genderA = a['gender'] ?? '';
-      final genderB = b['gender'] ?? '';
-
-      // Put males first
-      if (genderA == 'M' && genderB != 'M') return -1;
-      if (genderA != 'M' && genderB == 'M') return 1;
-
-      // Same gender, sort by username alphabetically
-      final userA = (a['username'] ?? '').toString();
-      final userB = (b['username'] ?? '').toString();
-      return userA.compareTo(userB);
-    });
 
     return Column(
       children: [
@@ -455,19 +445,6 @@ class _StaffAttendanceState extends State<StaffAttendance> {
   Widget nonTeaching() {
     final nonTeachingStaff =
         staffList.where((s) => s['faculty'] == 'nonteaching').toList();
-    nonTeachingStaff.sort((a, b) {
-      final genderA = a['gender'] ?? '';
-      final genderB = b['gender'] ?? '';
-
-      // Put males first
-      if (genderA == 'M' && genderB != 'M') return -1;
-      if (genderA != 'M' && genderB == 'M') return 1;
-
-      // Same gender, sort by username alphabetically
-      final userA = (a['username'] ?? '').toString();
-      final userB = (b['username'] ?? '').toString();
-      return userA.compareTo(userB);
-    });
 
     return Column(
       children: [

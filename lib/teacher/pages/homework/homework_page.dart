@@ -125,6 +125,7 @@ class _HomeworkPageState extends State<HomeworkPage> {
   Future<void> _pickImage() async {
     final XFile? picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
+      requestFullMetadata: false,
     );
     if (picked != null) {
       setState(() => _image = File(picked.path));

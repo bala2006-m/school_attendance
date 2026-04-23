@@ -289,7 +289,7 @@ class _StudentAbsentState extends State<StudentAbsent> {
     required BuildContext context,
     required bool isKinderGarden,
   }) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
+    // final screenWidth = MediaQuery.sizeOf(context).width;
     if (classes.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),

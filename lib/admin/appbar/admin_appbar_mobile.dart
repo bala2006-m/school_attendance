@@ -7,6 +7,7 @@ import 'package:school_attendance/admin/pages/dashboard/admin_dashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/api_service.dart';
+import '../components/academic_year_dropdown.dart';
 import '../pages/notification/notifications.dart';
 import '../services/admin_api_service.dart';
 
@@ -338,6 +339,8 @@ class _AdminAppbarMobileState extends State<AdminAppbarMobile> {
                 ],
               ),
               const Spacer(),
+              AcademicYearDropdown(schoolId: widget.schoolId),
+              const SizedBox(width: 6),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,

@@ -3,8 +3,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:school_attendance/admin/widget/admin_mobile_drawer.dart';
 import 'package:school_attendance/login_page.dart';
+import 'package:school_attendance/services/academic_year_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -78,12 +80,27 @@ class AdminDashboardState extends State<AdminDashboard> {
       loadCachedData();
       fetchFreshData();
       _startRealTimeTimer();
+      
+      // Listen for academic year changes
+      Provider.of<AcademicYearProvider>(context, listen: false).addListener(_onAcademicYearChanged);
     });
+  }
+
+  void _onAcademicYearChanged() {
+    if (mounted) {
+      // Small delay to allow provider to settle
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          fetchFreshData();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _realTimeTimer?.cancel();
+    Provider.of<AcademicYearProvider>(context, listen: false).removeListener(_onAcademicYearChanged);
     super.dispose();
   }
 
@@ -828,10 +845,6 @@ class AdminDashboardState extends State<AdminDashboard> {
               icon: Icon(Icons.analytics, size: 30),
               label: 'Manage',
             ),
-            // BottomNavigationBarItem(
-            //   icon: Icon(Icons.bar_chart, size: 30),
-            //   label: 'Analytics',
-            // ),
           ],
         ),
       ),

@@ -1,0 +1,63 @@
+<!--
+web/index.html — required changes for YouTube iframes on Flutter Web
+=====================================================================
+
+PROBLEM 1: Content-Security-Policy (CSP)
+─────────────────────────────────────────
+If your index.html has a <meta http-equiv="Content-Security-Policy"> tag
+that doesn't include YouTube in frame-src, the browser silently blocks
+every iframe. No Dart error is thrown — the player just shows blank.
+
+Add or update the CSP meta tag to include the origins below.
+If you have NO CSP tag, you don't need to add one — browsers are
+permissive by default.
+
+REPLACE your existing CSP meta tag (if any) with:
+-->
+
+<meta
+http-equiv="Content-Security-Policy"
+content="
+default-src 'self';
+script-src  'self' 'unsafe-inline' 'unsafe-eval'
+https://www.youtube.com
+https://s.ytimg.com;
+frame-src   https://www.youtube.com
+https://www.youtube-nocookie.com;
+img-src     'self' data: blob:
+https://*.ytimg.com
+https://*.ggpht.com;
+style-src   'self' 'unsafe-inline';
+connect-src 'self'
+https://smartschoolserver.ramchintech.com;
+"
+/>
+
+<!--
+PROBLEM 2: CORS on your API server
+────────────────────────────────────
+Flutter Web runs in a browser. When it calls your API at
+https://smartschoolserver.ramchintech.com the browser enforces CORS.
+If the server doesn't return Access-Control-Allow-Origin the browser
+blocks the response silently. Dart's catch block receives a JS TypeError,
+not a useful exception — so _hasError is set with no useful message.
+
+On your Express/Node backend, add:
+
+const cors = require('cors');
+app.use(cors({
+origin: '*',           // or your Flutter Web domain in production
+methods: ['GET'],
+}));
+
+Or if you're not using Express, add the header manually:
+
+res.header('Access-Control-Allow-Origin', '*');
+res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+
+PROBLEM 3: Mixed content (HTTP vs HTTPS)
+─────────────────────────────────────────
+If your Flutter Web app is served over HTTPS but your API is HTTP,
+the browser blocks it as mixed content. Ensure your API is also HTTPS.
+Your current baseUrl uses https:// so this should be fine already.
+-->

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../pages/notification/notifications.dart';
+import '../components/academic_year_dropdown.dart';
 import '../services/admin_api_service.dart';
 
 class AdminAppbarDesktop extends StatefulWidget {
@@ -106,7 +106,7 @@ class _AdminAppbarDesktopState extends State<AdminAppbarDesktop> {
         "Jun": "Jun",
         "Jul": "Jul",
         "Aug": "Aug",
-        "Sep": "Sept", // 👈 force "Sept"
+        "Sep": "Sept",
         "Oct": "Oct",
         "Nov": "Nov",
         "Dec": "Dec",
@@ -162,26 +162,26 @@ class _AdminAppbarDesktopState extends State<AdminAppbarDesktop> {
                 ),
               ),
               const Spacer(),
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => Notifications(
-                            schoolId: widget.schoolId,
-                            username: widget.username,
-                          ),
-                    ),
-                  );
-                  _loadUnseenCount();
-                },
-                icon: Badge(
-                  isLabelVisible: unseenCount > 0,
-                  label: Text(unseenCount.toString()),
-                  child: const Icon(Icons.notifications, color: Colors.white),
-                ),
-              ),
+              // IconButton(
+              //   onPressed: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder:
+              //             (context) => Notifications(
+              //               schoolId: widget.schoolId,
+              //               username: widget.username,
+              //             ),
+              //       ),
+              //     );
+              //     _loadUnseenCount();
+              //   },
+              //   icon: Badge(
+              //     isLabelVisible: unseenCount > 0,
+              //     label: Text(unseenCount.toString()),
+              //     child: const Icon(Icons.notifications, color: Colors.white),
+              //   ),
+              // ),
               SizedBox(width: 20),
             ],
           ),
@@ -190,7 +190,7 @@ class _AdminAppbarDesktopState extends State<AdminAppbarDesktop> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Padding(
-                padding: const EdgeInsets.only(right: 20),
+                padding: const EdgeInsets.only(right: 20, left: 20),
                 child: CircleAvatar(
                   backgroundColor: Colors.transparent,
                   radius: 30,
@@ -220,6 +220,8 @@ class _AdminAppbarDesktopState extends State<AdminAppbarDesktop> {
                 ],
               ),
               const Spacer(),
+              AcademicYearDropdown(schoolId: widget.schoolId),
+              const SizedBox(width: 8),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,

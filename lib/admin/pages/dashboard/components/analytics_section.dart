@@ -234,7 +234,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -254,7 +254,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
+                        color: color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(icon, color: color, size: 18),
@@ -288,103 +288,107 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                 const SizedBox(height: 12),
 
                 /// Chart Area with subtle background
-                Flexible(
-                  child: Container(
-                  constraints: const BoxConstraints(minHeight: 120),
+                Container(
+                  constraints: const BoxConstraints(
+                    minHeight: 180,
+                    maxHeight: 220,
+                  ),
                   padding: const EdgeInsets.only(top: 10, right: 10),
-                  child: LineChart(
-                    LineChartData(
-                      minX: 1,
-                      maxX: 12,
-                      gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: false,
-                        getDrawingHorizontalLine: (value) {
-                          return FlLine(
-                            color: Colors.grey.withValues(alpha: 0.1),
-                            strokeWidth: 1,
-                          );
-                        },
-                      ),
-                      borderData: FlBorderData(show: false),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
+                  child: AspectRatio(
+                    aspectRatio: 1.7,
+                    child: LineChart(
+                      LineChartData(
+                        minX: 1,
+                        maxX: 12,
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          getDrawingHorizontalLine: (value) {
+                            return FlLine(
+                              color: Colors.grey.withOpacity(0.1),
+                              strokeWidth: 1,
+                            );
+                          },
                         ),
-                        rightTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 45,
-                            getTitlesWidget: (value, meta) {
-                              return Padding(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: Text(
-                                  formatIndianUnits(value),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 45,
+                              getTitlesWidget: (value, meta) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Text(
+                                    formatIndianUnits(value),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 22,
+                              getTitlesWidget: (value, meta) {
+                                return Text(
+                                  getMonthName(value.toInt()),
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey.shade600,
-                                    fontWeight: FontWeight.w500,
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        leftTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 22,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                getMonthName(value.toInt()),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey.shade600,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: buildSpots(data, key),
-                          isCurved: true,
-                          barWidth: 4,
-                          isStrokeCapRound: true,
-                          gradient: LinearGradient(
-                            colors: [color, color.withValues(alpha: 0.6)],
-                          ),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                color.withValues(alpha: 0.2),
-                                color.withValues(alpha: 0.0),
-                              ],
+                                );
+                              },
                             ),
                           ),
-                          dotData: FlDotData(
-                            show: true,
-                            getDotPainter: (spot, percent, barData, index) {
-                              return FlDotCirclePainter(
-                                radius: 4,
-                                color: Colors.white,
-                                strokeWidth: 2,
-                                strokeColor: color,
-                              );
-                            },
-                          ),
                         ),
-                      ],
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: buildSpots(data, key),
+                            isCurved: true,
+                            barWidth: 4,
+                            isStrokeCapRound: true,
+                            gradient: LinearGradient(
+                              colors: [color, color.withOpacity(0.6)],
+                            ),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  color.withOpacity(0.2),
+                                  color.withOpacity(0.0),
+                                ],
+                              ),
+                            ),
+                            dotData: FlDotData(
+                              show: true,
+                              getDotPainter: (spot, percent, barData, index) {
+                                return FlDotCirclePainter(
+                                  radius: 4,
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                  strokeColor: color,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 ),
               ],
             ),
@@ -417,7 +421,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -434,7 +438,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -466,7 +470,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   dataRowHeight: 52,
                   dividerThickness: 1,
                   horizontalMargin: 16,
-                  headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+                  headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
                   columns: const [
                     DataColumn(
                       label: Text(
@@ -606,7 +610,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -626,7 +630,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withValues(alpha: 0.1),
+                          color: Colors.deepPurple.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -703,7 +707,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   horizontalMargin: 16,
                   headingRowHeight: 56,
                   dataRowHeight: 64,
-                  headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+                  headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
                   columns: const [
                     DataColumn(
                       label: Text(
@@ -786,9 +790,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                                     LinearProgressIndicator(
                                       value: score / 100,
                                       color: scoreColor,
-                                      backgroundColor: scoreColor.withValues(
-                                        alpha: 0.1,
-                                      ),
+                                      backgroundColor: scoreColor.withOpacity(0.1),
                                       minHeight: 4,
                                       borderRadius: BorderRadius.circular(2),
                                     ),
@@ -803,7 +805,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: scoreColor.withValues(alpha: 0.1),
+                                  color: scoreColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -843,7 +845,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
         bool isTablet =
             constraints.maxWidth > 600 && constraints.maxWidth <= 900;
 
-        return SingleChildScrollView(
+        return Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -874,7 +876,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
@@ -975,7 +977,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
